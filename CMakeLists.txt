@@ -1,11 +1,30 @@
 #
-# Copyright (C) 2016 Wind River Systems, Inc. All Rights Reserved.
+# Copyright (C) 2017 Wind River Systems, Inc. All Rights Reserved.
 #
 # The right to copy, distribute or otherwise make use of this software may
 # be licensed only pursuant to the terms of an applicable Wind River license
 # agreement.  No license to Wind River intellectual property rights is granted
 # herein.  All rights not licensed by Wind River are reserved by Wind River.
 #
+
+# get header file full path
+function( get_full_path OUT_VAR )
+	set( SRCS )
+	foreach ( SRC_FILE ${ARGN} )
+		if ( IS_ABSOLUTE "${SRC_FILE}" )
+			list( APPEND SRCS "${SRC_FILE}" )
+		else()
+			list( APPEND SRCS "${CMAKE_CURRENT_SOURCE_DIR}/${SRC_FILE}" )
+		endif()
+	endforeach( SRC_FILE )
+	set( ${OUT_VAR} ${SRCS} PARENT_SCOPE )
+endfunction( get_full_path OUT_VAR )
+
+set( CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/build-sys" "${CMAKE_MODULE_PATH}" )
+
+include( BuildSupport )
+include( DefineCompilerFlags )
+
 set( TARGET "osal" )
 
 add_subdirectory( "os" )
@@ -13,8 +32,8 @@ add_subdirectory( "os" )
 set( C_HDRS "os.h" ${C_HDRS} )
 set( C_SRCS "os.c" ${C_SRCS} )
 
-#get_full_path( C_HDRS ${C_HDRS} )
-#get_full_path( C_SRCS ${C_SRCS} )
+get_full_path( C_HDRS ${C_HDRS} )
+get_full_path( C_SRCS ${C_SRCS} )
 
 set( API_HDRS_C ${API_HDRS_C} ${C_HDRS} )
 set( API_HDRS_CXX ${API_HDRS_CXX} ${CXX_HDRS} )
