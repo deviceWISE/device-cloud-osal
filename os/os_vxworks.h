@@ -31,7 +31,7 @@
 #include <selectLib.h>   /* for select() */
 
 /* Maximum host name length string */
-#define IOT_HOST_MAX_LEN 256
+#define OS_HOST_MAX_LEN 256
 
 /*
  * NOTE: For a POSIX RW semaphore there is no limit on the number of

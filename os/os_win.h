@@ -24,11 +24,11 @@
 #include <Winsock2.h>
 #include <wincrypt.h>
 
-#ifndef IOT_API_ONLY
+#ifndef OS_API_ONLY
 #	include <rpc.h>        /* for uuid functions */
 	/** @brief Universally unique id type */
 	typedef struct _GUID os__uuid_t;
-#endif /* ifndef IOT_API_ONLY */
+#endif /* ifndef OS_API_ONLY */
 #pragma warning( pop )
 
 /* Define missing signals on Windows */
@@ -46,7 +46,7 @@
 #define SIGSTOP 19
 
 /** @brief Maximum length of a host name on Windows systems */
-#define IOT_HOST_MAX_LEN 255u
+#define OS_HOST_MAX_LEN 255u
 
 /* missing types in Windows */
 /** @brief Signed string length type */
@@ -116,7 +116,7 @@ typedef HANDLE os__file_t;
 #define OS_STDOUT        GetStdHandle( STD_OUTPUT_HANDLE )
 
 #pragma warning( push, 1 )
-#ifndef IOT_API_ONLY
+#ifndef OS_API_ONLY
 #	include <iphlpapi.h>
 #	include <strsafe.h>
 #	include <ws2tcpip.h>
@@ -154,7 +154,7 @@ typedef HANDLE os__file_t;
 		/** @brief Handle to the open directory */
 		HANDLE dir;
 		/** @brief Last error result */
-		iot_status_t last_result;
+		os_status_t last_result;
 		/** @brief Currently found file within the directory */
 		WIN32_FIND_DATA wfd;
 		/** @brief Path to the directory */
@@ -182,7 +182,7 @@ typedef HANDLE os__file_t;
 	 * @brief Thread read/write lock
 	 */
 	typedef SRWLOCK os__thread_rwlock_t;
-#endif /* ifndef IOT_API_ONLY */
+#endif /* ifndef OS_API_ONLY */
 
 #endif /* ifndef OS_WIN32_H */
 

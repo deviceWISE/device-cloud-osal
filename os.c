@@ -15,58 +15,58 @@
 
 #include <stdarg.h>
 
-iot_status_t os_time_elapsed(
-	iot_timestamp_t *start_time,
-	iot_millisecond_t *elapsed_time )
+os_status_t os_time_elapsed(
+	os_timestamp_t *start_time,
+	os_millisecond_t *elapsed_time )
 {
-	iot_status_t result = IOT_STATUS_BAD_PARAMETER;
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( start_time && elapsed_time )
 	{
-		iot_timestamp_t end_time;
+		os_timestamp_t end_time;
 		os_time( &end_time, NULL );
 		if( end_time >= *start_time )
 		{
 			*elapsed_time =
-				(iot_millisecond_t)( end_time - *start_time );
-			result = IOT_STATUS_SUCCESS;
+				(os_millisecond_t)( end_time - *start_time );
+			result = OS_STATUS_SUCCESS;
 		}
 		else
 		{
 			*elapsed_time = 0u;
-			result = IOT_STATUS_BAD_REQUEST;
+			result = OS_STATUS_BAD_REQUEST;
 		}
 	}
 	return result;
 }
 
-iot_status_t os_time_remaining(
-	iot_timestamp_t *start_time,
-	iot_millisecond_t time_out,
-	iot_millisecond_t *remaining )
+os_status_t os_time_remaining(
+	os_timestamp_t *start_time,
+	os_millisecond_t time_out,
+	os_millisecond_t *remaining )
 {
-	iot_status_t result = IOT_STATUS_BAD_PARAMETER;
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( start_time && remaining )
 	{
 		if ( time_out == 0u )
 		{
 			*remaining = 0u;
 			/* if time_out is 0u; indicates forever: so
-			 * don't return IOT_STATUS_TIMED_OUT */
-			result = IOT_STATUS_SUCCESS;
+			 * don't return OS_STATUS_TIMED_OUT */
+			result = OS_STATUS_SUCCESS;
 		}
 		else
 		{
-			iot_millisecond_t elapsed_time = 0u;
+			os_millisecond_t elapsed_time = 0u;
 			result = os_time_elapsed(
 				start_time, &elapsed_time );
-			if ( result == IOT_STATUS_SUCCESS )
+			if ( result == OS_STATUS_SUCCESS )
 			{
 				if ( elapsed_time < time_out )
 					*remaining = time_out - elapsed_time;
 				else
 				{
 					*remaining = 0u;
-					result = IOT_STATUS_TIMED_OUT;
+					result = OS_STATUS_TIMED_OUT;
 				}
 			}
 		}
@@ -74,7 +74,7 @@ iot_status_t os_time_remaining(
 	return result;
 }
 
-#ifndef IOT_API_ONLY
+#ifndef OS_API_ONLY
 char *os_string_tolower(
 	char *out,
 	const char *in,
@@ -103,9 +103,9 @@ char *os_string_toupper(
 	return out;
 }
 
-iot_status_t os_make_path( char *path, size_t len, ... )
+os_status_t os_make_path( char *path, size_t len, ... )
 {
-	iot_status_t result = IOT_STATUS_BAD_PARAMETER;
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( path && len > 0u )
 	{
 		va_list args;
@@ -114,7 +114,7 @@ iot_status_t os_make_path( char *path, size_t len, ... )
 		size_t idx = 0u;
 		va_start( args, len );
 		dir = va_arg( args, const char * );
-		result = IOT_STATUS_FULL;
+		result = OS_STATUS_FULL;
 		while ( dir && idx < ( len - dir_sep_len ) )
 		{
 			const size_t req_len = os_strlen( dir );
@@ -134,7 +134,7 @@ iot_status_t os_make_path( char *path, size_t len, ... )
 		va_end( args );
 
 		if ( idx + dir_sep_len < len )
-			result = IOT_STATUS_SUCCESS;
+			result = OS_STATUS_SUCCESS;
 		else
 			path[0] = '\0';
 	}
@@ -148,24 +148,24 @@ size_t os_strspn(
 	size_t result = 0u;
 	if ( str1 && str2 )
 	{
-		iot_bool_t done;
-		iot_bool_t match;
+		os_bool_t done;
+		os_bool_t match;
 		const char *s1;
 		const char *s2;
 
-		for ( s1 = str1, done = IOT_FALSE;
-			*s1 != '\0' && done == IOT_FALSE;
+		for ( s1 = str1, done = OS_FALSE;
+			*s1 != '\0' && done == OS_FALSE;
 			s1++ )
 		{
-			for ( s2 = str2, match = IOT_FALSE;
-				*s2 != '\0' && match == IOT_FALSE;
+			for ( s2 = str2, match = OS_FALSE;
+				*s2 != '\0' && match == OS_FALSE;
 				s2++ )
 				if ( *s1 == *s2 )
-					match = IOT_TRUE;
+					match = OS_TRUE;
 			if ( match )
 				++result;
 			else
-				done = IOT_TRUE;
+				done = OS_TRUE;
 		}
 	}
 	return result;
@@ -178,19 +178,19 @@ size_t os_strcspn(
 	size_t result = 0u;
 	if ( str1 && str2 )
 	{
-		iot_bool_t match = IOT_FALSE;
+		os_bool_t match = OS_FALSE;
 		const char *s1;
 		const char *s2;
 
 		for ( s1 = str1;
-			*s1 != '\0' && match == IOT_FALSE;
+			*s1 != '\0' && match == OS_FALSE;
 			s1++ )
 		{
 			for ( s2 = str2;
-				*s2 != '\0' && match == IOT_FALSE;
+				*s2 != '\0' && match == OS_FALSE;
 				s2++ )
 				if ( *s1 == *s2 )
-					match = IOT_TRUE;
+					match = OS_TRUE;
 			if ( !match )
 				++result;
 		}
@@ -272,5 +272,5 @@ int os_strncasecmp(
 	}
 	return result;
 }
-#endif /* ifndef IOT_API_ONLY */
+#endif /* ifndef OS_API_ONLY */
 

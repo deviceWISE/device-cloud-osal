@@ -11,26 +11,26 @@
  * River.
  */
 
-#include "../os_.h"
+#include "../os.h"
 
-#include <ctype.h>      /* for isalha, isalnum */
-#include <errno.h>      /* for errno */
-#include <stdarg.h>     /* for va_start, va_end, va_list */
-#include <stdlib.h>     /* for getenv */
-#include <stdio.h>      /* for snprintf */
-#include <string.h>     /* for strncpy, strerror */
-#include <unistd.h>     /* for close */
-#include <sys/socket.h> /* for setsockopt */
-#include <sys/stat.h>   /* for struct filestat, stat */
-#include <sys/time.h>   /* for gettimeofday */
-#include <sys/types.h>  /* for uid_t and gid_t */
-#include <sys/wait.h>   /* for waitpid */
+#include <ctype.h>       /* for isalha, isalnum */
+#include <errno.h>       /* for errno */
+#include <stdarg.h>      /* for va_start, va_end, va_list */
+#include <stdlib.h>      /* for getenv */
+#include <stdio.h>       /* for snprintf */
+#include <string.h>      /* for strncpy, strerror */
+#include <unistd.h>      /* for close */
+#include <sys/socket.h>  /* for setsockopt */
+#include <sys/stat.h>    /* for struct filestat, stat */
+#include <sys/time.h>    /* for gettimeofday */
+#include <sys/types.h>   /* for uid_t and gid_t */
+#include <sys/wait.h>    /* for waitpid */
 #ifndef _WRS_KERNEL
-#include <dlfcn.h>      /* for dlclose, dlopen, dlsym */
-#include <pwd.h>        /* for getpwnam */
-#include <regex.h>      /* for regular expression support */
-#include <sys/statvfs.h>/* for struct statsfs */
-#include <termios.h>    /* for terminal input */
+#include <dlfcn.h>       /* for dlclose, dlopen, dlsym */
+#include <pwd.h>         /* for getpwnam */
+#include <regex.h>       /* for regular expression support */
+#include <sys/statvfs.h> /* for struct statsfs */
+#include <termios.h>     /* for terminal input */
 #endif /* _WRS_KERNEL */
 
 #if defined(__linux__) || defined (_WRS_KERNEL)
@@ -67,14 +67,14 @@ typedef u_short in_port_t;
  */
 #define LOOP_WAIT_TIME 100u
 
-iot_status_t os_adapters_address(
+os_status_t os_adapters_address(
 	os_adapters_t *adapters,
 	int *family,
 	int *flags,
 	char *address,
 	size_t address_len )
 {
-	iot_status_t result = IOT_STATUS_FAILURE;
+	os_status_t result = OS_STATUS_FAILURE;
 	if ( adapters && adapters->current && address && address_len > 0u )
 	{
 		void* ptr = NULL;
@@ -97,16 +97,16 @@ iot_status_t os_adapters_address(
 		}
 
 		if ( ptr && inet_ntop( addr->sa_family, ptr, address, (socklen_t)address_len ) )
-			result = IOT_STATUS_SUCCESS;
+			result = OS_STATUS_SUCCESS;
 	}
 	return result;
 }
 
-iot_status_t os_adapters_index(
+os_status_t os_adapters_index(
 	os_adapters_t *adapters,
 	unsigned int *index )
 {
-	iot_status_t result = IOT_STATUS_FAILURE;
+	os_status_t result = OS_STATUS_FAILURE;
 	if ( adapters && adapters->current && index )
 	{
 		const int socket_fd =
@@ -120,7 +120,7 @@ iot_status_t os_adapters_index(
 			if ( ioctl( socket_fd, SIOCGIFINDEX, &ifr ) != -1 )
 			{
 				*index = (unsigned int)ifr.ifr_ifindex;
-				result = IOT_STATUS_SUCCESS;
+				result = OS_STATUS_SUCCESS;
 			}
 			close( socket_fd );
 		}
@@ -128,12 +128,12 @@ iot_status_t os_adapters_index(
 	return result;
 }
 
-iot_status_t os_adapters_mac(
+os_status_t os_adapters_mac(
 	os_adapters_t *adapters,
 	char *mac,
 	size_t mac_len )
 {
-	iot_status_t result = IOT_STATUS_FAILURE;
+	os_status_t result = OS_STATUS_FAILURE;
 	if ( adapters && adapters->current && mac && mac_len > 0u )
 	{
 #if defined(__linux__) || defined (_WRS_KERNEL)
@@ -168,12 +168,12 @@ iot_status_t os_adapters_mac(
 				const size_t id_len = sdl->sdl_alen;
 #endif /*  defined(__linux__) || defined (_WRS_KERNEL) */
 				/* loop through to produce mac address */
-				iot_bool_t good_mac = IOT_FALSE;
+				os_bool_t good_mac = OS_FALSE;
 				size_t i;
 				for ( i = 0u; i < id_len && i * 3u <= mac_len; ++i )
 				{
 					if ( id[ i ] > 0u )
-						good_mac = IOT_TRUE;
+						good_mac = OS_TRUE;
 					snprintf( &mac[ i * 3u ], 3, "%2.2x:", id[ i ] );
 				}
 
@@ -183,8 +183,8 @@ iot_status_t os_adapters_mac(
 				mac[ mac_len - 1u ] = '\0';
 
 				/* mac contained at least 1 non-zero value */
-				if ( good_mac != IOT_FALSE )
-					result = IOT_STATUS_SUCCESS;
+				if ( good_mac != OS_FALSE )
+					result = OS_STATUS_SUCCESS;
 			}
 #if defined( __linux__ ) || defined ( _WRS_KERNEL )
 			close( socket_fd );
@@ -194,67 +194,67 @@ iot_status_t os_adapters_mac(
 	return result;
 }
 
-iot_status_t os_adapters_next(
+os_status_t os_adapters_next(
 	os_adapters_t *adapters )
 {
-	iot_status_t result = IOT_STATUS_FAILURE;
+	os_status_t result = OS_STATUS_FAILURE;
 	if ( adapters )
 	{
 		if ( adapters->current )
 		{
 			adapters->current = adapters->current->ifa_next;
 			if ( adapters->current )
-				result = IOT_STATUS_SUCCESS;
+				result = OS_STATUS_SUCCESS;
 		}
 	}
 	return result;
 }
 
-iot_status_t os_adapters_obtain(
+os_status_t os_adapters_obtain(
 	os_adapters_t *adapters )
 {
-	iot_status_t result = IOT_STATUS_FAILURE;
+	os_status_t result = OS_STATUS_FAILURE;
 	if ( adapters )
 	{
 		if ( getifaddrs( &adapters->first ) == 0 )
 		{
 			adapters->current = adapters->first;
-			result = IOT_STATUS_SUCCESS;
+			result = OS_STATUS_SUCCESS;
 		}
 	}
 	return result;
 }
 
-iot_status_t os_adapters_release(
+os_status_t os_adapters_release(
 	os_adapters_t *adapters )
 {
-	iot_status_t result = IOT_STATUS_FAILURE;
+	os_status_t result = OS_STATUS_FAILURE;
 	if ( adapters )
 	{
 		if ( adapters->first )
 			freeifaddrs( adapters->first );
-		result = IOT_STATUS_SUCCESS;
+		result = OS_STATUS_SUCCESS;
 	}
 	return result;
 }
 
-#ifndef IOT_API_ONLY
+#ifndef OS_API_ONLY
 /* character testing support */
-iot_bool_t os_char_isalnum(
+os_bool_t os_char_isalnum(
 	char c )
 {
-	iot_bool_t result = IOT_FALSE;
+	os_bool_t result = OS_FALSE;
 	if ( isalnum( c ) )
-		result = IOT_TRUE;
+		result = OS_TRUE;
 	return result;
 }
 
-iot_bool_t os_char_isxdigit(
+os_bool_t os_char_isxdigit(
 	char c )
 {
-	iot_bool_t result = IOT_FALSE;
+	os_bool_t result = OS_FALSE;
 	if ( isxdigit( c ) )
-		result = IOT_TRUE;
+		result = OS_TRUE;
 	return result;
 }
 
@@ -269,45 +269,45 @@ char os_char_toupper(
 {
 	return (char)toupper( c );
 }
-#endif /* ifndef IOT_API_ONLY */
+#endif /* ifndef OS_API_ONLY */
 
 /* file & directory support */
-#ifndef IOT_API_ONLY
-iot_status_t os_directory_create(
+#ifndef OS_API_ONLY
+os_status_t os_directory_create(
 		const char *path,
-		iot_millisecond_t timeout )
+		os_millisecond_t timeout )
 {
-	iot_status_t result;
-	iot_timestamp_t start_time;
-	iot_millisecond_t time_elapsed;
+	os_status_t result;
+	os_timestamp_t start_time;
+	os_millisecond_t time_elapsed;
 
 	os_time( &start_time, NULL );
 	do {
 		result = os_directory_create_nowait( path );
-		if ( result != IOT_STATUS_SUCCESS )
+		if ( result != OS_STATUS_SUCCESS )
 		{
 			os_time_elapsed( &start_time, &time_elapsed );
-			os_time_sleep( LOOP_WAIT_TIME, IOT_TRUE );
+			os_time_sleep( LOOP_WAIT_TIME, OS_TRUE );
 		}
-	} while ( result != IOT_STATUS_SUCCESS &&
+	} while ( result != OS_STATUS_SUCCESS &&
 		( timeout == 0u || time_elapsed < timeout ) );
 
 	return result;
 }
 
-iot_status_t os_directory_create_nowait(
+os_status_t os_directory_create_nowait(
 		const char *path )
 {
-	iot_status_t result = IOT_STATUS_BAD_PARAMETER;
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( path )
 	{
 		size_t path_len = 0;
 		char *p = NULL;
 		char temp_path[ PATH_MAX + 1u ];
-		result = IOT_STATUS_FAILURE;
+		result = OS_STATUS_FAILURE;
 
 		if ( os_directory_exists( path ) )
-			return IOT_STATUS_SUCCESS;
+			return OS_STATUS_SUCCESS;
 
 		/* Get the parent dir and check if it exists */
 		os_strncpy( temp_path, path, PATH_MAX );
@@ -318,7 +318,7 @@ iot_status_t os_directory_create_nowait(
 		if ( p > temp_path )
 		{
 			*p = '\0';
-			if ( os_directory_exists( temp_path ) == IOT_FALSE )
+			if ( os_directory_exists( temp_path ) == OS_FALSE )
 				os_directory_create_nowait( temp_path );
 		}
 
@@ -328,69 +328,69 @@ iot_status_t os_directory_create_nowait(
 		if ( ( mkdir( path ) == OK ) &&
 			( chmod( path, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH ) == OK ) )
 #endif
-		result = IOT_STATUS_SUCCESS;
+		result = OS_STATUS_SUCCESS;
 	}
 	return result;
 }
 
-iot_status_t os_directory_current(
+os_status_t os_directory_current(
 		char *buffer,
 		size_t size )
 {
-	iot_status_t result = IOT_STATUS_BAD_PARAMETER;
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( buffer )
 	{
-		result = IOT_STATUS_FAILURE;
+		result = OS_STATUS_FAILURE;
 		if ( getcwd( buffer, size ) != NULL )
-			result = IOT_STATUS_SUCCESS;
+			result = OS_STATUS_SUCCESS;
 	}
 	return result;
 }
 
-iot_status_t os_directory_change(const char *path)
+os_status_t os_directory_change(const char *path)
 {
-	iot_status_t result = IOT_STATUS_BAD_PARAMETER;
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( path )
 	{
-		result = IOT_STATUS_SUCCESS;
+		result = OS_STATUS_SUCCESS;
 		if ( chdir ( path ) != 0)
-			result = IOT_STATUS_FAILURE;
+			result = OS_STATUS_FAILURE;
 	}
 	return result;
 }
 
-iot_status_t os_directory_close(
+os_status_t os_directory_close(
 	os_dir_t *dir )
 {
-	iot_status_t result = IOT_STATUS_FAILURE;
+	os_status_t result = OS_STATUS_FAILURE;
 	if( dir && dir->dir && closedir( dir->dir ) == 0 )
 	{
 		dir->dir = NULL;
-		result = IOT_STATUS_SUCCESS;
+		result = OS_STATUS_SUCCESS;
 	}
 	return result;
 }
 #ifndef _WRS_KERNEL
-iot_status_t os_directory_delete(
-	const char *path, const char *regex, iot_bool_t recursive )
+os_status_t os_directory_delete(
+	const char *path, const char *regex, os_bool_t recursive )
 {
 /** @brief maximum regular expression string length */
 #define REGEX_MAX_LEN   64u
-	iot_status_t result = IOT_STATUS_BAD_PARAMETER;
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( path )
 	{
 		regex_t regex_obj;
 		const char *regex_pos = regex;
 		char regex_str[REGEX_MAX_LEN];
-		result = IOT_STATUS_SUCCESS;
+		result = OS_STATUS_SUCCESS;
 		if ( regex == NULL || *regex == '\0' )
 			regex_pos = "*";
 		else if ( os_strncmp( regex, ".", 2u ) == 0 ||
 			os_strncmp( regex, "..", 3u ) == 0 ||
 			os_strstr( regex, "/" ) != NULL )
-			result = IOT_STATUS_BAD_REQUEST;
+			result = OS_STATUS_BAD_REQUEST;
 
-		if ( result == IOT_STATUS_SUCCESS )
+		if ( result == OS_STATUS_SUCCESS )
 		{
 			/* convert file regular expressionto POSIX regular
 			 * expression (i.e. "*.txt" -> "^.*\.txt$") */
@@ -420,18 +420,18 @@ iot_status_t os_directory_delete(
 		}
 
 		/* compile regular expression */
-		if ( result == IOT_STATUS_SUCCESS &&
+		if ( result == OS_STATUS_SUCCESS &&
 			regcomp( &regex_obj, regex_str, REG_NOSUB ) )
-				result = IOT_STATUS_BAD_REQUEST;
+				result = OS_STATUS_BAD_REQUEST;
 
-		if ( result == IOT_STATUS_SUCCESS )
+		if ( result == OS_STATUS_SUCCESS )
 		{
 			DIR *d = opendir( path );
 			if ( d )
 			{
 				struct dirent *p;
 				/* loop through all files */
-				while ( result == IOT_STATUS_SUCCESS &&
+				while ( result == OS_STATUS_SUCCESS &&
 					( p = readdir( d ) ) )
 				{
 					if ( strncmp( p->d_name, ".", 2u ) != 0 &&
@@ -453,7 +453,7 @@ iot_status_t os_directory_delete(
 							{
 								/* check for matching
 								 * files in sub-directory */
-								if ( recursive != IOT_FALSE &&
+								if ( recursive != OS_FALSE &&
 									S_ISDIR( st.st_mode ) )
 									result = os_directory_delete(
 										buf, regex, recursive );
@@ -469,34 +469,34 @@ iot_status_t os_directory_delete(
 										/* delete all files
 										 * within sub-directory */
 										result = os_directory_delete(
-											buf, NULL, IOT_TRUE );
+											buf, NULL, OS_TRUE );
 									}
 									else if ( unlink( buf ) != 0 )
-										result = IOT_STATUS_FAILURE;
+										result = OS_STATUS_FAILURE;
 								}
 							}
 							else
-								result = IOT_STATUS_FAILURE;
+								result = OS_STATUS_FAILURE;
 							free( buf );
 						}
 						else
-							result = IOT_STATUS_NO_MEMORY;
+							result = OS_STATUS_NO_MEMORY;
 					}
 				}
 				closedir( d );
 			}
 			else
-				result = IOT_STATUS_FAILURE;
+				result = OS_STATUS_FAILURE;
 			regfree( &regex_obj );
 
 			/* delete the directory */
-			if ( result == IOT_STATUS_SUCCESS && regex == NULL )
+			if ( result == OS_STATUS_SUCCESS && regex == NULL )
 			{
 				int retval = rmdir( path );
 				if ( retval == ENOTEMPTY )
-					result = IOT_STATUS_TRY_AGAIN;
+					result = OS_STATUS_TRY_AGAIN;
 				else if ( retval != 0 )
-					result = IOT_STATUS_FAILURE;
+					result = OS_STATUS_FAILURE;
 			}
 		}
 	}
@@ -504,16 +504,16 @@ iot_status_t os_directory_delete(
 }
 #endif
 
-iot_bool_t os_directory_exists(
+os_bool_t os_directory_exists(
 	const char *dir_path )
 {
 	DIR *dir;
-	iot_bool_t result = IOT_FALSE;
+	os_bool_t result = OS_FALSE;
 
 	dir = opendir( dir_path );
 	if ( dir )
 	{
-		result = IOT_TRUE;
+		result = OS_TRUE;
 		if ( closedir( dir ) != 0 )
 			os_fprintf( OS_STDERR,
 				"Failed to close dir %s due to %s\n",
@@ -524,14 +524,14 @@ iot_bool_t os_directory_exists(
 }
 
 #ifndef _WRS_KERNEL
-iot_uint64_t os_directory_free_space( const char* path )
+os_uint64_t os_directory_free_space( const char* path )
 {
-	iot_uint64_t free_space = 0u;
+	os_uint64_t free_space = 0u;
 	struct statvfs64 sfs;
 
 	if ( statvfs64 ( path, &sfs ) != -1 )
-		free_space = (iot_uint64_t)sfs.f_bsize *
-			(iot_uint64_t)sfs.f_bavail;
+		free_space = (os_uint64_t)sfs.f_bsize *
+			(os_uint64_t)sfs.f_bavail;
 	return free_space;
 }
 
@@ -548,13 +548,13 @@ const char *os_directory_get_temp_dir( char * dest, size_t size )
 	return ( result );
 }
 
-iot_status_t os_directory_next(
+os_status_t os_directory_next(
 	os_dir_t *dir,
-	iot_bool_t files_only,
+	os_bool_t files_only,
 	char *path,
 	size_t path_len )
 {
-	iot_status_t result = IOT_STATUS_FAILURE;
+	os_status_t result = OS_STATUS_FAILURE;
 	if ( dir && dir->dir && path && path_len > 0 )
 	{
 		struct dirent *d = NULL;
@@ -566,7 +566,7 @@ iot_status_t os_directory_next(
 				os_make_path( path, path_len, dir->path,
 					d->d_name, NULL );
 				path[ path_len - 1 ] = '\0';
-				if ( files_only != IOT_FALSE )
+				if ( files_only != OS_FALSE )
 				{
 					if ( d->d_type == DT_UNKNOWN )
 					{
@@ -583,7 +583,7 @@ iot_status_t os_directory_next(
 		}
 
 		if ( d != NULL )
-			result = IOT_STATUS_SUCCESS;
+			result = OS_STATUS_SUCCESS;
 		else
 			path[ 0 ] = '\0';
 	}
@@ -591,39 +591,39 @@ iot_status_t os_directory_next(
 }
 #endif /* _WRS_KERNEL */
 
-iot_status_t os_directory_rewind(
+os_status_t os_directory_rewind(
 	os_dir_t *dir )
 {
-	iot_status_t result = IOT_STATUS_FAILURE;
+	os_status_t result = OS_STATUS_FAILURE;
 	if( dir && dir->dir )
 	{
 		rewinddir( dir->dir );
-		result = IOT_STATUS_SUCCESS;
+		result = OS_STATUS_SUCCESS;
 	}
 	return result;
 }
 
-iot_status_t os_directory_open(
+os_status_t os_directory_open(
 	const char *dir_path,
 	os_dir_t* out )
 {
-	iot_status_t result = IOT_STATUS_FAILURE;
+	os_status_t result = OS_STATUS_FAILURE;
 	if ( dir_path && out )
 	{
 		os_strncpy( out->path, dir_path, PATH_MAX );
 		out->dir = opendir( dir_path );
 		if ( out->dir )
-			result = IOT_STATUS_SUCCESS;
+			result = OS_STATUS_SUCCESS;
 	}
 	return result;
 }
 
 #ifndef _WRS_KERNEL
-iot_status_t os_file_chown(
+os_status_t os_file_chown(
 	const char *path,
 	const char *user )
 {
-	iot_status_t result = IOT_STATUS_BAD_PARAMETER;
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( path && user && *path != '\0' && *user != '\0' )
 	{
 		int sys_result = -1;
@@ -631,32 +631,32 @@ iot_status_t os_file_chown(
 		if ( pwd )
 			sys_result = chown( path, pwd->pw_uid, pwd->pw_gid );
 		if ( sys_result == 0 )
-			result = IOT_STATUS_SUCCESS;
+			result = OS_STATUS_SUCCESS;
 		else
-			result = IOT_STATUS_FAILURE;
+			result = OS_STATUS_FAILURE;
 	}
 	return result;
 }
 #endif /* ifndef _WRS_KERNEL */
-iot_status_t os_file_close(
+os_status_t os_file_close(
 	os_file_t handle )
 {
-	iot_status_t result = IOT_STATUS_FAILURE;
+	os_status_t result = OS_STATUS_FAILURE;
 	if ( handle && fflush( handle ) == 0 && fclose( handle ) == 0 )
-		result = IOT_STATUS_SUCCESS;
+		result = OS_STATUS_SUCCESS;
 	return result;
 }
 
-iot_status_t os_file_copy(
+os_status_t os_file_copy(
 	const char *old_path,
 	const char *new_path )
 {
-	iot_status_t result = IOT_STATUS_BAD_PARAMETER;
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( old_path && new_path )
 	{
 		int fd_from;
 
-		result = IOT_STATUS_FAILURE;
+		result = OS_STATUS_FAILURE;
 #ifndef _WRS_KERNEL
 		fd_from = open( old_path, O_RDONLY );
 #else
@@ -672,14 +672,14 @@ iot_status_t os_file_copy(
 			file_stats.st_mode = 0666;
 			fstat( fd_from, &file_stats );
 
-			if ( os_file_exists( new_path ) != IOT_FALSE )
+			if ( os_file_exists( new_path ) != OS_FALSE )
 				os_file_delete( new_path );
 			fd_to = open( new_path, O_WRONLY | O_CREAT | O_EXCL,
 				file_stats.st_mode );
 			if ( fd_to >= 0 )
 			{
-				result = IOT_STATUS_SUCCESS;
-				while ( result == IOT_STATUS_SUCCESS &&
+				result = OS_STATUS_SUCCESS;
+				while ( result == OS_STATUS_SUCCESS &&
 					( nread = read( fd_from, &buf[0],
 					  sizeof( buf ) ) ) > 0 )
 				{
@@ -694,12 +694,12 @@ iot_status_t os_file_copy(
 							out_ptr += nwritten;
 						}
 						else if ( errno != EINTR )
-							result = IOT_STATUS_FAILURE;
-					} while ( result == IOT_STATUS_SUCCESS
+							result = OS_STATUS_FAILURE;
+					} while ( result == OS_STATUS_SUCCESS
 						&& nread > 0 );
 				}
 				if ( close( fd_to ) < 0 )
-					result = IOT_STATUS_FAILURE;
+					result = OS_STATUS_FAILURE;
 			}
 			close( fd_from );
 		}
@@ -707,30 +707,30 @@ iot_status_t os_file_copy(
 	return result;
 }
 
-iot_status_t os_file_delete(
+os_status_t os_file_delete(
 	const char *path )
 {
-	iot_status_t result = IOT_STATUS_BAD_PARAMETER;
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( path )
 	{
-		result = IOT_STATUS_FAILURE;
+		result = OS_STATUS_FAILURE;
 		if ( unlink( path ) == 0 )
-			result = IOT_STATUS_SUCCESS;
+			result = OS_STATUS_SUCCESS;
 	}
 	return result;
 }
 
-iot_bool_t os_file_exists(
+os_bool_t os_file_exists(
 	const char *file_path )
 {
-	iot_bool_t result = IOT_FALSE;
+	os_bool_t result = OS_FALSE;
 	struct stat file_stat;
 	if ( access( file_path, F_OK ) == 0 &&
 		stat( file_path, &file_stat ) == 0 )
 	{
 		if ( S_ISREG( file_stat.st_mode ) ||
 			S_ISLNK( file_stat.st_mode ) )
-			result = IOT_TRUE;
+			result = OS_TRUE;
 	}
 	return result;
 }
@@ -759,29 +759,29 @@ size_t os_file_fread(
 	return fread( ptr, size, nmemb, stream );
 }
 
-iot_status_t os_file_fseek(
+os_status_t os_file_fseek(
 	os_file_t stream,
 	long offset,
 	int whence
 )
 {
-	iot_status_t result = IOT_STATUS_BAD_PARAMETER;
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( stream != OS_FILE_INVALID )
 	{
-		result = IOT_STATUS_FAILURE;
+		result = OS_STATUS_FAILURE;
 		if ( fseek( stream, offset, whence ) == 0 )
-			result = IOT_STATUS_SUCCESS;
+			result = OS_STATUS_SUCCESS;
 	}
 	return result;
 }
 
-iot_status_t os_file_fsync( const char *file_path )
+os_status_t os_file_fsync( const char *file_path )
 {
-	iot_status_t result = IOT_STATUS_BAD_PARAMETER;
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( file_path )
 	{
 		int fd;
-		result = IOT_STATUS_FAILURE;
+		result = OS_STATUS_FAILURE;
 #ifndef _WRS_KERNEL
 		fd = open( file_path, O_RDONLY );
 #else
@@ -790,7 +790,7 @@ iot_status_t os_file_fsync( const char *file_path )
 		if ( fd >= 0 )
 		{
 			if ( fsync( fd ) == 0 )
-				result = IOT_STATUS_SUCCESS;
+				result = OS_STATUS_SUCCESS;
 			close( fd );
 		}
 	}
@@ -798,7 +798,7 @@ iot_status_t os_file_fsync( const char *file_path )
 	else
 	{
 		sync();
-		result = IOT_STATUS_SUCCESS;
+		result = OS_STATUS_SUCCESS;
 	}
 #endif
 	return result;
@@ -813,7 +813,7 @@ size_t os_file_fwrite(
 	return fwrite( ptr, size, nmemb, stream );
 }
 
-iot_uint64_t os_file_get_size(
+os_uint64_t os_file_get_size(
 	const char *file_path )
 {
 	struct stat file_stat;
@@ -821,10 +821,10 @@ iot_uint64_t os_file_get_size(
 	if ( stat( file_path, &file_stat ) != 0 )
 		file_stat.st_size = 0;
 
-	return (iot_uint64_t)file_stat.st_size;
+	return (os_uint64_t)file_stat.st_size;
 }
 
-iot_uint64_t os_file_get_size_handle(
+os_uint64_t os_file_get_size_handle(
 	os_file_t file_handle )
 {
 	long file_size = 0;
@@ -839,20 +839,20 @@ iot_uint64_t os_file_get_size_handle(
 				fseek( file_handle, cur_pos, SEEK_SET );
 		}
 	}
-	return (iot_uint64_t)file_size;
+	return (os_uint64_t)file_size;
 }
 
-iot_status_t os_file_move(
+os_status_t os_file_move(
 	const char *old_path,
 	const char *new_path
 )
 {
-	iot_status_t result = IOT_STATUS_BAD_PARAMETER;
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( old_path && new_path )
 	{
-		result = IOT_STATUS_FAILURE;
+		result = OS_STATUS_FAILURE;
 		if ( rename( old_path, new_path ) == 0 )
-			result = IOT_STATUS_SUCCESS;
+			result = OS_STATUS_SUCCESS;
 	}
 	return result;
 }
@@ -922,16 +922,16 @@ os_file_t os_file_open(
 }
 
 #ifndef _WRS_KERNEL
-iot_status_t os_file_temp(
+os_status_t os_file_temp(
 	char *prototype,
 	size_t suffix_len )
 {
-	iot_status_t result = IOT_STATUS_FAILURE;
+	os_status_t result = OS_STATUS_FAILURE;
 	if ( prototype )
 	{
 		int fd = mkstemps( prototype, (int)suffix_len );
 		close( fd );
-		result = IOT_STATUS_SUCCESS;
+		result = OS_STATUS_SUCCESS;
 	}
 	return result;
 }
@@ -951,12 +951,12 @@ char os_key_wait( void )
 }
 
 
-iot_status_t os_library_close(
+os_status_t os_library_close(
 	iot_lib_handle_t lib )
 {
-	iot_status_t result = IOT_STATUS_FAILURE;
+	os_status_t result = OS_STATUS_FAILURE;
 	if ( lib && dlclose( lib ) == 0 )
-		result = IOT_STATUS_SUCCESS;
+		result = OS_STATUS_SUCCESS;
 	return result;
 }
 
@@ -973,7 +973,7 @@ iot_lib_handle_t os_library_open(
 	return dlopen( path, RTLD_LAZY );
 }
 #endif /* ifndef _WRS_KERNEL */
-#endif /* ifndef IOT_API_ONLY */
+#endif /* ifndef OS_API_ONLY */
 
 int os_atoi( const char *str )
 {
@@ -1111,7 +1111,7 @@ void os_memzero(
 }
 
 /* print functions */
-#ifndef IOT_API_ONLY
+#ifndef OS_API_ONLY
 size_t os_env_expand(
 	char *src,
 	size_t len )
@@ -1240,7 +1240,7 @@ int os_fprintf(
 	va_end( args );
 	return result;
 }
-#endif /* ifndef IOT_API_ONLY */
+#endif /* ifndef OS_API_ONLY */
 
 int os_printf(
 	const char *format,
@@ -1300,11 +1300,11 @@ int os_vsnprintf(
 	return result;
 }
 
-iot_bool_t os_flush( os_file_t stream )
+os_bool_t os_flush( os_file_t stream )
 {
-	iot_bool_t result = IOT_FALSE;
+	os_bool_t result = OS_FALSE;
 	if ( fflush( stream ) == 0 )
-		result = IOT_TRUE;
+		result = OS_TRUE;
 	return result;
 }
 
@@ -1333,42 +1333,42 @@ void *os_heap_realloc( void *ptr, size_t size )
 	return realloc( ptr, size );
 }
 
-#ifndef IOT_API_ONLY
-iot_bool_t os_path_is_absolute( const char *path )
+#ifndef OS_API_ONLY
+os_bool_t os_path_is_absolute( const char *path )
 {
-	iot_bool_t result = IOT_FALSE;
+	os_bool_t result = OS_FALSE;
 	if ( path && *path == OS_DIR_SEP )
-		result = IOT_TRUE;
+		result = OS_TRUE;
 	return result;
 }
 
-iot_status_t os_path_executable(
+os_status_t os_path_executable(
 	char *path,
 	size_t size )
 {
-	iot_status_t result = IOT_STATUS_BAD_PARAMETER;
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( path )
 	{
-		result = IOT_STATUS_FAILURE;
+		result = OS_STATUS_FAILURE;
 		if ( readlink( "/proc/self/exe", path, size ) > 0 )
-			result = IOT_STATUS_SUCCESS;
+			result = OS_STATUS_SUCCESS;
 	}
 	return result;
 }
 
 #ifndef _WRS_KERNEL
 /* process functions */
-iot_status_t os_process_cleanup( void )
+os_status_t os_process_cleanup( void )
 {
-	iot_status_t result = IOT_STATUS_FAILURE;
+	os_status_t result = OS_STATUS_FAILURE;
 	if ( waitpid( -1, NULL, WNOHANG ) > 0 )
-		result = IOT_STATUS_SUCCESS;
+		result = OS_STATUS_SUCCESS;
 	return result;
 }
 #endif
 
 /* service functions */
-iot_status_t os_service_run(
+os_status_t os_service_run(
 	const char *id,
 	os_service_main_t service_function,
 	int argc,
@@ -1378,12 +1378,12 @@ iot_status_t os_service_run(
 	os_sighandler_t UNUSED(handler),
 	const char *UNUSED(logdir) )
 {
-	iot_status_t result = IOT_STATUS_BAD_PARAMETER;
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( id && service_function )
 	{
 		int i;
 		char** good_argv = (char**)malloc( argc * sizeof( char* ) );
-		result = IOT_STATUS_FAILURE;
+		result = OS_STATUS_FAILURE;
 		/* remove bad arguments */
 		if ( good_argv )
 		{
@@ -1415,7 +1415,7 @@ iot_status_t os_service_run(
 			}
 
 			if ( ( *service_function )( good_argc, good_argv ) == EXIT_SUCCESS )
-				result = IOT_STATUS_SUCCESS;
+				result = OS_STATUS_SUCCESS;
 
 			free( good_argv );
 		}
@@ -1423,33 +1423,33 @@ iot_status_t os_service_run(
 	return result;
 }
 
-iot_status_t os_service_install(
+os_status_t os_service_install(
 	const char *UNUSED(id),
 	const char *UNUSED(executable),
 	const char *UNUSED(args),
 	const char *UNUSED(name),
 	const char *UNUSED(description),
 	const char *UNUSED(dependencies),
-	iot_millisecond_t UNUSED(timeout)
+	os_millisecond_t UNUSED(timeout)
 )
 {
-	return IOT_STATUS_NOT_SUPPORTED;
+	return OS_STATUS_NOT_SUPPORTED;
 }
 
-iot_status_t os_service_uninstall(
+os_status_t os_service_uninstall(
 	const char *UNUSED(id),
-	iot_millisecond_t UNUSED(timeout)
+	os_millisecond_t UNUSED(timeout)
 )
 {
-	return IOT_STATUS_NOT_SUPPORTED;
+	return OS_STATUS_NOT_SUPPORTED;
 }
 
-iot_status_t os_service_start(
+os_status_t os_service_start(
 	const char *id,
-	iot_millisecond_t timeout
+	os_millisecond_t timeout
 )
 {
-	iot_status_t result;
+	os_status_t result;
 	int exit_status;
 	char buf[1u] = "\0";
 	char *out_buf[2u] = { buf, buf };
@@ -1459,18 +1459,18 @@ iot_status_t os_service_start(
 	service_cmd[ 255u ] = '\0';
 	result = os_system_run( service_cmd, &exit_status,
 		out_buf, out_len, timeout );
-	if ( result == IOT_STATUS_SUCCESS && exit_status != 0 )
-		result = IOT_STATUS_FAILURE;
+	if ( result == OS_STATUS_SUCCESS && exit_status != 0 )
+		result = OS_STATUS_FAILURE;
 	return result;
 }
 
-iot_status_t os_service_stop(
+os_status_t os_service_stop(
 	const char *id,
 	const char *exe,
-	iot_millisecond_t timeout
+	os_millisecond_t timeout
 )
 {
-	iot_status_t result;
+	os_status_t result;
 	int exit_status;
 	char buf[1u] = "\0";
 	char *out_buf[2u] = { buf, buf };
@@ -1489,27 +1489,27 @@ iot_status_t os_service_stop(
 	service_cmd[ 255u ] = '\0';
 	result = os_system_run( service_cmd, &exit_status,
 		out_buf, out_len, timeout );
-	if ( result == IOT_STATUS_SUCCESS && exit_status != 0 )
-		result = IOT_STATUS_NOT_FOUND;
-	if ( result != IOT_STATUS_NOT_FOUND )
+	if ( result == OS_STATUS_SUCCESS && exit_status != 0 )
+		result = OS_STATUS_NOT_FOUND;
+	if ( result != OS_STATUS_NOT_FOUND )
 	{
 		snprintf( service_cmd, 255u, SERVICE_STOP_CMD, id );
 		service_cmd[ 255u ] = '\0';
 		result = os_system_run( service_cmd, &exit_status,
 			out_buf, out_len, timeout );
-		if ( result == IOT_STATUS_SUCCESS && exit_status != 0 )
-			result = IOT_STATUS_FAILURE;
+		if ( result == OS_STATUS_SUCCESS && exit_status != 0 )
+			result = OS_STATUS_FAILURE;
 	}
 	return result;
 }
 
-iot_status_t os_service_query(
+os_status_t os_service_query(
 	const char *id,
-	iot_millisecond_t timeout
+	os_millisecond_t timeout
 )
 {
 	size_t i;
-	iot_status_t result = IOT_STATUS_SUCCESS;
+	os_status_t result = OS_STATUS_SUCCESS;
 
 #	ifndef __ANDROID__
 	const char *status_cmds[] = { "show", "is-active", "is-failed" };
@@ -1518,7 +1518,7 @@ iot_status_t os_service_query(
 	const char *status_cmds[] = { "ps | grep" };
 	const char *operation_cmd = "%s %s";
 #	endif /* __ANDROID__ */
-	for ( i = 0u; result == IOT_STATUS_SUCCESS &&
+	for ( i = 0u; result == OS_STATUS_SUCCESS &&
 		i < sizeof( status_cmds ) / sizeof( const char * ); ++i )
 	{
 		char buf[1u] = "\0";
@@ -1532,36 +1532,36 @@ iot_status_t os_service_query(
 		result = os_system_run( service_cmd, &exit_status,
 			out_buf, out_len, timeout );
 #	ifndef __ANDROID__
-		if ( result == IOT_STATUS_SUCCESS )
+		if ( result == OS_STATUS_SUCCESS )
 		{
 			/* is-failed returns 0 if it's failed */
 			if ( ( exit_status != 0 && i != 2u ) ||
 			     ( exit_status == 0 && i == 2u ) )
-				result = IOT_STATUS_FAILURE;
+				result = OS_STATUS_FAILURE;
 		}
 
-		if ( result == IOT_STATUS_FAILURE )
+		if ( result == OS_STATUS_FAILURE )
 		{
 			if ( i == 0u )
-				result = IOT_STATUS_NOT_FOUND;
+				result = OS_STATUS_NOT_FOUND;
 			else if ( i == 1u )
-				result = IOT_STATUS_NOT_INITIALIZED;
+				result = OS_STATUS_NOT_INITIALIZED;
 		}
 #	else /* __ANDROID__ */
-		if ( result != IOT_STATUS_SUCCESS || exit_status != 0 )
-			result = IOT_STATUS_NOT_INITIALIZED;
+		if ( result != OS_STATUS_SUCCESS || exit_status != 0 )
+			result = OS_STATUS_NOT_INITIALIZED;
 #	endif /* __ANDROID__ */
 	}
 	return result;
 }
 
-iot_status_t os_service_restart(
+os_status_t os_service_restart(
 	const char *id,
 	const char *exe,
-	iot_millisecond_t timeout
+	os_millisecond_t timeout
 )
 {
-	iot_status_t result;
+	os_status_t result;
 	int exit_status;
 	char service_cmd[ 256u ];
 #	ifndef __ANDROID__
@@ -1587,7 +1587,7 @@ iot_status_t os_service_restart(
 	service_cmd[ 255u ] = '\0';
 	result = os_system_run( service_cmd, &exit_status,
 		out_buf, out_len, timeout );
-	if ( result == IOT_STATUS_SUCCESS )
+	if ( result == OS_STATUS_SUCCESS )
 	{
 		if ( exit_status != 0 )
 		{
@@ -1598,19 +1598,19 @@ iot_status_t os_service_restart(
 		}
 		else
 		{
-			iot_bool_t first_space_found = IOT_FALSE;
-			iot_bool_t pid_found = IOT_FALSE;
+			os_bool_t first_space_found = OS_FALSE;
+			os_bool_t pid_found = OS_FALSE;
 			size_t i = 0u;
 			char *pid = NULL;
-			while ( pid_found == IOT_FALSE &&
+			while ( pid_found == OS_FALSE &&
 				i < COMMAND_OUTPUT_MAX_LEN )
 			{
 				/* search for the first space in stdout */
-				if ( first_space_found == IOT_FALSE &&
+				if ( first_space_found == OS_FALSE &&
 					stdout_buf[i] == ' ' )
-					first_space_found = IOT_TRUE;
+					first_space_found = OS_TRUE;
 
-				if ( first_space_found == IOT_TRUE )
+				if ( first_space_found == OS_TRUE )
 				{
 					if ( pid == NULL &&
 						stdout_buf[i] >= '0' &&
@@ -1621,16 +1621,16 @@ iot_status_t os_service_restart(
 						stdout_buf[i] == ' ' )
 					{
 						stdout_buf[i] = '\0';
-						pid_found = IOT_TRUE;
+						pid_found = OS_TRUE;
 					}
 				}
 				++i;
 			}
 
-			if ( pid_found == IOT_FALSE )
+			if ( pid_found == OS_FALSE )
 			{
 				/* service is not found */
-				result = IOT_STATUS_NOT_FOUND;
+				result = OS_STATUS_NOT_FOUND;
 			}
 			else
 			{
@@ -1646,11 +1646,11 @@ iot_status_t os_service_restart(
 		}
 	}
 #	endif
-	if ( result == IOT_STATUS_SUCCESS && exit_status != 0 )
-		result = IOT_STATUS_FAILURE;
+	if ( result == OS_STATUS_SUCCESS && exit_status != 0 )
+		result = OS_STATUS_FAILURE;
 	return result;
 }
-#endif /* ifndef IOT_API_ONLY */
+#endif /* ifndef OS_API_ONLY */
 
 /* socket functions */
 int os_get_host_address(
@@ -1692,15 +1692,15 @@ int os_get_host_address(
 	return result;
 }
 
-iot_status_t os_socket_accept(
+os_status_t os_socket_accept(
 	const os_socket_t *socket,
 	os_socket_t *out,
-	iot_millisecond_t max_time_out )
+	os_millisecond_t max_time_out )
 {
-	iot_status_t result = IOT_STATUS_BAD_PARAMETER;
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( socket && out )
 	{
-		result = IOT_STATUS_FAILURE;
+		result = OS_STATUS_FAILURE;
 		if ( socket->fd != OS_SOCKET_INVALID )
 		{
 			int select_result = 1;
@@ -1709,16 +1709,16 @@ iot_status_t os_socket_accept(
 				struct timeval ts;
 				fd_set rfds;
 
-				ts.tv_sec = max_time_out / IOT_MILLISECONDS_IN_SECOND;
-				ts.tv_usec = ( max_time_out % IOT_MILLISECONDS_IN_SECOND ) *
-					IOT_MICROSECONDS_IN_MILLISECOND;
+				ts.tv_sec = max_time_out / OS_MILLISECONDS_IN_SECOND;
+				ts.tv_usec = ( max_time_out % OS_MILLISECONDS_IN_SECOND ) *
+					OS_MICROSECONDS_IN_MILLISECOND;
 
 				FD_ZERO( &rfds );
 				FD_SET( socket->fd, &rfds );
 				select_result = select( socket->fd + 1,
 					&rfds, NULL, NULL, &ts );
 				if ( select_result == 0 )
-					result = IOT_STATUS_TIMED_OUT;
+					result = OS_STATUS_TIMED_OUT;
 			}
 			if ( select_result > 0 )
 			{
@@ -1726,45 +1726,45 @@ iot_status_t os_socket_accept(
 				memcpy( out, socket, sizeof( os_socket_t ) );
 				out->fd = accept( socket->fd, &out->addr, &sock_len );
 				if ( out->fd != OS_SOCKET_INVALID )
-					result = IOT_STATUS_SUCCESS;
+					result = OS_STATUS_SUCCESS;
 			}
 		}
 	}
 	return result;
 }
 
-iot_status_t os_socket_bind(
+os_status_t os_socket_bind(
 	const os_socket_t *socket,
 	int queue_size )
 {
-	iot_status_t result = IOT_STATUS_BAD_PARAMETER;
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( socket )
 	{
-		result = IOT_STATUS_FAILURE;
+		result = OS_STATUS_FAILURE;
 		if ( socket->fd != OS_SOCKET_INVALID && bind( socket->fd,
 			&socket->addr, sizeof( struct sockaddr ) ) == 0 )
 		{
 			if ( listen( socket->fd, queue_size ) == 0 )
-				result = IOT_STATUS_SUCCESS;
+				result = OS_STATUS_SUCCESS;
 		}
 	}
 	return result;
 }
 
-iot_status_t os_socket_broadcast(
+os_status_t os_socket_broadcast(
 	const os_socket_t *socket,
 	const void *buf,
 	size_t len,
 	int ttl,
 	size_t *bytes_written,
-	iot_millisecond_t max_time_out )
+	os_millisecond_t max_time_out )
 {
-	iot_status_t result = IOT_STATUS_BAD_PARAMETER;
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	const int broadcast_enable = 1;
 	if ( socket && socket->fd != OS_SOCKET_INVALID )
 	{
 		ssize_t retval;
-		result = IOT_STATUS_FAILURE;
+		result = OS_STATUS_FAILURE;
 		retval = setsockopt( socket->fd, SOL_SOCKET, SO_BROADCAST,
 			&broadcast_enable, sizeof( broadcast_enable ) );
 		if ( retval == 0 && ttl > 1 )
@@ -1777,53 +1777,53 @@ iot_status_t os_socket_broadcast(
 	return result;
 }
 
-iot_status_t os_socket_close(
+os_status_t os_socket_close(
 	os_socket_t *socket )
 {
-	iot_status_t result = IOT_STATUS_BAD_PARAMETER;
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( socket )
 	{
-		result = IOT_STATUS_FAILURE;
+		result = OS_STATUS_FAILURE;
 		if ( socket->fd != OS_SOCKET_INVALID &&
 			close( socket->fd ) == 0 )
 		{
 			memset( socket, 0, sizeof( os_socket_t ) );
-			result = IOT_STATUS_SUCCESS;
+			result = OS_STATUS_SUCCESS;
 		}
 	}
 	return result;
 }
 
-iot_status_t os_socket_connect(
+os_status_t os_socket_connect(
 	const os_socket_t *socket )
 {
-	iot_status_t result = IOT_STATUS_BAD_PARAMETER;
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( socket )
 	{
-		result = IOT_STATUS_FAILURE;
+		result = OS_STATUS_FAILURE;
 		if ( socket->fd != OS_SOCKET_INVALID &&
 			connect( socket->fd, &socket->addr,
 				sizeof( struct sockaddr ) ) == 0 )
-			result = IOT_STATUS_SUCCESS;
+			result = OS_STATUS_SUCCESS;
 	}
 	return result;
 }
 
-iot_status_t os_socket_initialize( void )
+os_status_t os_socket_initialize( void )
 {
-	return IOT_STATUS_SUCCESS;
+	return OS_STATUS_SUCCESS;
 }
 
-iot_status_t os_socket_open(
+os_status_t os_socket_open(
 	os_socket_t *out,
 	const char *address,
-	iot_uint16_t port,
+	os_uint16_t port,
 	int type,
 	int protocol,
-	iot_millisecond_t max_time_out )
+	os_millisecond_t max_time_out )
 {
-	iot_millisecond_t time_elapsed = 0u;
-	iot_status_t result = IOT_STATUS_BAD_PARAMETER;
+	os_millisecond_t time_elapsed = 0u;
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
 
 	if ( out && address && port > 0u )
 	{
@@ -1833,24 +1833,24 @@ iot_status_t os_socket_open(
 			(struct sockaddr_in *)addr_ptr;
 		struct sockaddr_in6 *const addr6 =
 			(struct sockaddr_in6 *)addr_ptr;
-		result = IOT_STATUS_FAILURE;
+		result = OS_STATUS_FAILURE;
 		memset( out, 0, sizeof( os_socket_t ) );
 		if ( inet_pton( AF_INET, address,
 			&(addr4->sin_addr) ) == 1 )
 		{
 			addr4->sin_family = AF_INET;
 			addr4->sin_port = (in_port_t)htons( port );
-			result = IOT_STATUS_SUCCESS;
+			result = OS_STATUS_SUCCESS;
 		}
 		else if ( inet_pton( AF_INET6, address,
 			&(addr6->sin6_addr) ) == 1 )
 		{
 			addr6->sin6_family = AF_INET6;
 			addr6->sin6_port = (in_port_t)htons( port );
-			result = IOT_STATUS_SUCCESS;
+			result = OS_STATUS_SUCCESS;
 		}
 
-		if ( result == IOT_STATUS_SUCCESS )
+		if ( result == OS_STATUS_SUCCESS )
 		{
 			out->type = type;
 			out->protocol = protocol;
@@ -1862,12 +1862,12 @@ iot_status_t os_socket_open(
 			{
 				struct timeval ts;
 
-				iot_millisecond_t wait_time = 2000u;
+				os_millisecond_t wait_time = 2000u;
 				if ( max_time_out > 0u && max_time_out - time_elapsed <  wait_time )
 					wait_time = max_time_out - time_elapsed;
-				ts.tv_sec = wait_time / IOT_MILLISECONDS_IN_SECOND;
-				ts.tv_usec = ( wait_time % IOT_MILLISECONDS_IN_SECOND ) *
-					IOT_MICROSECONDS_IN_MILLISECOND;
+				ts.tv_sec = wait_time / OS_MILLISECONDS_IN_SECOND;
+				ts.tv_usec = ( wait_time % OS_MILLISECONDS_IN_SECOND ) *
+					OS_MICROSECONDS_IN_MILLISECOND;
 
 				/* keep trying to obtain a socket until one if available,
 				 * this condition may be hit when running in a service, and
@@ -1879,50 +1879,50 @@ iot_status_t os_socket_open(
 			}
 
 			if ( out->fd == OS_SOCKET_INVALID )
-				result = IOT_STATUS_TIMED_OUT;
+				result = OS_STATUS_TIMED_OUT;
 		}
 	}
 	return result;
 }
 
-iot_status_t os_socket_option(
+os_status_t os_socket_option(
 	const os_socket_t *socket,
 	int level,
 	int optname,
 	const void *optval,
 	size_t optlen )
 {
-	iot_status_t result = IOT_STATUS_BAD_PARAMETER;
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( socket && socket->fd != OS_SOCKET_INVALID && optval )
 	{
-		result = IOT_STATUS_FAILURE;
+		result = OS_STATUS_FAILURE;
 		if ( setsockopt( socket->fd, level, optname, optval,
 			(socklen_t)optlen ) == 0 )
-			result = IOT_STATUS_SUCCESS;
+			result = OS_STATUS_SUCCESS;
 	}
 	return result;
 }
 
-iot_status_t os_socket_read(
+os_status_t os_socket_read(
 	const os_socket_t *socket,
 	void *buf,
 	size_t len,
 	size_t* bytes_read,
-	iot_millisecond_t max_time_out )
+	os_millisecond_t max_time_out )
 {
-	iot_status_t result = IOT_STATUS_BAD_PARAMETER;
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( bytes_read )
 		*bytes_read = 0u;
 	if ( socket && socket->fd != OS_SOCKET_INVALID )
 	{
 		ssize_t retval = 0;
-		result = IOT_STATUS_FAILURE;
+		result = OS_STATUS_FAILURE;
 		if ( max_time_out > 0u )
 		{
 			struct timeval tv;
-			tv.tv_sec = max_time_out / IOT_MILLISECONDS_IN_SECOND;
-			tv.tv_usec = ( max_time_out % IOT_MILLISECONDS_IN_SECOND ) *
-				IOT_MICROSECONDS_IN_MILLISECOND;
+			tv.tv_sec = max_time_out / OS_MILLISECONDS_IN_SECOND;
+			tv.tv_usec = ( max_time_out % OS_MILLISECONDS_IN_SECOND ) *
+				OS_MICROSECONDS_IN_MILLISECOND;
 			retval = setsockopt( socket->fd, SOL_SOCKET,
 				SO_RCVTIMEO, &tv, sizeof( struct timeval ) );
 		}
@@ -1933,12 +1933,12 @@ iot_status_t os_socket_read(
 			{
 				if ( bytes_read)
 					*bytes_read = (size_t)retval;
-				result = IOT_STATUS_SUCCESS;
+				result = OS_STATUS_SUCCESS;
 			}
 			else if ( bytes_read == 0 )
-				result = IOT_STATUS_TRY_AGAIN;
+				result = OS_STATUS_TRY_AGAIN;
 			else if ( errno == ETIMEDOUT )
-				result = IOT_STATUS_TIMED_OUT;
+				result = OS_STATUS_TIMED_OUT;
 		}
 	}
 	return result;
@@ -1950,8 +1950,8 @@ ssize_t os_socket_receive(
 	size_t len,
 	char *src_addr,
 	size_t src_addr_len,
-	iot_uint16_t *port,
-	iot_millisecond_t max_time_out )
+	os_uint16_t *port,
+	os_millisecond_t max_time_out )
 {
 	ssize_t result = -1;
 	if ( socket && socket->fd != OS_SOCKET_INVALID )
@@ -1960,9 +1960,9 @@ ssize_t os_socket_receive(
 		if ( max_time_out > 0u )
 		{
 			struct timeval tv;
-			tv.tv_sec = max_time_out / IOT_MILLISECONDS_IN_SECOND;
-			tv.tv_usec = ( max_time_out % IOT_MILLISECONDS_IN_SECOND ) *
-				IOT_MICROSECONDS_IN_MILLISECOND;
+			tv.tv_sec = max_time_out / OS_MILLISECONDS_IN_SECOND;
+			tv.tv_usec = ( max_time_out % OS_MILLISECONDS_IN_SECOND ) *
+				OS_MICROSECONDS_IN_MILLISECOND;
 			result = setsockopt( socket->fd, SOL_SOCKET, SO_RCVTIMEO, &tv,
 				sizeof( struct timeval ) );
 		}
@@ -2009,8 +2009,8 @@ ssize_t os_socket_send(
 	const void *buf,
 	size_t len,
 	const char *dest_addr,
-	iot_uint16_t port,
-	iot_millisecond_t max_time_out )
+	os_uint16_t port,
+	os_millisecond_t max_time_out )
 {
 	ssize_t result = -1;
 	if( socket && socket->fd != OS_SOCKET_INVALID && dest_addr )
@@ -2019,9 +2019,9 @@ ssize_t os_socket_send(
 		if ( max_time_out > 0u )
 		{
 			struct timeval tv;
-			tv.tv_sec = max_time_out / IOT_MILLISECONDS_IN_SECOND;
-			tv.tv_usec = ( max_time_out % IOT_MILLISECONDS_IN_SECOND )
-				* IOT_MICROSECONDS_IN_MILLISECOND;
+			tv.tv_sec = max_time_out / OS_MILLISECONDS_IN_SECOND;
+			tv.tv_usec = ( max_time_out % OS_MILLISECONDS_IN_SECOND )
+				* OS_MICROSECONDS_IN_MILLISECOND;
 			result = setsockopt( socket->fd, SOL_SOCKET, SO_SNDTIMEO,
 				&tv, sizeof( struct timeval ) );
 		}
@@ -2059,31 +2059,31 @@ ssize_t os_socket_send(
 	return result;
 }
 
-iot_status_t os_socket_terminate( void )
+os_status_t os_socket_terminate( void )
 {
-	return IOT_STATUS_SUCCESS;
+	return OS_STATUS_SUCCESS;
 }
 
-iot_status_t os_socket_write(
+os_status_t os_socket_write(
 	const os_socket_t *socket,
 	const void *buf,
 	size_t len,
 	size_t *bytes_written,
-	iot_millisecond_t max_time_out )
+	os_millisecond_t max_time_out )
 {
-	iot_status_t result = IOT_STATUS_BAD_PARAMETER;
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( bytes_written )
 		*bytes_written = 0u;
 	if ( socket && socket->fd != OS_SOCKET_INVALID )
 	{
 		ssize_t retval = 0;
-		result = IOT_STATUS_FAILURE;
+		result = OS_STATUS_FAILURE;
 		if ( max_time_out > 0u )
 		{
 			struct timeval tv;
-			tv.tv_sec = max_time_out / IOT_MILLISECONDS_IN_SECOND;
-			tv.tv_usec = ( max_time_out % IOT_MILLISECONDS_IN_SECOND )
-				* IOT_MICROSECONDS_IN_MILLISECOND;
+			tv.tv_sec = max_time_out / OS_MILLISECONDS_IN_SECOND;
+			tv.tv_usec = ( max_time_out % OS_MILLISECONDS_IN_SECOND )
+				* OS_MICROSECONDS_IN_MILLISECOND;
 			retval = setsockopt( socket->fd, SOL_SOCKET, SO_SNDTIMEO,
 				&tv, sizeof( struct timeval ) );
 		}
@@ -2094,24 +2094,24 @@ iot_status_t os_socket_write(
 			{
 				if ( bytes_written )
 					*bytes_written = (size_t)retval;
-				result = IOT_STATUS_SUCCESS;
+				result = OS_STATUS_SUCCESS;
 			}
 			else if ( errno == ETIMEDOUT )
-				result = IOT_STATUS_TIMED_OUT;
+				result = OS_STATUS_TIMED_OUT;
 		}
 	}
 	return result;
 }
 
 #ifndef _WRS_KERNEL
-iot_status_t os_stream_echo_set(
-	os_file_t stream, iot_bool_t enable )
+os_status_t os_stream_echo_set(
+	os_file_t stream, os_bool_t enable )
 {
-	iot_status_t result = IOT_STATUS_BAD_PARAMETER;
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( stream )
 	{
 		struct termios termios;
-		result = IOT_STATUS_FAILURE;
+		result = OS_STATUS_FAILURE;
 		if ( tcgetattr( fileno( stream ), &termios ) == 0 )
 		{
 			if ( enable )
@@ -2120,7 +2120,7 @@ iot_status_t os_stream_echo_set(
 				termios.c_lflag &= ~ECHO;
 
 			if ( tcsetattr( fileno( stream ), TCSAFLUSH, &termios ) == 0 )
-				result = IOT_STATUS_SUCCESS;
+				result = OS_STATUS_SUCCESS;
 		}
 	}
 	return result;
@@ -2143,10 +2143,10 @@ const char *os_system_error_string(
 }
 
 #ifndef _WRS_KERNEL
-iot_status_t os_system_info(
+os_status_t os_system_info(
 	os_system_info_t *sys_info )
 {
-	iot_status_t result = IOT_STATUS_FAILURE;
+	os_status_t result = OS_STATUS_FAILURE;
 	struct utsname uts_info;
 
 	if ( sys_info )
@@ -2247,32 +2247,32 @@ iot_status_t os_system_info(
 			strncpy( sys_info->vendor_name, sys_info->system_name,
 				OS_SYSTEM_INFO_MAX_LEN );
 		}
-		result = IOT_STATUS_SUCCESS;
+		result = OS_STATUS_SUCCESS;
 	}
 	return result;
 }
 
-iot_uint32_t os_system_pid( void )
+os_uint32_t os_system_pid( void )
 {
-	return (iot_uint32_t)getpid();
+	return (os_uint32_t)getpid();
 }
 
-iot_status_t os_system_run(
+os_status_t os_system_run(
 	const char *command,
 	int *exit_status,
 	char *out_buf[2u],
 	size_t out_len[2u],
-	iot_millisecond_t max_time_out )
+	os_millisecond_t max_time_out )
 {
 	int command_output_fd[2u][2u] =
 		{ { -1, -1 }, { -1, -1 } };
 	size_t i;
 	const int output_fd[2u] = { STDOUT_FILENO, STDERR_FILENO };
-	iot_status_t result = IOT_STATUS_SUCCESS;
-	iot_timestamp_t start_time;
+	os_status_t result = OS_STATUS_SUCCESS;
+	os_timestamp_t start_time;
 	int system_result = -1;
-	iot_millisecond_t time_elapsed;
-	const iot_bool_t wait_for_return =
+	os_millisecond_t time_elapsed;
+	const os_bool_t wait_for_return =
 		( out_buf[0] != NULL && out_len[0] > 0 ) ||
 		( out_buf[1] != NULL && out_len[1] > 0 );
 
@@ -2284,15 +2284,15 @@ iot_status_t os_system_run(
 
 	/* capture the stdout & stderr of the command and send it back
 	 * as the response */
-	if ( wait_for_return != IOT_FALSE )
-		for ( i = 0u; i < 2u && result == IOT_STATUS_SUCCESS; ++i )
+	if ( wait_for_return != OS_FALSE )
+		for ( i = 0u; i < 2u && result == OS_STATUS_SUCCESS; ++i )
 			if ( pipe( command_output_fd[i] ) != 0 )
-				result = IOT_STATUS_IO_ERROR;
+				result = OS_STATUS_IO_ERROR;
 
-	if ( result == IOT_STATUS_SUCCESS )
+	if ( result == OS_STATUS_SUCCESS )
 	{
 		const pid_t pid = fork();
-		result = IOT_STATUS_NOT_EXECUTABLE;
+		result = OS_STATUS_NOT_EXECUTABLE;
 		if ( pid != -1 )
 		{
 			if ( pid == 0 )
@@ -2320,14 +2320,14 @@ iot_status_t os_system_run(
 			for ( i = 0u; i < 2u; ++i )
 				close( command_output_fd[i][1] );
 
-			result = IOT_STATUS_INVOKED;
-			if ( wait_for_return != IOT_FALSE )
+			result = OS_STATUS_INVOKED;
+			if ( wait_for_return != OS_FALSE )
 			{
 				errno = 0;
 				do {
 					waitpid( pid, &system_result, WNOHANG );
 					os_time_elapsed( &start_time, &time_elapsed );
-					os_time_sleep( LOOP_WAIT_TIME, IOT_FALSE );
+					os_time_sleep( LOOP_WAIT_TIME, OS_FALSE );
 				} while ( ( errno != ECHILD ) &&
 					( !WIFEXITED( system_result ) ) &&
 					( !WIFSIGNALED( system_result ) ) &&
@@ -2339,10 +2339,10 @@ iot_status_t os_system_run(
 				{
 					kill( pid, SIGTERM );
 					waitpid( pid, &system_result, WNOHANG );
-					result = IOT_STATUS_TIMED_OUT;
+					result = OS_STATUS_TIMED_OUT;
 				}
 				else
-					result = IOT_STATUS_SUCCESS;
+					result = OS_STATUS_SUCCESS;
 
 				fflush( stdout );
 				fflush( stderr );
@@ -2379,13 +2379,13 @@ iot_status_t os_system_run(
 }
 #endif /* _WRS_KERNEL */
 
-iot_status_t os_system_shutdown(
-	iot_bool_t reboot , unsigned int delay)
+os_status_t os_system_shutdown(
+	os_bool_t reboot , unsigned int delay)
 {
 	char cmd[ PATH_MAX ];
 	char *buf[2] = { NULL, NULL };
 	size_t buf_len[2] = { 0u, 0u };
-	if ( reboot == IOT_FALSE )
+	if ( reboot == OS_FALSE )
 		os_snprintf( cmd, PATH_MAX, "%s %d", SERVICE_SHUTDOWN_CMD, delay );
 	else
 		os_snprintf( cmd, PATH_MAX, "%s %d", SERVICE_REBOOT_CMD, delay );
@@ -2394,47 +2394,47 @@ iot_status_t os_system_shutdown(
 }
 
 
-#ifndef IOT_API_ONLY
-iot_bool_t os_terminal_vt100_support(
+#ifndef OS_API_ONLY
+os_bool_t os_terminal_vt100_support(
 	os_file_t stream
 )
 {
 	int fd;
-	iot_bool_t result = IOT_FALSE;
+	os_bool_t result = OS_FALSE;
 	fd = fileno( stream );
 	if ( isatty( fd ) )
-		result = IOT_TRUE;
+		result = OS_TRUE;
 	else
 	{
 		struct stat file_stat;
 		if ( fstat( fd, &file_stat ) == 0 &&
 			S_ISFIFO( file_stat.st_mode ) )
-			result = IOT_TRUE;
+			result = OS_TRUE;
 	}
 	return result;
 }
 
-iot_status_t os_terminate_handler(
+os_status_t os_terminate_handler(
 	os_sighandler_t signal_handler )
 {
 	struct sigaction new_action;
 	memset( &new_action, 0, sizeof( new_action ) );
-#ifndef _WRS_KERNEL
+/*#ifndef _WRS_KERNEL
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdisabled-macro-expansion"
-#endif
+#endif*/
 	new_action.sa_handler = signal_handler;
-#ifndef _WRS_KERNEL
+/*#ifndef _WRS_KERNEL
 #pragma clang diagnostic pop
-#endif
+#endif*/
 	sigemptyset( &new_action.sa_mask );
 	sigaction( SIGINT, &new_action, NULL );
 	sigaction( SIGTERM, &new_action, NULL );
 	sigaction( SIGCHLD, &new_action, NULL );
 
-	return IOT_STATUS_SUCCESS;
+	return OS_STATUS_SUCCESS;
 }
-#endif /* ifndef IOT_API_ONLY */
+#endif /* ifndef OS_API_ONLY */
 
 #ifdef _WRS_KERNEL
 static __thread int rand_init = 0;
@@ -2457,66 +2457,66 @@ double os_random(
 	return min + (rand() / (double)RAND_MAX) * ( max - min );
 }
 
-iot_status_t os_time(
-	iot_timestamp_t *time_stamp,
-	iot_bool_t *up_time )
+os_status_t os_time(
+	os_timestamp_t *time_stamp,
+	os_bool_t *up_time )
 {
-	iot_status_t result = IOT_STATUS_BAD_PARAMETER;
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( time_stamp )
 	{
 		struct timeval tv;
 
-		result = IOT_STATUS_FAILURE;
+		result = OS_STATUS_FAILURE;
 		if ( gettimeofday( &tv, NULL ) == 0 )
 		{
-			*time_stamp = (iot_timestamp_t)tv.tv_sec *
-				IOT_MILLISECONDS_IN_SECOND +
-				(iot_timestamp_t)tv.tv_usec /
-				IOT_MICROSECONDS_IN_MILLISECOND;
-			result = IOT_STATUS_SUCCESS;
+			*time_stamp = (os_timestamp_t)tv.tv_sec *
+				OS_MILLISECONDS_IN_SECOND +
+				(os_timestamp_t)tv.tv_usec /
+				OS_MICROSECONDS_IN_MILLISECOND;
+			result = OS_STATUS_SUCCESS;
 		}
 	}
 	if ( up_time )
-		*up_time = IOT_FALSE;
+		*up_time = OS_FALSE;
 	return result;
 }
 
-iot_status_t os_time_format(
+os_status_t os_time_format(
 	char *buf,
 	size_t len )
 {
-	iot_status_t result = IOT_STATUS_BAD_PARAMETER;
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( buf )
 	{
 		time_t raw_time;
 		struct tm *time_info;
 
-		result = IOT_STATUS_FAILURE;
+		result = OS_STATUS_FAILURE;
 		if ( time( &raw_time ) != -1 &&
 			( time_info = localtime( &raw_time ) ) != NULL )
 		{
 			if ( strftime( buf, len, "%b %d %T", time_info ) > 0 )
-				result = IOT_STATUS_SUCCESS;
+				result = OS_STATUS_SUCCESS;
 		}
 	}
 	return result;
 }
 
-iot_status_t os_time_sleep(
-	iot_millisecond_t ms,
-	iot_bool_t allow_interrupts )
+os_status_t os_time_sleep(
+	os_millisecond_t ms,
+	os_bool_t allow_interrupts )
 {
 	struct timespec rem;
-	iot_status_t result = IOT_STATUS_FAILURE;
+	os_status_t result = OS_STATUS_FAILURE;
 	struct timespec s;
 	int sleep_result;
-	s.tv_sec = ms / IOT_MILLISECONDS_IN_SECOND;
-	s.tv_nsec = ( ms % IOT_MILLISECONDS_IN_SECOND ) *
-		IOT_NANOSECONDS_IN_MILLISECOND;
+	s.tv_sec = ms / OS_MILLISECONDS_IN_SECOND;
+	s.tv_nsec = ( ms % OS_MILLISECONDS_IN_SECOND ) *
+		OS_NANOSECONDS_IN_MILLISECOND;
 	sleep_result = nanosleep( &s, &rem );
 
 	/* continue sleeping if an interrupt is received */
-	while( allow_interrupts == IOT_FALSE && sleep_result == -1 &&
+	while( allow_interrupts == OS_FALSE && sleep_result == -1 &&
 		errno == EINTR )
 	{
 		memcpy( &s, &rem, sizeof( struct timespec ) );
@@ -2524,105 +2524,105 @@ iot_status_t os_time_sleep(
 	}
 
 	if ( sleep_result == 0 )
-		result = IOT_STATUS_SUCCESS;
+		result = OS_STATUS_SUCCESS;
 	return result;
 }
 
 /* threads & lock support */
 #ifndef NO_THREAD_SUPPORT
-iot_status_t os_thread_condition_broadcast(
+os_status_t os_thread_condition_broadcast(
 	os_thread_condition_t *cond )
 {
-	iot_status_t result = IOT_STATUS_BAD_PARAMETER;
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( cond )
 	{
-		result = IOT_STATUS_FAILURE;
+		result = OS_STATUS_FAILURE;
 		if ( pthread_cond_broadcast( cond ) == 0 )
-			result = IOT_STATUS_SUCCESS;
+			result = OS_STATUS_SUCCESS;
 	}
 	return result;
 }
 
-iot_status_t os_thread_condition_create(
+os_status_t os_thread_condition_create(
 	os_thread_condition_t *cond )
 {
-	iot_status_t result = IOT_STATUS_BAD_PARAMETER;
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( cond )
 	{
-		result = IOT_STATUS_FAILURE;
+		result = OS_STATUS_FAILURE;
 		if ( pthread_cond_init( cond, NULL ) == 0 )
-			result = IOT_STATUS_SUCCESS;
+			result = OS_STATUS_SUCCESS;
 	}
 	return result;
 }
 
-iot_status_t os_thread_condition_destroy(
+os_status_t os_thread_condition_destroy(
 	os_thread_condition_t *cond )
 {
-	iot_status_t result = IOT_STATUS_BAD_PARAMETER;
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( cond )
 	{
-		result = IOT_STATUS_FAILURE;
+		result = OS_STATUS_FAILURE;
 		if ( pthread_cond_destroy( cond ) == 0 )
-			result = IOT_STATUS_SUCCESS;
+			result = OS_STATUS_SUCCESS;
 	}
 	return result;
 }
 
-iot_status_t os_thread_condition_signal(
+os_status_t os_thread_condition_signal(
 	os_thread_condition_t *cond,
 	os_thread_mutex_t *lock )
 {
-	iot_status_t result = IOT_STATUS_BAD_PARAMETER;
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( cond && lock )
 	{
-		result = IOT_STATUS_FAILURE;
+		result = OS_STATUS_FAILURE;
 		if (  pthread_mutex_lock( lock ) == 0 )
 		{
 			if ( pthread_cond_signal( cond ) == 0 )
-				result = IOT_STATUS_SUCCESS;
+				result = OS_STATUS_SUCCESS;
 			pthread_mutex_unlock( lock );
 		}
 	}
 	return result;
 }
 
-iot_status_t os_thread_condition_timed_wait(
+os_status_t os_thread_condition_timed_wait(
 	os_thread_condition_t *cond,
 	os_thread_mutex_t *lock,
-	iot_millisecond_t max_time_out )
+	os_millisecond_t max_time_out )
 {
-	iot_status_t result = IOT_STATUS_BAD_PARAMETER;
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( cond && lock )
 	{
-		result = IOT_STATUS_FAILURE;
+		result = OS_STATUS_FAILURE;
 		if ( max_time_out > 0u )
 		{
 			int error_number;
 			struct timespec abs_time_out;
 			clock_gettime( CLOCK_REALTIME, &abs_time_out );
 			abs_time_out.tv_nsec +=
-				( max_time_out % IOT_MILLISECONDS_IN_SECOND ) *
-				IOT_NANOSECONDS_IN_MILLISECOND;
+				( max_time_out % OS_MILLISECONDS_IN_SECOND ) *
+				OS_NANOSECONDS_IN_MILLISECOND;
 			abs_time_out.tv_sec +=
-				( max_time_out / IOT_MILLISECONDS_IN_SECOND ) +
+				( max_time_out / OS_MILLISECONDS_IN_SECOND ) +
 				( (unsigned long)abs_time_out.tv_nsec /
-					IOT_NANOSECONDS_IN_SECOND );
-			abs_time_out.tv_nsec %= IOT_NANOSECONDS_IN_SECOND;
+					OS_NANOSECONDS_IN_SECOND );
+			abs_time_out.tv_nsec %= OS_NANOSECONDS_IN_SECOND;
 			error_number = pthread_cond_timedwait( cond, lock,
 				&abs_time_out );
 			if ( error_number == 0 )
-				result = IOT_STATUS_SUCCESS;
+				result = OS_STATUS_SUCCESS;
 			else if ( error_number == ETIMEDOUT )
-				result = IOT_STATUS_TIMED_OUT;
+				result = OS_STATUS_TIMED_OUT;
 		}
 		else if ( pthread_cond_wait( cond, lock ) == 0 )
-			result = IOT_STATUS_SUCCESS;
+			result = OS_STATUS_SUCCESS;
 	}
 	return result;
 }
 
-iot_status_t os_thread_condition_wait(
+os_status_t os_thread_condition_wait(
 	os_thread_condition_t *cond,
 	os_thread_mutex_t *lock )
 {
@@ -2630,177 +2630,177 @@ iot_status_t os_thread_condition_wait(
 }
 
 #ifndef _WRS_KERNEL
-iot_status_t os_thread_create(
+os_status_t os_thread_create(
 	os_thread_t *thread,
 	os_thread_main_t main,
 	void *arg )
 {
-	iot_status_t result = IOT_STATUS_BAD_PARAMETER;
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( main )
 	{
-		result = IOT_STATUS_FAILURE;
+		result = OS_STATUS_FAILURE;
 		if ( pthread_create( thread, NULL, main, arg ) == 0 )
-			result = IOT_STATUS_SUCCESS;
+			result = OS_STATUS_SUCCESS;
 	}
 	return result;
 }
 #endif
 
-iot_status_t os_thread_destroy(
+os_status_t os_thread_destroy(
 	os_thread_t *thread )
 {
-	iot_status_t result = IOT_STATUS_BAD_PARAMETER;
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( thread )
 	{
-		result = IOT_STATUS_FAILURE;
+		result = OS_STATUS_FAILURE;
 #ifndef __ANDROID__
 		if ( !(*thread) || pthread_cancel( *thread ) == 0 )
-			result = IOT_STATUS_SUCCESS;
+			result = OS_STATUS_SUCCESS;
 #endif
 	}
 	return result;
 }
 
-iot_status_t os_thread_wait(
+os_status_t os_thread_wait(
 	os_thread_t *thread )
 {
-	iot_status_t result = IOT_STATUS_BAD_PARAMETER;
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( thread )
 	{
-		result = IOT_STATUS_FAILURE;
+		result = OS_STATUS_FAILURE;
 		if ( !(*thread) || pthread_join( *thread, NULL ) == 0 )
-			result = IOT_STATUS_SUCCESS;
+			result = OS_STATUS_SUCCESS;
 	}
 	return result;
 }
 
-iot_status_t os_thread_mutex_create(
+os_status_t os_thread_mutex_create(
 	os_thread_mutex_t *lock )
 {
-	iot_status_t result = IOT_STATUS_BAD_PARAMETER;
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( lock )
 	{
-		result = IOT_STATUS_FAILURE;
+		result = OS_STATUS_FAILURE;
 		if ( pthread_mutex_init( lock, NULL ) == 0 )
-			result = IOT_STATUS_SUCCESS;
+			result = OS_STATUS_SUCCESS;
 	}
 	return result;
 }
 
-iot_status_t os_thread_mutex_lock(
+os_status_t os_thread_mutex_lock(
 	os_thread_mutex_t *lock )
 {
-	iot_status_t result = IOT_STATUS_BAD_PARAMETER;
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( lock )
 	{
-		result = IOT_STATUS_FAILURE;
+		result = OS_STATUS_FAILURE;
 		if ( pthread_mutex_lock( lock ) == 0 )
-			result = IOT_STATUS_SUCCESS;
+			result = OS_STATUS_SUCCESS;
 	}
 	return result;
 }
 
-iot_status_t os_thread_mutex_unlock(
+os_status_t os_thread_mutex_unlock(
 	os_thread_mutex_t *lock )
 {
-	iot_status_t result = IOT_STATUS_BAD_PARAMETER;
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( lock )
 	{
-		result = IOT_STATUS_FAILURE;
+		result = OS_STATUS_FAILURE;
 		if ( pthread_mutex_unlock( lock ) == 0 )
-			result = IOT_STATUS_SUCCESS;
+			result = OS_STATUS_SUCCESS;
 	}
 	return result;
 }
 
-iot_status_t os_thread_mutex_destroy(
+os_status_t os_thread_mutex_destroy(
 	os_thread_mutex_t *lock )
 {
-	iot_status_t result = IOT_STATUS_BAD_PARAMETER;
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( lock )
 	{
-		result = IOT_STATUS_FAILURE;
+		result = OS_STATUS_FAILURE;
 		if ( pthread_mutex_destroy( lock ) == 0 )
-			result = IOT_STATUS_SUCCESS;
+			result = OS_STATUS_SUCCESS;
 	}
 	return result;
 }
 
 #ifndef _WRS_KERNEL
-iot_status_t os_thread_rwlock_create(
+os_status_t os_thread_rwlock_create(
 	os_thread_rwlock_t *lock )
 {
-	iot_status_t result = IOT_STATUS_BAD_PARAMETER;
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( lock )
 	{
-		result = IOT_STATUS_FAILURE;
+		result = OS_STATUS_FAILURE;
 		if ( pthread_rwlock_init( lock, NULL ) == 0 )
-			result = IOT_STATUS_SUCCESS;
+			result = OS_STATUS_SUCCESS;
 	}
 	return result;
 }
 
-iot_status_t os_thread_rwlock_read_lock(
+os_status_t os_thread_rwlock_read_lock(
 	os_thread_rwlock_t *lock )
 {
-	iot_status_t result = IOT_STATUS_BAD_PARAMETER;
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( lock )
 	{
-		result = IOT_STATUS_FAILURE;
+		result = OS_STATUS_FAILURE;
 		if ( pthread_rwlock_rdlock( lock ) == 0 )
-			result = IOT_STATUS_SUCCESS;
+			result = OS_STATUS_SUCCESS;
 	}
 	return result;
 }
 
-iot_status_t os_thread_rwlock_read_unlock(
+os_status_t os_thread_rwlock_read_unlock(
 	os_thread_rwlock_t *lock )
 {
-	iot_status_t result = IOT_STATUS_BAD_PARAMETER;
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( lock )
 	{
-		result = IOT_STATUS_FAILURE;
+		result = OS_STATUS_FAILURE;
 		if ( pthread_rwlock_unlock( lock ) == 0 )
-			result = IOT_STATUS_SUCCESS;
+			result = OS_STATUS_SUCCESS;
 	}
 	return result;
 }
 
-iot_status_t os_thread_rwlock_write_lock(
+os_status_t os_thread_rwlock_write_lock(
 	os_thread_rwlock_t *lock )
 {
-	iot_status_t result = IOT_STATUS_BAD_PARAMETER;
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( lock )
 	{
-		result = IOT_STATUS_FAILURE;
+		result = OS_STATUS_FAILURE;
 		if ( pthread_rwlock_wrlock( lock ) == 0 )
-			result = IOT_STATUS_SUCCESS;
+			result = OS_STATUS_SUCCESS;
 	}
 	return result;
 }
 
-iot_status_t os_thread_rwlock_write_unlock(
+os_status_t os_thread_rwlock_write_unlock(
 	os_thread_rwlock_t *lock )
 {
-	iot_status_t result = IOT_STATUS_BAD_PARAMETER;
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( lock )
 	{
-		result = IOT_STATUS_FAILURE;
+		result = OS_STATUS_FAILURE;
 		if ( pthread_rwlock_unlock( lock ) == 0 )
-			result = IOT_STATUS_SUCCESS;
+			result = OS_STATUS_SUCCESS;
 	}
 	return result;
 }
 
-iot_status_t os_thread_rwlock_destroy(
+os_status_t os_thread_rwlock_destroy(
 	os_thread_rwlock_t *lock )
 {
-	iot_status_t result = IOT_STATUS_BAD_PARAMETER;
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( lock )
 	{
-		result = IOT_STATUS_FAILURE;
+		result = OS_STATUS_FAILURE;
 		if ( pthread_rwlock_destroy( lock ) == 0 )
-			result = IOT_STATUS_SUCCESS;
+			result = OS_STATUS_SUCCESS;
 	}
 	return result;
 }
@@ -2809,35 +2809,35 @@ iot_status_t os_thread_rwlock_destroy(
 
 #ifndef _WRS_KERNEL
 /* uuid support */
-#ifndef IOT_API_ONLY
-iot_status_t os_uuid_generate(
+#ifndef OS_API_ONLY
+os_status_t os_uuid_generate(
 	os_uuid_t *uuid )
 {
-	iot_status_t result = IOT_STATUS_BAD_PARAMETER;
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( uuid )
 	{
 		uuid_generate( *uuid );
-		result = IOT_STATUS_SUCCESS;
+		result = OS_STATUS_SUCCESS;
 	}
 	return result;
 }
 
-iot_status_t os_uuid_to_string_lower(
+os_status_t os_uuid_to_string_lower(
 	os_uuid_t *uuid,
 	char *dest,
 	size_t len )
 {
-	iot_status_t result = IOT_STATUS_BAD_PARAMETER;
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( uuid && dest )
 	{
-		result = IOT_STATUS_NO_MEMORY;
+		result = OS_STATUS_NO_MEMORY;
 		if ( len >= 37u )
 		{
 			uuid_unparse_lower( *uuid, dest );
-			result = IOT_STATUS_SUCCESS;
+			result = OS_STATUS_SUCCESS;
 		}
 	}
 	return result;
 }
-#endif /* ifndef IOT_API_ONLY */
+#endif /* ifndef OS_API_ONLY */
 #endif /* _WRS_KERNEL */

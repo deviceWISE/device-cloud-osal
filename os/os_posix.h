@@ -14,7 +14,7 @@
 #define OS_POSIX_H
 
 #ifndef OS_H
-#error "This file must be included only by os_.h"
+#error "This file must be included only by os.h"
 #endif /* ifndef OS_H */
 
 #include <limits.h>      /* for PATH_MAX */
@@ -24,19 +24,19 @@
 #include <sys/utsname.h> /* for struct utsname */
 #endif
 
-#ifndef IOT_API_ONLY
+#ifndef OS_API_ONLY
 #   ifndef _WRS_KERNEL
 #	include <uuid/uuid.h>   /* for libuuid functions + uuid_t */
 #   endif
 #	define os_uuid_t uuid_t
-#endif /* ifndef IOT_API_ONLY */
+#endif /* ifndef OS_API_ONLY */
 
 #ifndef _WRS_KERNEL
 /** @brief Maximum length of a host name on POSIX systems */
 #ifndef _POSIX_HOST_NAME_MAX
 #	define _POSIX_HOST_NAME_MAX 64
 #endif
-#define IOT_HOST_MAX_LEN _POSIX_HOST_NAME_MAX
+#define OS_HOST_MAX_LEN _POSIX_HOST_NAME_MAX
 #endif
 
 /**
@@ -98,7 +98,7 @@ typedef FILE *os_file_t;
  */
 #define OS_STDOUT        stdout
 
-#ifndef IOT_API_ONLY
+#ifndef OS_API_ONLY
 #	include <arpa/inet.h>  /* for inet_ntoa, inet_htons */
 #	include <dirent.h>     /* for DIR*, opendir, closedir */
 #	include <fcntl.h>      /* for open, O_WRONLY, O_CREAT, O_EXCL, S_IRUSR,
@@ -167,7 +167,7 @@ typedef FILE *os_file_t;
 	typedef pthread_rwlock_t os_thread_rwlock_t;
 #endif
 
-#endif /* ifndef IOT_API_ONLY */
+#endif /* ifndef OS_API_ONLY */
 
 #endif /* ifndef OS_POSIX_H */
 

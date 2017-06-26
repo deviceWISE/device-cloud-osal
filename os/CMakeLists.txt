@@ -17,8 +17,8 @@ else()
 	set( C_LIBS "dl" )
 endif()
 
-get_full_path( C_HDRS ${C_HDRS} )
-get_full_path( C_SRCS ${C_SRCS} )
+#get_full_path( C_HDRS ${C_HDRS} )
+#get_full_path( C_SRCS ${C_SRCS} )
 
 set( API_HDRS_C ${API_HDRS_C} ${C_HDRS} PARENT_SCOPE )
 set( API_HDRS_CXX ${API_HDRS_CXX} ${CXX_HDRS} PARENT_SCOPE )

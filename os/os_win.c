@@ -11,7 +11,7 @@
  * River.
  */
 
-#include "../os_.h"
+#include "../os.h"
 #pragma warning( push, 1 )
 #include <float.h>  /* for DBL_MAX */
 #include <signal.h> /* for SIGINT & SIGTERM */
@@ -125,14 +125,14 @@ static BOOL WINAPI os_on_terminate( DWORD ctrl_type );
  * @param[out]     status              a pointer to an SERVICE_STATUS structure
  *                                     for return values
  *
- * @retval IOT_STATUS_SUCCESS          on success
- * @retval IOT_STATUS_BAD_PARAMETER    on bad mandatory parameter(s)
- * @retval IOT_STATUS_FAILURE          on failure
+ * @retval OS_STATUS_SUCCESS          on success
+ * @retval OS_STATUS_BAD_PARAMETER    on bad mandatory parameter(s)
+ * @retval OS_STATUS_FAILURE          on failure
  *
  * @note Forward-slashes (/) and Backslashes (\) are not valid within a
  *       service name.
  */
-static iot_status_t os_service_control( const char *id,
+static os_status_t os_service_control( const char *id,
 	DWORD control_code, LPSERVICE_STATUS status );
 
 #ifdef RegisterServiceCtrlHandlerEx
@@ -188,18 +188,18 @@ static void WINAPI os_service_main( DWORD argc, LPTSTR *argv );
  *
  * @retval
  */
-static iot_status_t os_time_stamp_to_datetime(
-	os_date_time_t* date_time, iot_timestamp_t time_stamp );
+static os_status_t os_time_stamp_to_datetime(
+	os_date_time_t* date_time, os_timestamp_t time_stamp );
 
 
-iot_status_t os_adapters_address(
+os_status_t os_adapters_address(
 	os_adapters_t *adapters,
 	int *family,
 	int *flags,
 	char *address,
 	size_t address_len )
 {
-	iot_status_t result = IOT_STATUS_FAILURE;
+	os_status_t result = OS_STATUS_FAILURE;
 	if ( adapters && adapters->current && address && address_len > 0u )
 	{
 		void* ptr = NULL;
@@ -223,16 +223,16 @@ iot_status_t os_adapters_address(
 			ptr = &(((struct sockaddr_in *)addr)->sin_addr);
 
 		if ( ptr && inet_ntop( addr->sa_family, ptr, address, address_len ) )
-			result = IOT_STATUS_SUCCESS;
+			result = OS_STATUS_SUCCESS;
 	}
 	return result;
 }
 
-iot_status_t os_adapters_index(
+os_status_t os_adapters_index(
 	os_adapters_t *adapters,
 	unsigned int *index )
 {
-	iot_status_t result = IOT_STATUS_FAILURE;
+	os_status_t result = OS_STATUS_FAILURE;
 	if ( adapters && adapters->adapter_current && index )
 	{
 		int family = AF_INET;
@@ -245,17 +245,17 @@ iot_status_t os_adapters_index(
 			*index = adapters->adapter_current->Ipv6IfIndex;
 		else
 			*index = adapters->adapter_current->IfIndex;
-		result = IOT_STATUS_SUCCESS;
+		result = OS_STATUS_SUCCESS;
 	}
 	return result;
 }
 
-iot_status_t os_adapters_mac(
+os_status_t os_adapters_mac(
 	os_adapters_t *adapters,
 	char *mac,
 	size_t mac_len )
 {
-	iot_status_t result = IOT_STATUS_FAILURE;
+	os_status_t result = OS_STATUS_FAILURE;
 	if ( adapters && adapters->adapter_current &&
 		adapters->adapter_current->NoMulticast == FALSE )
 	{
@@ -263,38 +263,38 @@ iot_status_t os_adapters_mac(
 		const size_t id_len = adapters->adapter_current->PhysicalAddressLength;
 
 		/* loop through to produce mac address */
-		iot_bool_t good_mac = IOT_FALSE;
+		os_bool_t good_mac = OS_FALSE;
 		size_t i;
 		for ( i = 0u; i < id_len && i * 3u <= mac_len; ++i )
 		{
 			if ( id[ i ] > 0u )
-				good_mac = IOT_TRUE;
+				good_mac = OS_TRUE;
 			os_sprintf( &mac[ i * 3u ], "%02.2x:", id[ i ] );
 		}
 
 		/* mac contained at least 1 non-zero value */
-		if ( good_mac != IOT_FALSE )
+		if ( good_mac != OS_FALSE )
 		{
 			/* null-terminate mac */
 			if ( i * 3u < mac_len )
 				mac_len = i * 3u;
 			mac[ mac_len - 1u ] = '\0';
-			result = IOT_STATUS_SUCCESS;
+			result = OS_STATUS_SUCCESS;
 		}
 	}
 	return result;
 }
 
-iot_status_t os_adapters_next(
+os_status_t os_adapters_next(
 	os_adapters_t *adapters )
 {
-	iot_status_t result = IOT_STATUS_FAILURE;
+	os_status_t result = OS_STATUS_FAILURE;
 	if ( adapters && adapters->adapter_current )
 	{
 		if ( adapters->current )
 			adapters->current = adapters->current->Next;
 		if ( adapters->current )
-			result = IOT_STATUS_SUCCESS;
+			result = OS_STATUS_SUCCESS;
 		else
 		{
 			adapters->adapter_current = adapters->adapter_current->Next;
@@ -306,16 +306,16 @@ iot_status_t os_adapters_next(
 			}
 
 			if ( adapters->adapter_current && adapters->current )
-				result = IOT_STATUS_SUCCESS;
+				result = OS_STATUS_SUCCESS;
 		}
 	}
 	return result;
 }
 
-iot_status_t os_adapters_obtain(
+os_status_t os_adapters_obtain(
 	os_adapters_t *adapters )
 {
-	iot_status_t result = IOT_STATUS_FAILURE;
+	os_status_t result = OS_STATUS_FAILURE;
 	if ( adapters )
 	{
 		ULONG size = 0u;
@@ -348,7 +348,7 @@ iot_status_t os_adapters_obtain(
 			}
 
 			if ( adapters->current )
-				result = IOT_STATUS_SUCCESS;
+				result = OS_STATUS_SUCCESS;
 			else
 			{
 				HeapFree( GetProcessHeap(), 0,
@@ -360,15 +360,15 @@ iot_status_t os_adapters_obtain(
 	return result;
 }
 
-iot_status_t os_adapters_release(
+os_status_t os_adapters_release(
 	os_adapters_t *adapters )
 {
-	iot_status_t result = IOT_STATUS_FAILURE;
+	os_status_t result = OS_STATUS_FAILURE;
 	if ( adapters && adapters->adapter_first )
 	{
 		HeapFree( GetProcessHeap(), 0, adapters->adapter_first );
 		ZeroMemory( adapters, sizeof( struct os_adapters ) );
-		result = IOT_STATUS_SUCCESS;
+		result = OS_STATUS_SUCCESS;
 	}
 	return result;
 }
@@ -385,25 +385,25 @@ const char *os_directory_get_temp_dir( char * dest, size_t size )
 	return result;
 }
 
-#ifndef IOT_API_ONLY
+#ifndef OS_API_ONLY
 /* character testing support */
-iot_bool_t os_char_isalnum(
+os_bool_t os_char_isalnum(
 	char c )
 {
-	iot_bool_t result = IOT_FALSE;
+	os_bool_t result = OS_FALSE;
 	if ( IsCharAlphaNumeric( c ) )
-		result = IOT_TRUE;
+		result = OS_TRUE;
 	return result;
 }
 
-iot_bool_t os_char_isxdigit(
+os_bool_t os_char_isxdigit(
 	char c )
 {
 	const char ch = c;
-	iot_bool_t result = IOT_FALSE;
+	os_bool_t result = OS_FALSE;
 	if ( ( ch >= '0' && ch <= '9' ) || ( ch >='A' && ch <= 'F' ) ||
 		( ch >= 'a' && ch <= 'f' ) )
-		result = IOT_TRUE;
+		result = OS_TRUE;
 	return result;
 }
 
@@ -426,46 +426,46 @@ char os_char_toupper(
 	CharUpperA( str );
 	return str[0u];
 }
-#endif /* ifndef IOT_API_ONLY */
+#endif /* ifndef OS_API_ONLY */
 
 /* file & directory support */
-#ifndef IOT_API_ONLY
-iot_status_t os_directory_create(
+#ifndef OS_API_ONLY
+os_status_t os_directory_create(
 		const char *path,
-		iot_millisecond_t timeout )
+		os_millisecond_t timeout )
 {
-	iot_bool_t create_dir_failed = IOT_FALSE;
-	iot_status_t result;
-	iot_timestamp_t start_time;
-	iot_millisecond_t time_elapsed;
+	os_bool_t create_dir_failed = OS_FALSE;
+	os_status_t result;
+	os_timestamp_t start_time;
+	os_millisecond_t time_elapsed;
 
 	os_time( &start_time, NULL );
 	do {
 		result = os_directory_create_nowait( path );
-		if ( result != IOT_STATUS_SUCCESS )
+		if ( result != OS_STATUS_SUCCESS )
 		{
 			os_time_elapsed( &start_time, &time_elapsed );
-			os_time_sleep( LOOP_WAIT_TIME, IOT_FALSE );
+			os_time_sleep( LOOP_WAIT_TIME, OS_FALSE );
 		}
-	} while ( result != IOT_STATUS_SUCCESS &&
+	} while ( result != OS_STATUS_SUCCESS &&
 		( timeout == 0u || time_elapsed < timeout ) );
 
 	return result;
 }
 
-iot_status_t os_directory_create_nowait(
+os_status_t os_directory_create_nowait(
 	const char *path )
 {
-	iot_status_t result = IOT_STATUS_BAD_PARAMETER;
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( path )
 	{
 		size_t path_len = 0;
 		char *p = NULL;
 		char temp_path[ PATH_MAX + 1u ];
-		result = IOT_STATUS_FAILURE;
+		result = OS_STATUS_FAILURE;
 
 		if ( os_directory_exists( path ) )
-			return IOT_STATUS_SUCCESS;
+			return OS_STATUS_SUCCESS;
 
 		/* Get the parent dir and check if it exists */
 		os_strncpy( temp_path, path, PATH_MAX );
@@ -476,74 +476,74 @@ iot_status_t os_directory_create_nowait(
 		if ( p > temp_path )
 		{
 			*p = '\0';
-			if ( os_directory_exists( temp_path ) == IOT_FALSE )
+			if ( os_directory_exists( temp_path ) == OS_FALSE )
 				os_directory_create_nowait( temp_path );
 		}
 
 		if ( CreateDirectory( path, NULL ) != 0 )
-			result = IOT_STATUS_SUCCESS;
+			result = OS_STATUS_SUCCESS;
 	}
 	return result;
 }
 
-iot_status_t os_directory_current(
+os_status_t os_directory_current(
 	char *buffer,
 	size_t size
 )
 {
-	iot_status_t result = IOT_STATUS_BAD_PARAMETER;
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( buffer )
 	{
 		DWORD cur_dir_result;
 
-		result = IOT_STATUS_FAILURE;
+		result = OS_STATUS_FAILURE;
 		cur_dir_result = GetCurrentDirectory( size, buffer );
 		if ( cur_dir_result > 0 && cur_dir_result <= size )
-			result = IOT_STATUS_SUCCESS;
+			result = OS_STATUS_SUCCESS;
 	}
 	return result;
 }
 
-iot_status_t os_directory_close(
+os_status_t os_directory_close(
 	os_dir_t *dir )
 {
-	iot_status_t result = IOT_STATUS_FAILURE;
+	os_status_t result = OS_STATUS_FAILURE;
 	if ( dir && dir->dir && FindClose( dir->dir ) )
 	{
 		ZeroMemory( dir, sizeof( os_dir_t ) );
-		result = IOT_STATUS_SUCCESS;
+		result = OS_STATUS_SUCCESS;
 	}
 	return result;
 }
 
-iot_status_t os_directory_change(const char *path)
+os_status_t os_directory_change(const char *path)
 {
-	iot_status_t result = IOT_STATUS_BAD_PARAMETER;
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( path )
 	{
-		result = IOT_STATUS_SUCCESS;
+		result = OS_STATUS_SUCCESS;
 		if ( !SetCurrentDirectory( path ))
-			result = IOT_STATUS_FAILURE;
+			result = OS_STATUS_FAILURE;
 	}
 	return result;
 }
 
-iot_status_t os_directory_delete(
-	const char *path, const char *regex, iot_bool_t recursive )
+os_status_t os_directory_delete(
+	const char *path, const char *regex, os_bool_t recursive )
 {
-	iot_status_t result = IOT_STATUS_BAD_PARAMETER;
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( path )
 	{
-		result = IOT_STATUS_SUCCESS;
+		result = OS_STATUS_SUCCESS;
 		const char *regex_str = regex;
 		if ( !regex_str || *regex_str == '\0' )
 			regex_str = "*";
 		else if ( os_strncmp( regex, ".", 2u ) == 0 ||
 			os_strncmp( regex, "..", 3u ) == 0 ||
 			os_strstr( regex, "\\/" ) != NULL )
-			result = IOT_STATUS_BAD_REQUEST;
+			result = OS_STATUS_BAD_REQUEST;
 
-		if ( result == IOT_STATUS_SUCCESS )
+		if ( result == OS_STATUS_SUCCESS )
 		{
 			HANDLE dir;
 			WIN32_FIND_DATA wfd;
@@ -551,18 +551,18 @@ iot_status_t os_directory_delete(
 			ZeroMemory( &wfd, sizeof( wfd ) );
 
 			/* go through all subdirectories first */
-			if ( recursive != IOT_FALSE )
+			if ( recursive != OS_FALSE )
 			{
 				os_snprintf( search_path, MAX_PATH - 1u,
 					"%s\\*", path );
 				search_path[ MAX_PATH - 1u ] = '\0';
 				dir = FindFirstFile( search_path, &wfd );
-				result = IOT_STATUS_FAILURE;
+				result = OS_STATUS_FAILURE;
 				if ( dir != INVALID_HANDLE_VALUE )
 				{
 					do
 					{
-						result = IOT_STATUS_SUCCESS;
+						result = OS_STATUS_SUCCESS;
 						if ( os_strncmp( wfd.cFileName, ".", 2u ) != 0 &&
 							os_strncmp( wfd.cFileName, "..", 3u ) != 0 &&
 							wfd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY )
@@ -571,10 +571,10 @@ iot_status_t os_directory_delete(
 								os_strlen( wfd.cFileName ) + 2u;
 							char *buf = (char*)os_heap_malloc( buf_len );
 
-							result = IOT_STATUS_NO_MEMORY;
+							result = OS_STATUS_NO_MEMORY;
 							if ( buf )
 							{
-								result = IOT_STATUS_SUCCESS;
+								result = OS_STATUS_SUCCESS;
 								os_snprintf( buf, buf_len,
 									"%s\\%s", path,
 									wfd.cFileName );
@@ -585,7 +585,7 @@ iot_status_t os_directory_delete(
 								os_heap_free( (void **)&buf );
 							}
 						}
-					} while ( result == IOT_STATUS_SUCCESS &&
+					} while ( result == OS_STATUS_SUCCESS &&
 						FindNextFile( dir, &wfd ) );
 					FindClose( dir );
 				}
@@ -597,12 +597,12 @@ iot_status_t os_directory_delete(
 				path, regex_str );
 			search_path[ MAX_PATH - 1u ] = '\0';
 			dir = FindFirstFile( search_path, &wfd );
-			result = IOT_STATUS_FAILURE;
+			result = OS_STATUS_FAILURE;
 			if ( dir != INVALID_HANDLE_VALUE )
 			{
 				do
 				{
-					result = IOT_STATUS_SUCCESS;
+					result = OS_STATUS_SUCCESS;
 					if ( os_strncmp( wfd.cFileName, ".", 2u ) != 0 &&
 						os_strncmp( wfd.cFileName, "..", 3u ) != 0 )
 					{
@@ -610,10 +610,10 @@ iot_status_t os_directory_delete(
 							os_strlen( wfd.cFileName ) + 2u;
 						char *buf = (char*)os_heap_malloc( buf_len );
 
-						result = IOT_STATUS_NO_MEMORY;
+						result = OS_STATUS_NO_MEMORY;
 						if ( buf )
 						{
-							result = IOT_STATUS_SUCCESS;
+							result = OS_STATUS_SUCCESS;
 							os_snprintf( buf, buf_len,
 								"%s\\%s", path,
 								wfd.cFileName );
@@ -621,24 +621,24 @@ iot_status_t os_directory_delete(
 								FILE_ATTRIBUTE_DIRECTORY ) )
 								RemoveDirectory( buf );
 							else if ( !DeleteFile( buf ) )
-								result = IOT_STATUS_FAILURE;
+								result = OS_STATUS_FAILURE;
 							os_heap_free( (void **)&buf );
 						}
 					}
-				} while ( result == IOT_STATUS_SUCCESS &&
+				} while ( result == OS_STATUS_SUCCESS &&
 					FindNextFile( dir, &wfd ) );
 				FindClose( dir );
 			}
 
 			/* clear empty directory */
-			if ( result == IOT_STATUS_SUCCESS && regex == NULL )
+			if ( result == OS_STATUS_SUCCESS && regex == NULL )
 			{
 				if ( !RemoveDirectory( path ) )
 				{
 					if ( GetLastError() == ERROR_DIR_NOT_EMPTY )
-						result = IOT_STATUS_TRY_AGAIN;
+						result = OS_STATUS_TRY_AGAIN;
 					else
-						result = IOT_STATUS_FAILURE;
+						result = OS_STATUS_FAILURE;
 				}
 			}
 		}
@@ -646,41 +646,41 @@ iot_status_t os_directory_delete(
 	return result;
 }
 
-iot_bool_t os_directory_exists(
+os_bool_t os_directory_exists(
 	const char *dir_path )
 {
 	DWORD dir_attrib;
-	iot_bool_t result = IOT_FALSE;
+	os_bool_t result = OS_FALSE;
 	dir_attrib = GetFileAttributes( dir_path );
 	if ( dir_attrib != INVALID_FILE_ATTRIBUTES &&
 		dir_attrib & FILE_ATTRIBUTE_DIRECTORY )
-		result = IOT_TRUE;
+		result = OS_TRUE;
 	return result;
 }
 
-iot_status_t os_directory_rewind(
+os_status_t os_directory_rewind(
 	os_dir_t *dir )
 {
-	iot_status_t result = IOT_STATUS_FAILURE;
+	os_status_t result = OS_STATUS_FAILURE;
 	if( dir && dir->dir )
 	{
 		char path[PATH_MAX];
 		os_strncpy( path, dir->path, PATH_MAX );
 		os_directory_close( dir );
 		os_directory_open( path, dir );
-		result = IOT_STATUS_SUCCESS;
+		result = OS_STATUS_SUCCESS;
 	}
 	return result;
 }
 
-iot_status_t os_directory_next(
+os_status_t os_directory_next(
 	os_dir_t *dir,
-	iot_bool_t files_only,
+	os_bool_t files_only,
 	char *path,
 	size_t path_len )
 {
-	iot_status_t result = IOT_STATUS_FAILURE;
-	if ( dir && dir->path && dir->last_result == IOT_STATUS_SUCCESS )
+	os_status_t result = OS_STATUS_FAILURE;
+	if ( dir && dir->path && dir->last_result == OS_STATUS_SUCCESS )
 	{
 		BOOL file_found = FALSE;
 
@@ -688,14 +688,14 @@ iot_status_t os_directory_next(
 		while ( ( file_found = FindNextFile( dir->dir, &dir->wfd ) ) &&
 			( os_strncmp( dir->wfd.cFileName, ".", 1 ) == 0 ||
 			os_strncmp( dir->wfd.cFileName, "..", 2 ) == 0 ||
-			( files_only != IOT_FALSE &&
+			( files_only != OS_FALSE &&
 			dir->wfd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY ) ) );
 
 		if ( file_found )
 		{
 			os_make_path( path, path_len, dir->path,
 				dir->wfd.cFileName, NULL );
-			result = IOT_STATUS_SUCCESS;
+			result = OS_STATUS_SUCCESS;
 		}
 
 		dir->last_result = result;
@@ -703,11 +703,11 @@ iot_status_t os_directory_next(
 	return result;
 }
 
-iot_status_t os_directory_open(
+os_status_t os_directory_open(
 	const char *dir_path,
 	os_dir_t* out )
 {
-	iot_status_t result = IOT_STATUS_FAILURE;
+	os_status_t result = OS_STATUS_FAILURE;
 	if ( dir_path && out )
 	{
 		char new_dir_path[ PATH_MAX + 1u];
@@ -717,12 +717,12 @@ iot_status_t os_directory_open(
 		StringCchCat( new_dir_path, PATH_MAX, "\\*" );
 		out->dir = FindFirstFile( new_dir_path, &out->wfd );
 		if ( out->dir != INVALID_HANDLE_VALUE )
-			out->last_result = result = IOT_STATUS_SUCCESS;
+			out->last_result = result = OS_STATUS_SUCCESS;
 	}
 	return result;
 }
 
-iot_uint64_t os_directory_free_space(
+os_uint64_t os_directory_free_space(
 	const char* path )
 {
 	DWORD free_bytes = -1;
@@ -754,64 +754,64 @@ iot_uint64_t os_directory_free_space(
 					dwBytesPerSect;
 		}
 	}
-	return (iot_uint64_t)free_bytes;
+	return (os_uint64_t)free_bytes;
 }
 
-iot_status_t os_file_chown(
+os_status_t os_file_chown(
 	const char *UNUSED(path),
 	const char *UNUSED(user) )
 {
-	return IOT_STATUS_SUCCESS;
+	return OS_STATUS_SUCCESS;
 }
 
-iot_status_t os_file_close(
+os_status_t os_file_close(
 	os_file_t handle )
 {
-	iot_status_t result = IOT_STATUS_FAILURE;
+	os_status_t result = OS_STATUS_FAILURE;
 	if ( handle && CloseHandle( handle ) )
-		result = IOT_STATUS_SUCCESS;
+		result = OS_STATUS_SUCCESS;
 	return result;
 }
 
-iot_status_t os_file_copy(
+os_status_t os_file_copy(
 	const char *old_path,
 	const char *new_path )
 {
-	iot_status_t result = IOT_STATUS_BAD_PARAMETER;
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( old_path && new_path )
 	{
-		result = IOT_STATUS_FAILURE;
+		result = OS_STATUS_FAILURE;
 		if ( CopyFileEx( old_path, new_path, NULL, NULL, NULL, 0 ) )
-			result = IOT_STATUS_SUCCESS;
+			result = OS_STATUS_SUCCESS;
 	}
 	return result;
 }
 
-iot_status_t os_file_delete(
+os_status_t os_file_delete(
 	const char *path )
 {
-	iot_status_t result = IOT_STATUS_BAD_PARAMETER;
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( path )
 	{
-		result = IOT_STATUS_FAILURE;
+		result = OS_STATUS_FAILURE;
 		if ( os_file_exists( path ) )
 		{
 			if ( DeleteFile( path ) )
-				result = IOT_STATUS_SUCCESS;
+				result = OS_STATUS_SUCCESS;
 		}
 	}
 	return result;
 }
 
-iot_bool_t os_file_exists(
+os_bool_t os_file_exists(
 	const char *file_path )
 {
 	DWORD file_attrib;
-	iot_bool_t result = IOT_FALSE;
+	os_bool_t result = OS_FALSE;
 	file_attrib = GetFileAttributes( file_path );
 	if ( file_attrib != INVALID_FILE_ATTRIBUTES &&
 		!( file_attrib & FILE_ATTRIBUTE_DIRECTORY ) )
-		result = IOT_TRUE;
+		result = OS_TRUE;
 	return result;
 }
 
@@ -888,28 +888,28 @@ size_t os_file_fread(
 	return result;
 }
 
-iot_status_t os_file_fseek(
+os_status_t os_file_fseek(
 	os_file_t stream,
 	long offset,
 	int whence
 )
 {
-	iot_status_t result = IOT_STATUS_BAD_PARAMETER;
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( stream != OS_FILE_INVALID )
 	{
 
-		result = IOT_STATUS_FAILURE;
+		result = OS_STATUS_FAILURE;
 		if ( SetFilePointer( stream, offset, NULL, whence )
 			!= INVALID_SET_FILE_POINTER )
-			result = IOT_STATUS_SUCCESS;
+			result = OS_STATUS_SUCCESS;
 	}
 	return result;
 }
 
-iot_status_t os_file_fsync( const char *UNUSED(file_path) )
+os_status_t os_file_fsync( const char *UNUSED(file_path) )
 {
 	/* buffers will be flushed when a stream is closed */
-	return IOT_STATUS_SUCCESS;
+	return OS_STATUS_SUCCESS;
 }
 
 size_t os_file_fwrite(
@@ -929,7 +929,7 @@ size_t os_file_fwrite(
 	return result;
 }
 
-iot_uint64_t os_file_get_size(
+os_uint64_t os_file_get_size(
 	const char *file_path )
 {
 
@@ -943,31 +943,31 @@ iot_uint64_t os_file_get_size(
 		size.LowPart = attr.nFileSizeLow;
 		file_size = size.QuadPart;
 	}
-	return (iot_uint64_t)file_size;
+	return (os_uint64_t)file_size;
 }
 
-iot_uint64_t os_file_get_size_handle(
+os_uint64_t os_file_get_size_handle(
 	os_file_t file_handle )
 {
 	DWORD file_size = 0;
 	if ( file_handle )
 		file_size = GetFileSize( file_handle, NULL );
-	return (iot_uint64_t)file_size;
+	return (os_uint64_t)file_size;
 }
 
-iot_status_t os_file_move(
+os_status_t os_file_move(
 	const char *old_path,
 	const char *new_path
 )
 {
-	iot_status_t result = IOT_STATUS_BAD_PARAMETER;
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( old_path && new_path )
 	{
-		result = IOT_STATUS_FAILURE;
+		result = OS_STATUS_FAILURE;
 		if ( MoveFileEx( old_path, new_path,
 			MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH |
 			MOVEFILE_COPY_ALLOWED ) )
-			result = IOT_STATUS_SUCCESS;
+			result = OS_STATUS_SUCCESS;
 	}
 	return result;
 }
@@ -1020,11 +1020,11 @@ os_file_t os_file_open(
 	return result;
 }
 
-iot_status_t os_file_temp(
+os_status_t os_file_temp(
 	char *prototype,
 	size_t suffix_len )
 {
-	iot_status_t result = IOT_STATUS_FAILURE;
+	os_status_t result = OS_STATUS_FAILURE;
 	if ( prototype && os_strstr( prototype, "XXXXXX" ) )
 	{
 		int const max_attempt = 128;
@@ -1035,13 +1035,13 @@ iot_status_t os_file_temp(
 
 		os_strncpy( suffix, prototype + str_len - suffix_len, suffix_len );
 
-		for ( ; i < max_attempt && result == IOT_STATUS_FAILURE; i++ )
+		for ( ; i < max_attempt && result == OS_STATUS_FAILURE; i++ )
 		{
 			unsigned int random_number = (int)os_random( 0, 999999 );
 			os_snprintf( x_location, 6u + suffix_len + 1u, "%.6u%s", random_number, suffix );
 
-			if ( os_file_exists( prototype ) == IOT_FALSE )
-				result = IOT_STATUS_SUCCESS;
+			if ( os_file_exists( prototype ) == OS_FALSE )
+				result = OS_STATUS_SUCCESS;
 		}
 	}
 	return result;
@@ -1064,12 +1064,12 @@ char os_key_wait( void )
 	return result;
 }
 
-iot_status_t os_library_close(
+os_status_t os_library_close(
 	iot_lib_handle_t lib )
 {
-	iot_status_t result = IOT_STATUS_FAILURE;
+	os_status_t result = OS_STATUS_FAILURE;
 	if ( FreeLibrary( lib ) )
-		result = IOT_STATUS_SUCCESS;
+		result = OS_STATUS_SUCCESS;
 	return result;
 }
 
@@ -1086,7 +1086,7 @@ iot_lib_handle_t os_library_open(
 	return LoadLibrary( path );
 }
 
-#endif /* ifndef IOT_API_ONLY */
+#endif /* ifndef OS_API_ONLY */
 
 int os_atoi( const char *str )
 {
@@ -1236,7 +1236,7 @@ double os_strtod(
 		int decimal = 0;
 		int *current = &integer;
 		int decimal_points = 1;
-		iot_bool_t after = IOT_FALSE;
+		os_bool_t after = OS_FALSE;
 		int negative = 1;
 		char *num;
 		char nums[] = "0123456789.";
@@ -1246,17 +1246,17 @@ double os_strtod(
 			++str;
 		}
 		num = os_strchr( nums, *str );
-		while ( *str && num && !( num-nums == 10 && after == IOT_TRUE ) )
+		while ( *str && num && !( num-nums == 10 && after == OS_TRUE ) )
 		{
-			if ( num-nums == 10 && after == IOT_FALSE )
+			if ( num-nums == 10 && after == OS_FALSE )
 			{
-				after = IOT_TRUE;
+				after = OS_TRUE;
 				current = &decimal;
 			}
 			else
 			{
 				*current = (*current)*10 + num-nums;
-				if ( after == IOT_TRUE )
+				if ( after == OS_TRUE )
 					decimal_points *= 10;
 			}
 			++str;
@@ -1398,7 +1398,7 @@ int os_printf(
 	return result;
 }
 
-#ifndef IOT_API_ONLY
+#ifndef OS_API_ONLY
 size_t os_env_expand(
 	char *src,
 	size_t len )
@@ -1447,7 +1447,7 @@ int os_fprintf(
 	va_end( args );
 	return result;
 }
-#endif /* ifdnef IOT_API_ONLY */
+#endif /* ifdnef OS_API_ONLY */
 
 int os_sprintf(
 	char *str,
@@ -1496,16 +1496,16 @@ int os_vfprintf(
 			int i;
 			const char *write_start = buffer;
 			const char *pos = buffer;
-			iot_bool_t have_carriage_return = IOT_FALSE;
+			os_bool_t have_carriage_return = OS_FALSE;
 			DWORD number_written;
 			result = 0;
 			for ( i = 0; i < str_len && result >= 0; ++i )
 			{
 				if ( *pos == '\r' )
-					have_carriage_return = IOT_TRUE;
+					have_carriage_return = OS_TRUE;
 				else
 				{
-					if ( have_carriage_return == IOT_FALSE
+					if ( have_carriage_return == OS_FALSE
 						&& *pos == '\n' )
 					{
 						const DWORD to_write =
@@ -1531,7 +1531,7 @@ int os_vfprintf(
 						else
 							result  = -1;
 					}
-					have_carriage_return = IOT_FALSE;
+					have_carriage_return = OS_FALSE;
 				}
 				++pos;
 			}
@@ -1560,11 +1560,11 @@ int os_vsnprintf(
 	return result;
 }
 
-iot_bool_t os_flush( os_file_t stream )
+os_bool_t os_flush( os_file_t stream )
 {
-	iot_bool_t result = IOT_FALSE;
+	os_bool_t result = OS_FALSE;
 	if ( FlushFileBuffers( stream ) )
-		result = IOT_TRUE;
+		result = OS_TRUE;
 	return result;
 }
 
@@ -1598,7 +1598,7 @@ void *os_heap_realloc( void *ptr, size_t size )
 	return result;
 }
 
-#ifndef IOT_API_ONLY
+#ifndef OS_API_ONLY
 BOOL WINAPI os_on_terminate( DWORD ctrl_type )
 {
 	BOOL result = FALSE;
@@ -1614,49 +1614,49 @@ BOOL WINAPI os_on_terminate( DWORD ctrl_type )
 	return result;
 }
 
-iot_bool_t os_path_is_absolute( const char *path )
+os_bool_t os_path_is_absolute( const char *path )
 {
-	iot_bool_t result = IOT_FALSE;
+	os_bool_t result = OS_FALSE;
 
 	/* test path started with a letter + colon (i.e. C:, D:, a: ... ) */
 	if ( path && ( ( path[0] >= 'A' && path[0] <= 'Z' ) ||
 		     ( path[0] >= 'a' && path[0] <= 'z' ) ) &&
 		path[1] == ':' )
-		result = IOT_TRUE;
+		result = OS_TRUE;
 	return result;
 }
 
-iot_status_t os_path_executable(
+os_status_t os_path_executable(
 	char *path,
 	size_t size )
 {
-	iot_status_t result = IOT_STATUS_BAD_PARAMETER;
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( path )
 	{
-		result = IOT_STATUS_FAILURE;
+		result = OS_STATUS_FAILURE;
 		if ( GetModuleFileNameA( NULL, path, size ) > 0 )
-			result = IOT_STATUS_SUCCESS;
+			result = OS_STATUS_SUCCESS;
 	}
 	return result;
 }
 
 /* process functions */
-iot_status_t os_process_cleanup( void )
+os_status_t os_process_cleanup( void )
 {
-	return IOT_STATUS_SUCCESS;
+	return OS_STATUS_SUCCESS;
 }
 
 /* service functions */
-iot_status_t os_service_control(
+os_status_t os_service_control(
 	const char *id,
 	DWORD control_code,
 	LPSERVICE_STATUS status )
 {
-	iot_status_t result = IOT_STATUS_BAD_PARAMETER;
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( id != NULL && *id != '\0' )
 	{
 		SC_HANDLE sc_manager;
-		result = IOT_STATUS_FAILURE;
+		result = OS_STATUS_FAILURE;
 		/* Get a handle to the SCM database. */
 		sc_manager = OpenSCManager( 0, 0, SC_MANAGER_ALL_ACCESS );
 		if ( sc_manager )
@@ -1672,7 +1672,7 @@ iot_status_t os_service_control(
 				if ( control_result ||
 				   ( !control_result && GetLastError() ==
 				     ERROR_SERVICE_NOT_ACTIVE ) )
-					result = IOT_STATUS_SUCCESS;
+					result = OS_STATUS_SUCCESS;
 				CloseServiceHandle( sc_service );
 			}
 			CloseServiceHandle( sc_manager );
@@ -1681,7 +1681,7 @@ iot_status_t os_service_control(
 	return result;
 }
 
-iot_status_t os_service_run(
+os_status_t os_service_run(
 	const char *id,
 	os_service_main_t main,
 	int argc,
@@ -1691,16 +1691,16 @@ iot_status_t os_service_run(
 	os_sighandler_t handler,
 	const char *logdir )
 {
-	iot_status_t result = IOT_STATUS_BAD_PARAMETER;
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( logdir )
 	{
 		struct tm *current_date = NULL;
-		char date_stamp[IOT_NAME_MAX_LEN];
+		char date_stamp[OS_NAME_MAX_LEN];
 		os_date_time_t date_time;
-		char logfile_name[IOT_NAME_MAX_LEN];
+		char logfile_name[OS_NAME_MAX_LEN];
 		char logfile_full_path[PATH_MAX];
-		iot_bool_t up_time;
-		iot_timestamp_t time_stamp;
+		os_bool_t up_time;
+		os_timestamp_t time_stamp;
 
 		ZeroMemory( &date_time, sizeof(os_date_time_t) );
 		os_time( &time_stamp, &up_time );
@@ -1708,14 +1708,14 @@ iot_status_t os_service_run(
 		/* Make sure that os_time did not return the uptime for
 		 * the device */
 		/* This will not convert properly into a date stamp */
-		if ( time_stamp > 0u && up_time == IOT_FALSE )
+		if ( time_stamp > 0u && up_time == OS_FALSE )
 		{
 
 			result = os_time_stamp_to_datetime(
 				&date_time, time_stamp );
-			if ( result == IOT_STATUS_SUCCESS )
+			if ( result == OS_STATUS_SUCCESS )
 			{
-				os_snprintf( date_stamp, IOT_NAME_MAX_LEN,
+				os_snprintf( date_stamp, OS_NAME_MAX_LEN,
 					"%04d-%02d-%02d_%02d-%02d-%02d",
 					date_time.year,
 					date_time.month,
@@ -1724,18 +1724,18 @@ iot_status_t os_service_run(
 					date_time.minute,
 					date_time.second
 					);
-				date_stamp[ IOT_NAME_MAX_LEN - 1u ] = '\0';
+				date_stamp[ OS_NAME_MAX_LEN - 1u ] = '\0';
 				os_snprintf( logfile_name,
-					IOT_NAME_MAX_LEN,
+					OS_NAME_MAX_LEN,
 					"%s_%s.log", id, date_stamp );
-				logfile_name[ IOT_NAME_MAX_LEN - 1u ] = '\0';
+				logfile_name[ OS_NAME_MAX_LEN - 1u ] = '\0';
 			}
 		}
 		else
 		{
-			os_snprintf( logfile_name, IOT_NAME_MAX_LEN,
+			os_snprintf( logfile_name, OS_NAME_MAX_LEN,
 				"%s.log", id );
-			logfile_name[ IOT_NAME_MAX_LEN - 1u ] = '\0';
+			logfile_name[ OS_NAME_MAX_LEN - 1u ] = '\0';
 		}
 
 		os_make_path( logfile_full_path, PATH_MAX,
@@ -1752,13 +1752,13 @@ iot_status_t os_service_run(
 
 	if ( id && main )
 	{
-		result = IOT_STATUS_EXISTS;
+		result = OS_STATUS_EXISTS;
 		if ( SERVICE_KEY == NULL && SERVICE_MAIN == NULL )
 		{
 			const size_t service_id_len =
 				os_strlen( id );
 
-			result = IOT_STATUS_NO_MEMORY;
+			result = OS_STATUS_NO_MEMORY;
 			SERVICE_KEY = (char *)os_heap_malloc( service_id_len );
 			if ( SERVICE_KEY )
 			{
@@ -1771,9 +1771,9 @@ iot_status_t os_service_run(
 					sizeof(char*) * argc );
 				if ( SERVICE_MAIN_ARGV )
 				{
-					iot_bool_t no_error = IOT_TRUE;
+					os_bool_t no_error = OS_TRUE;
 					int i;
-					for ( i = 0; i < argc; ++i && no_error != IOT_FALSE )
+					for ( i = 0; i < argc; ++i && no_error != OS_FALSE )
 					{
 						BOOL is_good_arg = TRUE; /* true */
 						if ( remove_argc > 0 && remove_argv && argv[i] )
@@ -1805,12 +1805,12 @@ iot_status_t os_service_run(
 									os_strncpy( SERVICE_MAIN_ARGV[SERVICE_MAIN_ARGC], argv[i], arg_len );
 							}
 							else
-								no_error = IOT_TRUE;
+								no_error = OS_TRUE;
 							++SERVICE_MAIN_ARGC;
 						}
 					}
 
-					if ( no_error != IOT_FALSE )
+					if ( no_error != OS_FALSE )
 					{
 						SERVICE_TABLE_ENTRY ste[] = {
 							{ SERVICE_KEY,
@@ -1821,9 +1821,9 @@ iot_status_t os_service_run(
 						/* bind any provided callbacks */
 						if ( handler )
 							SERVICE_HANDLER = handler;
-						result = IOT_STATUS_FAILURE;
+						result = OS_STATUS_FAILURE;
 						if ( StartServiceCtrlDispatcher( ste ) )
-							result = IOT_STATUS_SUCCESS;
+							result = OS_STATUS_SUCCESS;
 					}
 					else
 					{
@@ -1949,14 +1949,14 @@ void WINAPI os_service_main( DWORD argc, LPTSTR *argv )
 	}
 }
 
-iot_status_t os_service_install(
+os_status_t os_service_install(
 	const char *id,
 	const char *executable,
 	const char *args,
 	const char *name,
 	const char *description,
 	const char *dependencies,
-	iot_millisecond_t timeout
+	os_millisecond_t timeout
 )
 {
 /** @brief Maximum number of retries when service encounters a failure */
@@ -1966,7 +1966,7 @@ iot_status_t os_service_install(
 /** @brief Number of hours before resetting the fail counter of the service */
 #define SERVICE_RESET_FAIL_COUNTER_HOURS 6u
 
-	iot_status_t result = IOT_STATUS_BAD_PARAMETER;
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( executable && id && *id != '\0' && name && *name != '\0' )
 	{
 		char *cmd_line;
@@ -1976,7 +1976,7 @@ iot_status_t os_service_install(
 		if ( args && *args != '\0' )
 			/* +1 for space character between arguments */
 			cmd_line_len += os_strlen( args ) + 1u;
-		result = IOT_STATUS_NO_MEMORY;
+		result = OS_STATUS_NO_MEMORY;
 		cmd_line = (char *)os_heap_malloc( sizeof(char) *
 			( cmd_line_len + 1u ) );
 		if ( cmd_line )
@@ -1993,7 +1993,7 @@ iot_status_t os_service_install(
 					cmd_line_len + 1u );
 			cmd_line[cmd_line_len] = '\0';
 
-			result = IOT_STATUS_FAILURE;
+			result = OS_STATUS_FAILURE;
 			if ( ( sc_manager = OpenSCManager( 0, 0,
 				SC_MANAGER_ALL_ACCESS ) ) != 0 )
 			{
@@ -2040,7 +2040,7 @@ iot_status_t os_service_install(
 					0, /* System User */
 					0 /* Password */ ) ) != 0 )
 				{
-					result = IOT_STATUS_SUCCESS;
+					result = OS_STATUS_SUCCESS;
 					if ( description )
 					{
 						LPTSTR desc_heap;
@@ -2072,15 +2072,15 @@ iot_status_t os_service_install(
 							sd.lpDescription = desc_heap;
 							if ( !ChangeServiceConfig2( sc_service,
 								SERVICE_CONFIG_DESCRIPTION, &sd ) )
-								result = IOT_STATUS_FAILURE;
+								result = OS_STATUS_FAILURE;
 							os_heap_free( (void**)&desc_heap );
 						}
 						else
-							result = IOT_STATUS_NO_MEMORY;
+							result = OS_STATUS_NO_MEMORY;
 					}
 
 					/* reboot service on failure */
-					if ( result == IOT_STATUS_SUCCESS )
+					if ( result == OS_STATUS_SUCCESS )
 					{
 						SERVICE_FAILURE_ACTIONS sfa;
 						SERVICE_FAILURE_ACTIONS_FLAG sfaf;
@@ -2088,8 +2088,8 @@ iot_status_t os_service_install(
 						ZeroMemory( &sfa, sizeof( sfa ) );
 						sfa.dwResetPeriod = (DWORD)(
 							SERVICE_RESET_FAIL_COUNTER_HOURS
-							* IOT_MINUTES_IN_HOUR
-							* IOT_SECONDS_IN_MINUTE );
+							* OS_MINUTES_IN_HOUR
+							* OS_SECONDS_IN_MINUTE );
 						sfa.lpRebootMsg = NULL;
 						sfa.lpCommand = NULL;
 
@@ -2109,41 +2109,41 @@ iot_status_t os_service_install(
 									SC_ACTION_RESTART;
 								lpAction->Delay =
 									SERVICE_RETRY_DELAY_SECONDS *
-									IOT_MILLISECONDS_IN_SECOND;
+									OS_MILLISECONDS_IN_SECOND;
 								++lpAction;
 							}
 							sfa.cActions = SERVICE_RETRY_COUNT_MAX;
 						}
 						else
-							result = IOT_STATUS_NO_MEMORY;
+							result = OS_STATUS_NO_MEMORY;
 
-						if ( result == IOT_STATUS_SUCCESS &&
+						if ( result == OS_STATUS_SUCCESS &&
 							!ChangeServiceConfig2(
 								sc_service,
 								SERVICE_CONFIG_FAILURE_ACTIONS,
 								&sfa ) )
-							result = IOT_STATUS_FAILURE;
+							result = OS_STATUS_FAILURE;
 
 						ZeroMemory( &sfaf, sizeof( sfaf ) );
 						sfaf.fFailureActionsOnNonCrashFailures = TRUE;
-						if ( result == IOT_STATUS_SUCCESS &&
+						if ( result == OS_STATUS_SUCCESS &&
 							!ChangeServiceConfig2(
 								sc_service,
 								SERVICE_CONFIG_FAILURE_ACTIONS_FLAG,
 								&sfaf ) )
-							result = IOT_STATUS_FAILURE;
+							result = OS_STATUS_FAILURE;
 
 						os_heap_free( (void**)&sfa.lpsaActions );
 					}
 
 					/* on failure, delete the service */
-					if ( result != IOT_STATUS_SUCCESS )
+					if ( result != OS_STATUS_SUCCESS )
 						DeleteService( sc_service );
 
 					CloseServiceHandle( sc_service );
 				}
 				else if ( GetLastError() == ERROR_DUPLICATE_SERVICE_NAME )
-					result = IOT_STATUS_EXISTS;
+					result = OS_STATUS_EXISTS;
 				CloseServiceHandle( sc_manager );
 			}
 		}
@@ -2151,18 +2151,18 @@ iot_status_t os_service_install(
 	return result;
 }
 
-iot_status_t os_service_uninstall(
+os_status_t os_service_uninstall(
 	const char *id,
-	iot_millisecond_t timeout )
+	os_millisecond_t timeout )
 {
-	iot_status_t result = IOT_STATUS_BAD_PARAMETER;
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	SC_HANDLE sc_manager;
 	SC_HANDLE sc_service;
 
 	if ( id != NULL && *id != '\0' )
 	{
 		/* Get a handle to the SCM database. */
-		result = IOT_STATUS_FAILURE;
+		result = OS_STATUS_FAILURE;
 		if ((sc_manager = OpenSCManager(0, 0, SC_MANAGER_ALL_ACCESS)) != 0)
 		{
 			/* Open the service */
@@ -2170,13 +2170,13 @@ iot_status_t os_service_uninstall(
 			{
 				/* Delete the service. */
 				if (DeleteService(sc_service))
-					result = IOT_STATUS_SUCCESS;
+					result = OS_STATUS_SUCCESS;
 				CloseServiceHandle(sc_service);
 			}
 			else if ( GetLastError() == ERROR_INVALID_NAME ||
 				GetLastError() == ERROR_SERVICE_DOES_NOT_EXIST )
 			{
-				result = IOT_STATUS_NOT_FOUND;
+				result = OS_STATUS_NOT_FOUND;
 			}
 			CloseServiceHandle(sc_manager);
 		}
@@ -2184,18 +2184,18 @@ iot_status_t os_service_uninstall(
 	return result;
 }
 
-iot_status_t os_service_start(
+os_status_t os_service_start(
 	const char *id,
-	iot_millisecond_t timeout
+	os_millisecond_t timeout
 )
 {
-	iot_status_t result = IOT_STATUS_BAD_PARAMETER;
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	SC_HANDLE sc_manager;
 	SC_HANDLE sc_service;
 
 	if ( id != NULL && *id != '\0' )
 	{
-		result = IOT_STATUS_FAILURE;
+		result = OS_STATUS_FAILURE;
 		/* Get a handle to the SCM database. */
 		if ((sc_manager = OpenSCManager(0, 0, SC_MANAGER_ALL_ACCESS)) != 0)
 		{
@@ -2206,7 +2206,7 @@ iot_status_t os_service_start(
 				if ( StartService( sc_service, 0, NULL ) ||
 					GetLastError() ==
 						ERROR_SERVICE_ALREADY_RUNNING )
-					result = IOT_STATUS_SUCCESS;
+					result = OS_STATUS_SUCCESS;
 				CloseServiceHandle(sc_service);
 			}
 			CloseServiceHandle(sc_manager);
@@ -2215,19 +2215,19 @@ iot_status_t os_service_start(
 	return result;
 }
 
-iot_status_t os_service_stop(
+os_status_t os_service_stop(
 	const char *id,
 	const char *UNUSED(exe),
-	iot_millisecond_t timeout
+	os_millisecond_t timeout
 )
 {
-	iot_status_t result = IOT_STATUS_BAD_PARAMETER;
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	const DWORD start_time = GetTickCount();
 
 	if ( id && *id != '\0' )
 	{
 		SC_HANDLE sc_manager;
-		result = IOT_STATUS_FAILURE;
+		result = OS_STATUS_FAILURE;
 		sc_manager = OpenSCManager(
 			NULL,                    /* local computer */
 			NULL,                    /* ServicesActive database */
@@ -2247,7 +2247,7 @@ iot_status_t os_service_stop(
 				SERVICE_STATUS_PROCESS ssp;
 				DWORD bytes_needed;
 				BOOL query_succeeded;
-				iot_bool_t timeout_expired = IOT_FALSE;
+				os_bool_t timeout_expired = OS_FALSE;
 
 				ZeroMemory( &ssp,
 					sizeof( SERVICE_STATUS_PROCESS ) );
@@ -2259,7 +2259,7 @@ iot_status_t os_service_stop(
 					(LPBYTE)&ssp,
 					sizeof(SERVICE_STATUS_PROCESS),
 					&bytes_needed );
-				result = IOT_STATUS_SUCCESS;
+				result = OS_STATUS_SUCCESS;
 				if ( query_succeeded &&
 					ssp.dwCurrentState != SERVICE_STOP_PENDING &&
 					ssp.dwCurrentState != SERVICE_STOPPED )
@@ -2276,10 +2276,10 @@ iot_status_t os_service_stop(
 						SERVICE_STOP_PENDING;
 				}
 
-				while ( result == IOT_STATUS_SUCCESS &&
+				while ( result == OS_STATUS_SUCCESS &&
 					query_succeeded &&
 					ssp.dwCurrentState == SERVICE_STOP_PENDING &&
-					timeout_expired == IOT_FALSE )
+					timeout_expired == OS_FALSE )
 				{
 					DWORD wait_time;
 					/* Do not wait longer than the wait hint. A good interval is */
@@ -2304,30 +2304,30 @@ iot_status_t os_service_stop(
 
 					if ( timeout != 0u &&
 						( ( GetTickCount() - start_time ) > timeout ) )
-						timeout_expired = IOT_TRUE;
+						timeout_expired = OS_TRUE;
 				}
 
 				if ( ssp.dwCurrentState != SERVICE_STOPPED )
-					result = IOT_STATUS_FAILURE;
-				else if ( timeout_expired != IOT_FALSE )
-					result = IOT_STATUS_TIMED_OUT;
+					result = OS_STATUS_FAILURE;
+				else if ( timeout_expired != OS_FALSE )
+					result = OS_STATUS_TIMED_OUT;
 			}
 			else if ( GetLastError() == ERROR_INVALID_NAME ||
 				GetLastError() == ERROR_SERVICE_DOES_NOT_EXIST )
 			{
-				result = IOT_STATUS_NOT_FOUND;
+				result = OS_STATUS_NOT_FOUND;
 			}
 		}
 	}
 	return result;
 }
 
-iot_status_t os_service_query(
+os_status_t os_service_query(
 	const char *id,
-	iot_millisecond_t timeout
+	os_millisecond_t timeout
 )
 {
-	iot_status_t result = IOT_STATUS_BAD_PARAMETER;
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	const DWORD start_time = GetTickCount();
 
 	if ( id && *id != '\0' )
@@ -2337,7 +2337,7 @@ iot_status_t os_service_query(
 			NULL,                    /* ServicesActive database */
 			SC_MANAGER_CONNECT );    /* connect to SCM */
 
-		result = IOT_STATUS_FAILURE;
+		result = OS_STATUS_FAILURE;
 		if ( sc_manager )
 		{
 			/* Get a handle to the service. */
@@ -2350,7 +2350,7 @@ iot_status_t os_service_query(
 				SERVICE_STATUS_PROCESS ssp;
 				DWORD bytes_needed;
 				BOOL query_succeeded;
-				iot_bool_t timeout_expired = IOT_FALSE;
+				os_bool_t timeout_expired = OS_FALSE;
 
 				ZeroMemory( &ssp,
 					sizeof( SERVICE_STATUS_PROCESS ) );
@@ -2365,46 +2365,46 @@ iot_status_t os_service_query(
 
 				if ( query_succeeded )
 				{
-					result = IOT_STATUS_NOT_INITIALIZED;
+					result = OS_STATUS_NOT_INITIALIZED;
 					if ( ssp.dwCurrentState == SERVICE_RUNNING )
-						result = IOT_STATUS_SUCCESS;
+						result = OS_STATUS_SUCCESS;
 				}
 
 				if ( timeout != 0u &&
 					( ( GetTickCount() - start_time ) > timeout ) )
 				{
-					result = IOT_STATUS_TIMED_OUT;
+					result = OS_STATUS_TIMED_OUT;
 				}
 			}
 			else if ( GetLastError() == ERROR_INVALID_NAME ||
 				GetLastError() == ERROR_SERVICE_DOES_NOT_EXIST )
 			{
-				result = IOT_STATUS_NOT_FOUND;
+				result = OS_STATUS_NOT_FOUND;
 			}
 		}
 	}
 	return result;
 }
 
-iot_status_t os_service_restart(
+os_status_t os_service_restart(
 	const char *id,
 	const char *UNUSED(exe),
-	iot_millisecond_t timeout
+	os_millisecond_t timeout
 )
 {
-	iot_status_t result = IOT_STATUS_BAD_PARAMETER;
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	const DWORD start_time = GetTickCount();
 	if ( id != NULL && *id != '\0' )
 	{
 		/* check to see if the service is already running */
 		result = os_service_stop( id, NULL,
 			timeout - (GetTickCount() - start_time) );
-		os_time_sleep(1000, IOT_TRUE);
+		os_time_sleep(1000, OS_TRUE);
 
-		if (result == IOT_STATUS_SUCCESS)
+		if (result == OS_STATUS_SUCCESS)
 		{
 			SERVICE_STATUS service_status = {0};
-			iot_bool_t service_stopped = IOT_FALSE;
+			os_bool_t service_stopped = OS_FALSE;
 			int i = 0;
 			int max_retries = 10;
 
@@ -2414,18 +2414,18 @@ iot_status_t os_service_restart(
 				result = os_service_control( id,
 					SERVICE_CONTROL_INTERROGATE,
 					&service_status );
-				if (result == IOT_STATUS_SUCCESS)
+				if (result == OS_STATUS_SUCCESS)
 				{
 					if (service_status.dwCurrentState == SERVICE_STOPPED)
-						service_stopped = IOT_TRUE;
+						service_stopped = OS_TRUE;
 					else
-						os_time_sleep(1000, IOT_TRUE);
+						os_time_sleep(1000, OS_TRUE);
 				}
 				else
-					result = IOT_STATUS_FAILURE;
+					result = OS_STATUS_FAILURE;
 				i++;
 			}
-			result = IOT_STATUS_FAILURE;
+			result = OS_STATUS_FAILURE;
 			if (service_stopped)
 				result = os_service_start( id,
 					timeout - ( GetTickCount() - start_time ) );
@@ -2433,7 +2433,7 @@ iot_status_t os_service_restart(
 	}
 	return result;
 }
-#endif /* ifndef IOT_API_ONLY */
+#endif /* ifndef OS_API_ONLY */
 
 /* socket functions */
 int os_get_host_address(
@@ -2473,15 +2473,15 @@ int os_get_host_address(
 	return result;
 }
 
-iot_status_t os_socket_accept(
+os_status_t os_socket_accept(
 	const os_socket_t *socket,
 	os_socket_t *out,
-	iot_millisecond_t max_time_out )
+	os_millisecond_t max_time_out )
 {
-	iot_status_t result = IOT_STATUS_BAD_PARAMETER;
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( socket && out )
 	{
-		result = IOT_STATUS_FAILURE;
+		result = OS_STATUS_FAILURE;
 		if ( socket->fd != OS_SOCKET_INVALID )
 		{
 			int select_result = 1;
@@ -2490,16 +2490,16 @@ iot_status_t os_socket_accept(
 				struct timeval ts;
 				fd_set rfds;
 
-				ts.tv_sec = max_time_out / IOT_MILLISECONDS_IN_SECOND;
-				ts.tv_usec = ( max_time_out % IOT_MILLISECONDS_IN_SECOND ) *
-					IOT_MICROSECONDS_IN_MILLISECOND;
+				ts.tv_sec = max_time_out / OS_MILLISECONDS_IN_SECOND;
+				ts.tv_usec = ( max_time_out % OS_MILLISECONDS_IN_SECOND ) *
+					OS_MICROSECONDS_IN_MILLISECOND;
 
 				FD_ZERO( &rfds );
 				FD_SET( socket->fd, &rfds );
 				select_result = select( socket->fd + 1,
 					&rfds, NULL, NULL, &ts );
 				if ( select_result == 0 )
-					result = IOT_STATUS_TIMED_OUT;
+					result = OS_STATUS_TIMED_OUT;
 			}
 			if ( select_result > 0 )
 			{
@@ -2508,39 +2508,39 @@ iot_status_t os_socket_accept(
 				out->fd = accept( socket->fd,
 					&out->addr, &sock_len );
 				if ( out->fd != OS_SOCKET_INVALID )
-					result = IOT_STATUS_SUCCESS;
+					result = OS_STATUS_SUCCESS;
 			}
 		}
 	}
 	return result;
 }
 
-iot_status_t os_socket_bind(
+os_status_t os_socket_bind(
 	const os_socket_t *socket,
 	int queue_size
 )
 {
-	iot_status_t result = IOT_STATUS_BAD_PARAMETER;
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( socket )
 	{
-		result = IOT_STATUS_FAILURE;
+		result = OS_STATUS_FAILURE;
 		if ( socket->fd != OS_SOCKET_INVALID && bind( socket->fd,
 			&socket->addr, sizeof( struct sockaddr ) ) == 0 )
 		{
 			if ( listen( socket->fd, queue_size ) == 0 )
-				result = IOT_STATUS_SUCCESS;
+				result = OS_STATUS_SUCCESS;
 		}
 	}
 	return result;
 }
 
-iot_status_t os_socket_broadcast(
+os_status_t os_socket_broadcast(
 	const os_socket_t *socket,
 	const void *buf,
 	size_t len,
 	int ttl,
 	size_t *bytes_written,
-	iot_millisecond_t max_time_out )
+	os_millisecond_t max_time_out )
 {
 	ssize_t result = -1;
 	const int broadcast_enable = 1;
@@ -2559,13 +2559,13 @@ iot_status_t os_socket_broadcast(
 	return result;
 }
 
-iot_status_t os_socket_close(
+os_status_t os_socket_close(
 	os_socket_t *socket )
 {
-	iot_status_t result = IOT_STATUS_BAD_PARAMETER;
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( socket )
 	{
-		result = IOT_STATUS_FAILURE;
+		result = OS_STATUS_FAILURE;
 		if ( socket->fd != OS_SOCKET_INVALID )
 		{
 			/* disable send/receive on socket */
@@ -2574,32 +2574,32 @@ iot_status_t os_socket_close(
 			if ( closesocket( socket->fd ) == 0 )
 			{
 				ZeroMemory( socket, sizeof( os_socket_t ) );
-				result = IOT_STATUS_SUCCESS;
+				result = OS_STATUS_SUCCESS;
 			}
 		}
 	}
 	return result;
 }
 
-iot_status_t os_socket_connect(
+os_status_t os_socket_connect(
 	const os_socket_t *socket )
 {
-	iot_status_t result = IOT_STATUS_BAD_PARAMETER;
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( socket )
 	{
-		result = IOT_STATUS_FAILURE;
+		result = OS_STATUS_FAILURE;
 		if ( socket->fd != OS_SOCKET_INVALID &&
 			WSAConnect( socket->fd, &socket->addr,
 				sizeof( struct sockaddr ),
 				NULL, NULL, NULL, NULL ) == 0 )
-			result = IOT_STATUS_SUCCESS;
+			result = OS_STATUS_SUCCESS;
 	}
 	return result;
 }
 
-iot_status_t os_socket_initialize( void )
+os_status_t os_socket_initialize( void )
 {
-	iot_status_t result = IOT_STATUS_FAILURE;
+	os_status_t result = OS_STATUS_FAILURE;
 	WSADATA wsa_data;
 	const int err = WSAStartup( MAKEWORD( 2, 2 ), &wsa_data );
 	if ( err == 0 )
@@ -2608,21 +2608,21 @@ iot_status_t os_socket_initialize( void )
 			HIBYTE( wsa_data.wVersion ) != 2 )
 			WSACleanup();
 		else
-			result = IOT_STATUS_SUCCESS;
+			result = OS_STATUS_SUCCESS;
 	}
 	return result;
 }
 
-iot_status_t os_socket_open(
+os_status_t os_socket_open(
 	os_socket_t *out,
 	const char *address,
-	iot_uint16_t port,
+	os_uint16_t port,
 	int type,
 	int protocol,
-	iot_millisecond_t max_time_out )
+	os_millisecond_t max_time_out )
 {
-	iot_millisecond_t time_elapsed = 0u;
-	iot_status_t result = IOT_STATUS_BAD_PARAMETER;
+	os_millisecond_t time_elapsed = 0u;
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
 
 	if ( out && address && port > 0u )
 	{
@@ -2631,24 +2631,24 @@ iot_status_t os_socket_open(
 			(struct sockaddr_in *)addr_ptr;
 		struct sockaddr_in6 *const addr6 =
 			(struct sockaddr_in6 *)addr_ptr;
-		result = IOT_STATUS_FAILURE;
+		result = OS_STATUS_FAILURE;
 		memset( out, 0, sizeof( os_socket_t ) );
 		if ( inet_pton( AF_INET, address,
 			&(addr4->sin_addr) ) == 1 )
 		{
 			addr4->sin_family = AF_INET;
 			addr4->sin_port = (in_port_t)htons( port );
-			result = IOT_STATUS_SUCCESS;
+			result = OS_STATUS_SUCCESS;
 		}
 		else if ( inet_pton( AF_INET6, address,
 			&(addr6->sin6_addr) ) == 1 )
 		{
 			addr6->sin6_family = AF_INET6;
 			addr6->sin6_port = (in_port_t)htons( port );
-			result = IOT_STATUS_SUCCESS;
+			result = OS_STATUS_SUCCESS;
 		}
 
-		if ( result == IOT_STATUS_SUCCESS )
+		if ( result == OS_STATUS_SUCCESS )
 		{
 			out->type = type;
 			out->protocol = protocol;
@@ -2659,12 +2659,12 @@ iot_status_t os_socket_open(
 			{
 				struct timeval ts;
 
-				iot_millisecond_t wait_time = 2000u;
+				os_millisecond_t wait_time = 2000u;
 				if ( max_time_out > 0u && max_time_out - time_elapsed <  wait_time )
 					wait_time = max_time_out - time_elapsed;
-				ts.tv_sec = wait_time / IOT_MILLISECONDS_IN_SECOND;
-				ts.tv_usec = ( wait_time % IOT_MILLISECONDS_IN_SECOND ) *
-					IOT_MICROSECONDS_IN_MILLISECOND;
+				ts.tv_sec = wait_time / OS_MILLISECONDS_IN_SECOND;
+				ts.tv_usec = ( wait_time % OS_MILLISECONDS_IN_SECOND ) *
+					OS_MICROSECONDS_IN_MILLISECOND;
 
 				/* keep trying to obtain a socket until one if available,
 				 * this condition may be hit when running in a service, and
@@ -2676,53 +2676,53 @@ iot_status_t os_socket_open(
 			}
 
 			if ( out->fd == OS_SOCKET_INVALID )
-				result = IOT_STATUS_TIMED_OUT;
+				result = OS_STATUS_TIMED_OUT;
 		}
 	}
 	return result;
 }
 
-iot_status_t os_socket_option(
+os_status_t os_socket_option(
 	const os_socket_t *socket,
 	int level,
 	int optname,
 	const void *optval,
 	size_t optlen )
 {
-	iot_status_t result = IOT_STATUS_BAD_PARAMETER;
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( socket && socket->fd != OS_SOCKET_INVALID && optval )
 	{
-		result = IOT_STATUS_FAILURE;
+		result = OS_STATUS_FAILURE;
 		if ( setsockopt( socket->fd, level, optname,
 			(const char *)optval, optlen ) == 0 )
-			result = IOT_STATUS_SUCCESS;
+			result = OS_STATUS_SUCCESS;
 	}
 	return result;
 }
 
-iot_status_t os_socket_read(
+os_status_t os_socket_read(
 	const os_socket_t *socket,
 	void *buf,
 	size_t len,
 	size_t* bytes_read,
-	iot_millisecond_t max_time_out )
+	os_millisecond_t max_time_out )
 {
-	iot_status_t result = IOT_STATUS_BAD_PARAMETER;
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( bytes_read )
 		*bytes_read = 0u;
 	if ( socket && socket->fd != OS_SOCKET_INVALID )
 	{
 		DWORD bytes_in = 0;
-		result = IOT_STATUS_FAILURE;
+		result = OS_STATUS_FAILURE;
 		if ( max_time_out > 0u )
 		{
 			fd_set read_fds;
 			struct timeval timeout;
 
 			ZeroMemory( &timeout, sizeof( struct timeval ) );
-			timeout.tv_sec = max_time_out / IOT_MILLISECONDS_IN_SECOND;
-			timeout.tv_usec = (max_time_out % IOT_MILLISECONDS_IN_SECOND) *
-				IOT_MICROSECONDS_IN_MILLISECOND;
+			timeout.tv_sec = max_time_out / OS_MILLISECONDS_IN_SECOND;
+			timeout.tv_usec = (max_time_out % OS_MILLISECONDS_IN_SECOND) *
+				OS_MICROSECONDS_IN_MILLISECOND;
 			FD_ZERO( &read_fds );
 			FD_SET( socket->fd, &read_fds );
 			bytes_in = select( socket->fd + 1,
@@ -2730,7 +2730,7 @@ iot_status_t os_socket_read(
 		}
 
 		if ( bytes_in == 0 )
-			result = IOT_STATUS_TIMED_OUT;
+			result = OS_STATUS_TIMED_OUT;
 		else if ( bytes_in != SOCKET_ERROR )
 		{
 			bytes_in = recv( socket->fd, buf, len, 0 );
@@ -2743,12 +2743,12 @@ iot_status_t os_socket_read(
 					else
 						*bytes_read = (size_t)bytes_in;
 				}
-				result = IOT_STATUS_SUCCESS;
+				result = OS_STATUS_SUCCESS;
 			}
 			else if ( WSAGetLastError() == WSAECONNABORTED )
-				result = IOT_STATUS_TIMED_OUT;
+				result = OS_STATUS_TIMED_OUT;
 			else if ( WSAGetLastError() == WSAECONNRESET )
-				result = IOT_STATUS_TRY_AGAIN;
+				result = OS_STATUS_TRY_AGAIN;
 		}
 	}
 	return result;
@@ -2760,8 +2760,8 @@ ssize_t os_socket_receive(
 	size_t len,
 	char *src_addr,
 	size_t src_addr_len,
-	iot_uint16_t *port,
-	iot_millisecond_t max_time_out )
+	os_uint16_t *port,
+	os_millisecond_t max_time_out )
 {
 	ssize_t result = 0;
 	if ( socket && socket->fd != OS_SOCKET_INVALID && max_time_out > 0u )
@@ -2769,9 +2769,9 @@ ssize_t os_socket_receive(
 		struct timeval ts;
 		fd_set rfds;
 
-		ts.tv_sec = max_time_out / IOT_MILLISECONDS_IN_SECOND;
-		ts.tv_usec = ( max_time_out % IOT_MILLISECONDS_IN_SECOND ) *
-			IOT_MICROSECONDS_IN_MILLISECOND;
+		ts.tv_sec = max_time_out / OS_MILLISECONDS_IN_SECOND;
+		ts.tv_usec = ( max_time_out % OS_MILLISECONDS_IN_SECOND ) *
+			OS_MICROSECONDS_IN_MILLISECOND;
 
 		FD_ZERO( &rfds );
 		FD_SET( socket->fd, &rfds );
@@ -2818,8 +2818,8 @@ ssize_t os_socket_send(
 	const void *buf,
 	size_t len,
 	const char *dest_addr,
-	iot_uint16_t port,
-	iot_millisecond_t max_time_out )
+	os_uint16_t port,
+	os_millisecond_t max_time_out )
 {
 	ssize_t result = -1;
 	if( socket && socket->fd != OS_SOCKET_INVALID && dest_addr )
@@ -2866,26 +2866,26 @@ ssize_t os_socket_send(
 	return result;
 }
 
-iot_status_t os_socket_terminate( void )
+os_status_t os_socket_terminate( void )
 {
 	WSACleanup();
-	return IOT_STATUS_SUCCESS;
+	return OS_STATUS_SUCCESS;
 }
 
-iot_status_t os_socket_write(
+os_status_t os_socket_write(
 	const os_socket_t *socket,
 	const void *buf,
 	size_t len,
 	size_t *bytes_written,
-	iot_millisecond_t max_time_out )
+	os_millisecond_t max_time_out )
 {
-	iot_status_t result = IOT_STATUS_BAD_PARAMETER;
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( bytes_written )
 		*bytes_written = 0u;
 	if ( socket && socket->fd != OS_SOCKET_INVALID )
 	{
 		ssize_t retval = 0;
-		result = IOT_STATUS_FAILURE;
+		result = OS_STATUS_FAILURE;
 		if ( max_time_out > 0u )
 		{
 			DWORD tv = (DWORD)( max_time_out / 2u );
@@ -2900,7 +2900,7 @@ iot_status_t os_socket_write(
 			{
 				if ( bytes_written )
 					*bytes_written = (size_t)bytes_out;
-				result = IOT_STATUS_SUCCESS;
+				result = OS_STATUS_SUCCESS;
 			}
 			else
 			{
@@ -2908,25 +2908,25 @@ iot_status_t os_socket_write(
 				{
 					if ( bytes_written )
 						*bytes_written = len;
-					result = IOT_STATUS_SUCCESS;
+					result = OS_STATUS_SUCCESS;
 				}
 				else if ( WSAGetLastError() == WSAECONNABORTED ||
 					WSAGetLastError() == WSAETIMEDOUT )
-					result = IOT_STATUS_TIMED_OUT;
+					result = OS_STATUS_TIMED_OUT;
 			}
 		}
 	}
 	return result;
 }
 
-iot_status_t os_stream_echo_set(
-	os_file_t stream, iot_bool_t enable )
+os_status_t os_stream_echo_set(
+	os_file_t stream, os_bool_t enable )
 {
-	iot_status_t result = IOT_STATUS_BAD_PARAMETER;
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( stream )
 	{
 		int mode;
-		result = IOT_STATUS_FAILURE;
+		result = OS_STATUS_FAILURE;
 		if ( GetConsoleMode( stream, &mode ) != 0 )
 		{
 			if ( enable )
@@ -2935,7 +2935,7 @@ iot_status_t os_stream_echo_set(
 				mode &= ~ENABLE_ECHO_INPUT;
 
 			if ( SetConsoleMode( stream, mode ) != 0 )
-				result = IOT_STATUS_SUCCESS;
+				result = OS_STATUS_SUCCESS;
 		}
 	}
 	return result;
@@ -2973,10 +2973,10 @@ const char *os_system_error_string(
 	return result;
 }
 
-iot_status_t os_system_info(
+os_status_t os_system_info(
 	os_system_info_t *sys_info )
 {
-	iot_status_t result = IOT_STATUS_BAD_PARAMETER;
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( sys_info )
 	{
 		BOOL found_version = FALSE;
@@ -3094,30 +3094,30 @@ iot_status_t os_system_info(
 				cur_version->desktop,
 				OS_SYSTEM_INFO_MAX_LEN );
 
-		result = IOT_STATUS_SUCCESS;
+		result = OS_STATUS_SUCCESS;
 	}
 	return result;
 }
 
-iot_uint32_t os_system_pid( void )
+os_uint32_t os_system_pid( void )
 {
-	return (iot_uint32_t)GetCurrentProcessId();
+	return (os_uint32_t)GetCurrentProcessId();
 }
 
-iot_status_t os_system_run(
+os_status_t os_system_run(
 	const char *command,
 	int *exit_status,
 	char *out_buf[2u],
 	size_t out_len[2u],
-	iot_millisecond_t max_time_out )
+	os_millisecond_t max_time_out )
 {
 	HANDLE child_read[2u];
 	HANDLE child_write[2u];
 	size_t i;
-	iot_status_t result = IOT_STATUS_SUCCESS;
+	os_status_t result = OS_STATUS_SUCCESS;
 	SECURITY_ATTRIBUTES secure_attr;
-	iot_timestamp_t start_time;
-	iot_bool_t wait_for_return = ( ( out_buf[0] && out_len[0] > 0 ) ||
+	os_timestamp_t start_time;
+	os_bool_t wait_for_return = ( ( out_buf[0] && out_len[0] > 0 ) ||
 		( out_buf[1] && out_len[1] > 0 ) );
 
 	os_time( &start_time, NULL );
@@ -3130,13 +3130,13 @@ iot_status_t os_system_run(
 	if ( exit_status )
 		*exit_status = -1;
 
-	if ( wait_for_return != IOT_FALSE )
-		for ( i = 0u; i < 2u && result == IOT_STATUS_SUCCESS; ++i )
+	if ( wait_for_return != OS_FALSE )
+		for ( i = 0u; i < 2u && result == OS_STATUS_SUCCESS; ++i )
 			if ( ! CreatePipe( &child_read[i], &child_write[i], &secure_attr, 0 ) ||
 				! SetHandleInformation( child_read[i], HANDLE_FLAG_INHERIT, 0 ) )
-				result = IOT_STATUS_IO_ERROR;
+				result = OS_STATUS_IO_ERROR;
 
-	if ( result == IOT_STATUS_SUCCESS )
+	if ( result == OS_STATUS_SUCCESS )
 	{
 		DWORD cmd_result = -1;
 		PROCESS_INFORMATION proc_info;
@@ -3151,7 +3151,7 @@ iot_status_t os_system_run(
 		ZeroMemory( &start_info, sizeof( STARTUPINFO ) );
 		start_info.cb = sizeof( STARTUPINFO );
 
-		if ( wait_for_return != IOT_FALSE )
+		if ( wait_for_return != OS_FALSE )
 		{
 			/* in order to pipe the stdout/stderr from the new
 			 * process back to the parent process, the
@@ -3168,7 +3168,7 @@ iot_status_t os_system_run(
 			start_info.hStdInput = NULL;
 			start_info.dwFlags |= STARTF_USESTDHANDLES;
 		}
-		result = IOT_STATUS_NOT_EXECUTABLE;
+		result = OS_STATUS_NOT_EXECUTABLE;
 
 		/* add script prefix.  if the command to
 		  *be run is dos internal
@@ -3189,26 +3189,26 @@ iot_status_t os_system_run(
 		if (CreateProcess(NULL, (LPTSTR)command_with_comspec, NULL, NULL,
 			inheritHandles, DETACHED_PROCESS, NULL, NULL, &start_info, &proc_info))
 		{
-			result = IOT_STATUS_INVOKED;
-			if ( wait_for_return != IOT_FALSE )
+			result = OS_STATUS_INVOKED;
+			if ( wait_for_return != OS_FALSE )
 			{
-				iot_millisecond_t time_elapsed;
+				os_millisecond_t time_elapsed;
 				cmd_result = STILL_ACTIVE;
 				do {
 					GetExitCodeProcess( proc_info.hProcess,
 						&cmd_result );
 					os_time_elapsed( &start_time, &time_elapsed );
-					os_time_sleep( LOOP_WAIT_TIME, IOT_FALSE );
+					os_time_sleep( LOOP_WAIT_TIME, OS_FALSE );
 				} while ( cmd_result == STILL_ACTIVE &&
 					( max_time_out == 0 || time_elapsed < max_time_out ) );
 
 				if ( cmd_result == STILL_ACTIVE )
 				{
 					TerminateProcess( proc_info.hProcess, -1 );
-					result = IOT_STATUS_TIMED_OUT;
+					result = OS_STATUS_TIMED_OUT;
 				}
 				else
-					result = IOT_STATUS_SUCCESS;
+					result = OS_STATUS_SUCCESS;
 				GetExitCodeProcess( proc_info.hProcess,
 					&cmd_result );
 			}
@@ -3217,7 +3217,7 @@ iot_status_t os_system_run(
 			CloseHandle( proc_info.hThread );
 		}
 
-		if ( wait_for_return != IOT_FALSE )
+		if ( wait_for_return != OS_FALSE )
 		{
 			CloseHandle( child_write[0] );
 			CloseHandle( child_write[1] );
@@ -3241,13 +3241,13 @@ iot_status_t os_system_run(
 	return result;
 }
 
-iot_status_t os_system_shutdown(
-	iot_bool_t reboot, unsigned int delay )
+os_status_t os_system_shutdown(
+	os_bool_t reboot, unsigned int delay )
 {
 	char cmd[ PATH_MAX ];
 	char *buf[2] = { NULL, NULL };
 	size_t buf_len[2] = { 0u, 0u };
-	if ( reboot == IOT_FALSE )
+	if ( reboot == OS_FALSE )
 		os_snprintf( cmd, PATH_MAX, "%s %d", "shutdown /s /t ",
 			delay * SECONDS_IN_MINUTE );
 	else
@@ -3257,33 +3257,33 @@ iot_status_t os_system_shutdown(
 	return os_system_run( cmd, NULL, buf, buf_len, 0u );
 }
 
-#ifndef IOT_API_ONLY
-iot_bool_t os_terminal_vt100_support(
+#ifndef OS_API_ONLY
+os_bool_t os_terminal_vt100_support(
 	os_file_t stream
 )
 {
-	iot_bool_t result = IOT_FALSE;
+	os_bool_t result = OS_FALSE;
 #ifdef ENABLE_VIRTUAL_TERMINAL_PROCESSING
 	DWORD mode = 0;
 	if ( GetConsoleMode( stream, &mode ) == TRUE &&
 		( mode & ENABLE_VIRTUAL_TERMINAL_PROCESSING ) )
-		result = IOT_TRUE;
+		result = OS_TRUE;
 #endif /* ifdef ENABLE_VIRTUAL_TERMINAL_PROCESSING */
 	return result;
 }
 
-iot_status_t os_terminate_handler(
+os_status_t os_terminate_handler(
 	os_sighandler_t signal_handler )
 {
 	const BOOL add_handler = (signal_handler != NULL);
-	iot_status_t result = IOT_STATUS_FAILURE;
+	os_status_t result = OS_STATUS_FAILURE;
 
 	TERMINATE_HANDLER = signal_handler;
 	if ( SetConsoleCtrlHandler( os_on_terminate, add_handler ) )
-		result = IOT_STATUS_SUCCESS;
+		result = OS_STATUS_SUCCESS;
 	return result;
 }
-#endif /* ifndef IOT_API_ONLY */
+#endif /* ifndef OS_API_ONLY */
 
 double os_random(
 	double min,
@@ -3321,16 +3321,16 @@ double os_random(
 }
 
 /* time functions */
-iot_status_t os_time(
-	iot_timestamp_t *time_stamp,
-	iot_bool_t *up_time )
+os_status_t os_time(
+	os_timestamp_t *time_stamp,
+	os_bool_t *up_time )
 {
 /**
  * @brief Number of seconds between windows epoch (1601-01-01T00:00:00Z and
  * UNIX/Linux epoch 1970-01-01T00:00:00Z).
  */
 #define SEC_TO_UNIX_EPOCH 11644473600LL
-	iot_status_t result = IOT_STATUS_BAD_PARAMETER;
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( time_stamp )
 	{
 		SYSTEMTIME st;
@@ -3340,7 +3340,7 @@ iot_status_t os_time(
 		ULONGLONG time_calc;
 
 		GetSystemTime( &st );
-		result = IOT_STATUS_FAILURE;
+		result = OS_STATUS_FAILURE;
 		if ( SystemTimeToFileTime( &st, &ft ) )
 		{
 			time_calc = (((ULONGLONG)ft.dwHighDateTime) << 32) +
@@ -3348,25 +3348,25 @@ iot_status_t os_time(
 			/* convert from 100 ns intervals to milliseconds */
 			time_calc /= 10000;
 			time_calc -= SEC_TO_UNIX_EPOCH *
-				IOT_MILLISECONDS_IN_SECOND;
+				OS_MILLISECONDS_IN_SECOND;
 			*time_stamp = time_calc;
-			result = IOT_STATUS_SUCCESS;
+			result = OS_STATUS_SUCCESS;
 		}
 	}
 	if ( up_time )
-		*up_time = IOT_FALSE;
+		*up_time = OS_FALSE;
 	return result;
 }
 
-iot_status_t os_time_format(
+os_status_t os_time_format(
 	char *buf,
 	size_t len )
 {
-	iot_status_t result = IOT_STATUS_BAD_PARAMETER;
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( buf )
 	{
 		SYSTEMTIME st;
-		result = IOT_STATUS_FAILURE;
+		result = OS_STATUS_FAILURE;
 		ZeroMemory( buf, len );
 		GetSystemTime( &st );
 		if ( GetDateFormatA( LOCALE_SYSTEM_DEFAULT,
@@ -3376,42 +3376,42 @@ iot_status_t os_time_format(
 				0, &st, "HH':'mm':'ss",
 				buf + os_strlen( buf ),
 				len - os_strlen( buf ) ) != 0 )
-				result = IOT_STATUS_SUCCESS;
+				result = OS_STATUS_SUCCESS;
 		}
 	}
 	return result;
 }
 
-iot_status_t os_time_sleep(
-	iot_millisecond_t ms,
-	iot_bool_t allow_interrupts )
+os_status_t os_time_sleep(
+	os_millisecond_t ms,
+	os_bool_t allow_interrupts )
 {
-	iot_status_t result = IOT_STATUS_FAILURE;
-	if ( SleepEx( ms, ( allow_interrupts != IOT_FALSE ) ) == 0 )
-		result = IOT_STATUS_SUCCESS;
+	os_status_t result = OS_STATUS_FAILURE;
+	if ( SleepEx( ms, ( allow_interrupts != OS_FALSE ) ) == 0 )
+		result = OS_STATUS_SUCCESS;
 	return result;
 }
 
-iot_status_t os_time_stamp_to_datetime( os_date_time_t* date_time,
-	iot_timestamp_t time_stamp )
+os_status_t os_time_stamp_to_datetime( os_date_time_t* date_time,
+	os_timestamp_t time_stamp )
 {
-	iot_status_t result = IOT_STATUS_BAD_PARAMETER;
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if (date_time != NULL)
 	{
-		iot_timestamp_t time_stamp_copy = time_stamp;
-		iot_uint32_t years;
-		iot_uint32_t year;
-		iot_uint32_t month;
-		date_time->millisecond = time_stamp_copy % IOT_MILLISECONDS_IN_SECOND;
+		os_timestamp_t time_stamp_copy = time_stamp;
+		os_uint32_t years;
+		os_uint32_t year;
+		os_uint32_t month;
+		date_time->millisecond = time_stamp_copy % OS_MILLISECONDS_IN_SECOND;
 		time_stamp_copy /= 1000;
-		date_time->second = time_stamp_copy % IOT_SECONDS_IN_MINUTE;
-		time_stamp_copy /= IOT_SECONDS_IN_MINUTE;
-		date_time->minute = time_stamp_copy % IOT_MINUTES_IN_HOUR;
-		time_stamp_copy /= IOT_MINUTES_IN_HOUR;
-		date_time->hour = time_stamp_copy % IOT_HOURS_IN_DAY;
-		time_stamp_copy /= IOT_HOURS_IN_DAY;
+		date_time->second = time_stamp_copy % OS_SECONDS_IN_MINUTE;
+		time_stamp_copy /= OS_SECONDS_IN_MINUTE;
+		date_time->minute = time_stamp_copy % OS_MINUTES_IN_HOUR;
+		time_stamp_copy /= OS_MINUTES_IN_HOUR;
+		date_time->hour = time_stamp_copy % OS_HOURS_IN_DAY;
+		time_stamp_copy /= OS_HOURS_IN_DAY;
 
-		years = (iot_uint32_t)(time_stamp_copy / ((365 * 4) + 1) * 4);
+		years = (os_uint32_t)(time_stamp_copy / ((365 * 4) + 1) * 4);
 		time_stamp_copy %= (365 * 4) + 1;
 
 		year = 3;
@@ -3425,270 +3425,270 @@ iot_status_t os_time_stamp_to_datetime( os_date_time_t* date_time,
 		/* the beginning year for epoch time is 1970 */
 		date_time->year = years + year + 1970;
 		date_time->month = month + 1;
-		date_time->day = (iot_uint8_t)( time_stamp_copy -
+		date_time->day = (os_uint8_t)( time_stamp_copy -
 			DAYS[year][month] + 1 );
 
-		result = IOT_STATUS_SUCCESS;
+		result = OS_STATUS_SUCCESS;
 	}
 	return result;
 }
 
 /* threads & lock support */
 #ifndef NO_THREAD_SUPPORT
-iot_status_t os_thread_condition_broadcast(
+os_status_t os_thread_condition_broadcast(
 	os_thread_condition_t *cond )
 {
-	iot_status_t result = IOT_STATUS_BAD_PARAMETER;
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( cond )
 	{
 		WakeAllConditionVariable( cond );
-		result = IOT_STATUS_SUCCESS;
+		result = OS_STATUS_SUCCESS;
 	}
 	return result;
 }
 
-iot_status_t os_thread_condition_create(
+os_status_t os_thread_condition_create(
 	os_thread_condition_t *cond )
 {
-	iot_status_t result = IOT_STATUS_BAD_PARAMETER;
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( cond )
 	{
 		InitializeConditionVariable( cond );
-		result = IOT_STATUS_SUCCESS;
+		result = OS_STATUS_SUCCESS;
 	}
 	return result;
 }
 
-iot_status_t os_thread_condition_destroy(
+os_status_t os_thread_condition_destroy(
 	os_thread_condition_t *cond )
 {
-	return IOT_STATUS_SUCCESS;
+	return OS_STATUS_SUCCESS;
 }
 
-iot_status_t os_thread_condition_signal(
+os_status_t os_thread_condition_signal(
 	os_thread_condition_t *cond,
 	os_thread_mutex_t *lock )
 {
-	iot_status_t result = IOT_STATUS_BAD_PARAMETER;
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( cond && lock )
 	{
 		WakeConditionVariable( cond );
-		result = IOT_STATUS_SUCCESS;
+		result = OS_STATUS_SUCCESS;
 	}
 	return result;
 }
 
-iot_status_t os_thread_condition_timed_wait(
+os_status_t os_thread_condition_timed_wait(
 	os_thread_condition_t *cond,
 	os_thread_mutex_t *lock,
-	iot_millisecond_t max_time_out )
+	os_millisecond_t max_time_out )
 {
-	iot_status_t result = IOT_STATUS_BAD_PARAMETER;
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( cond && lock )
 	{
-		result = IOT_STATUS_FAILURE;
+		result = OS_STATUS_FAILURE;
 		if ( max_time_out > 0u )
 		{
 			if ( SleepConditionVariableCS( cond, lock, max_time_out ) > 0 )
-				result = IOT_STATUS_SUCCESS;
+				result = OS_STATUS_SUCCESS;
 			else if ( GetLastError() == ERROR_TIMEOUT )
-				result = IOT_STATUS_TIMED_OUT;
+				result = OS_STATUS_TIMED_OUT;
 		}
 		else
 			if ( SleepConditionVariableCS( cond, lock, INFINITE ) > 0 )
-				result = IOT_STATUS_SUCCESS;
+				result = OS_STATUS_SUCCESS;
 	}
 	return result;
 }
 
-iot_status_t os_thread_condition_wait(
+os_status_t os_thread_condition_wait(
 	os_thread_condition_t *cond,
 	os_thread_mutex_t *lock )
 {
 	return os_thread_condition_timed_wait( cond, lock, 0 );
 }
 
-iot_status_t os_thread_create(
+os_status_t os_thread_create(
 	os_thread_t *thread,
 	os_thread_main_t main,
 	void *arg )
 {
-	iot_status_t result = IOT_STATUS_BAD_PARAMETER;
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( thread && main )
 	{
-		result = IOT_STATUS_FAILURE;
+		result = OS_STATUS_FAILURE;
 		if ( ( *thread = CreateThread( NULL, 0, main, arg, 0, NULL ) )
 			!= NULL )
-			result = IOT_STATUS_SUCCESS;
+			result = OS_STATUS_SUCCESS;
 	}
 	return result;
 }
 
-iot_status_t os_thread_destroy(
+os_status_t os_thread_destroy(
 	os_thread_t *thread )
 {
-	iot_status_t result = IOT_STATUS_BAD_PARAMETER;
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( thread )
 	{
-		result = IOT_STATUS_FAILURE;
+		result = OS_STATUS_FAILURE;
 		if ( TerminateThread( *thread, 0 ) )
-			result = IOT_STATUS_SUCCESS;
+			result = OS_STATUS_SUCCESS;
 	}
 	return result;
 }
 
-iot_status_t os_thread_wait(
+os_status_t os_thread_wait(
 	os_thread_t *thread )
 {
-	iot_status_t result = IOT_STATUS_BAD_PARAMETER;
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( thread )
 	{
 		WaitForSingleObject( *thread, INFINITE );
-		result = IOT_STATUS_SUCCESS;
+		result = OS_STATUS_SUCCESS;
 	}
 	return result;
 }
 
-iot_status_t os_thread_mutex_create(
+os_status_t os_thread_mutex_create(
 	os_thread_mutex_t *lock )
 {
-	iot_status_t result = IOT_STATUS_BAD_PARAMETER;
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( lock )
 	{
 		InitializeCriticalSection( lock );
-		result = IOT_STATUS_SUCCESS;
+		result = OS_STATUS_SUCCESS;
 	}
 	return result;
 }
 
-iot_status_t os_thread_mutex_lock(
+os_status_t os_thread_mutex_lock(
 	os_thread_mutex_t *lock )
 {
-	iot_status_t result = IOT_STATUS_BAD_PARAMETER;
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( lock )
 	{
 		EnterCriticalSection( lock );
-		result = IOT_STATUS_SUCCESS;
+		result = OS_STATUS_SUCCESS;
 	}
 	return result;
 }
 
-iot_status_t os_thread_mutex_unlock(
+os_status_t os_thread_mutex_unlock(
 	os_thread_mutex_t *lock )
 {
-	iot_status_t result = IOT_STATUS_BAD_PARAMETER;
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( lock )
 	{
 		LeaveCriticalSection( lock );
-		result = IOT_STATUS_SUCCESS;
+		result = OS_STATUS_SUCCESS;
 	}
 	return result;
 }
 
-iot_status_t os_thread_mutex_destroy(
+os_status_t os_thread_mutex_destroy(
 	os_thread_mutex_t *lock )
 {
-	iot_status_t result = IOT_STATUS_BAD_PARAMETER;
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( lock )
 	{
 		DeleteCriticalSection( lock );
-		result = IOT_STATUS_SUCCESS;
+		result = OS_STATUS_SUCCESS;
 	}
-	return IOT_STATUS_SUCCESS;
+	return OS_STATUS_SUCCESS;
 }
 
-iot_status_t os_thread_rwlock_create(
+os_status_t os_thread_rwlock_create(
 	os_thread_rwlock_t *lock )
 {
-	iot_status_t result = IOT_STATUS_BAD_PARAMETER;
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( lock )
 	{
 		InitializeSRWLock( lock );
-		result = IOT_STATUS_SUCCESS;
+		result = OS_STATUS_SUCCESS;
 	}
 	return result;
 }
 
-iot_status_t os_thread_rwlock_read_lock(
+os_status_t os_thread_rwlock_read_lock(
 	os_thread_rwlock_t *lock )
 {
-	iot_status_t result = IOT_STATUS_BAD_PARAMETER;
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( lock )
 	{
 		AcquireSRWLockShared( lock );
-		result = IOT_STATUS_SUCCESS;
+		result = OS_STATUS_SUCCESS;
 	}
 	return result;
 }
 
-iot_status_t os_thread_rwlock_read_unlock(
+os_status_t os_thread_rwlock_read_unlock(
 	os_thread_rwlock_t *lock )
 {
-	iot_status_t result = IOT_STATUS_BAD_PARAMETER;
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( lock )
 	{
 		ReleaseSRWLockShared( lock );
-		result = IOT_STATUS_SUCCESS;
+		result = OS_STATUS_SUCCESS;
 	}
 	return result;
 }
 
-iot_status_t os_thread_rwlock_write_lock(
+os_status_t os_thread_rwlock_write_lock(
 	os_thread_rwlock_t *lock )
 {
-	iot_status_t result = IOT_STATUS_BAD_PARAMETER;
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( lock )
 	{
 		AcquireSRWLockExclusive( lock );
-		result = IOT_STATUS_SUCCESS;
+		result = OS_STATUS_SUCCESS;
 	}
 	return result;
 }
 
-iot_status_t os_thread_rwlock_write_unlock(
+os_status_t os_thread_rwlock_write_unlock(
 	os_thread_rwlock_t *lock )
 {
-	iot_status_t result = IOT_STATUS_BAD_PARAMETER;
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( lock )
 	{
 		ReleaseSRWLockExclusive( lock );
-		result = IOT_STATUS_SUCCESS;
+		result = OS_STATUS_SUCCESS;
 	}
 	return result;
 }
 
-iot_status_t os_thread_rwlock_destroy(
+os_status_t os_thread_rwlock_destroy(
 	os_thread_rwlock_t *lock )
 {
-	return IOT_STATUS_SUCCESS;
+	return OS_STATUS_SUCCESS;
 }
 
 #endif /* ifndef NO_THREAD_SUPPORT */
 
 /* uuid support */
-#ifndef IOT_API_ONLY
-iot_status_t os_uuid_generate(
+#ifndef OS_API_ONLY
+os_status_t os_uuid_generate(
 	os_uuid_t *uuid )
 {
-	iot_status_t result = IOT_STATUS_BAD_PARAMETER;
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( uuid )
 	{
-		result = IOT_STATUS_FAILURE;
+		result = OS_STATUS_FAILURE;
 		if ( UuidCreate( uuid ) == RPC_S_OK )
-			result = IOT_STATUS_SUCCESS;
+			result = OS_STATUS_SUCCESS;
 	}
 	return result;
 }
-iot_status_t os_uuid_to_string_lower(
+os_status_t os_uuid_to_string_lower(
 	os_uuid_t *uuid,
 	char *dest,
 	size_t len )
 {
-	iot_status_t result = IOT_STATUS_BAD_PARAMETER;
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( uuid && dest )
 	{
 		RPC_CSTR rpc_str = NULL;
-		result = IOT_STATUS_NO_MEMORY;
+		result = OS_STATUS_NO_MEMORY;
 		if ( len >= 37u &&
 			UuidToString( uuid, &rpc_str ) == RPC_S_OK && rpc_str )
 		{
@@ -3698,10 +3698,10 @@ iot_status_t os_uuid_to_string_lower(
 				dest[ i ] = rpc_str[ i ];
 			dest[ i ] = '\0';
 			RpcStringFree( &rpc_str );
-			result = IOT_STATUS_SUCCESS;
+			result = OS_STATUS_SUCCESS;
 		}
 	}
 	return result;
 }
-#endif /* ifndef IOT_API_ONLY */
+#endif /* ifndef OS_API_ONLY */
 
