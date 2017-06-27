@@ -990,49 +990,11 @@ char *os_strchr(
 	return strchr( s, (int)c );
 }
 
-int os_strcmp(
-	const char *s1,
-	const char *s2
-)
-{
-	return strcmp( s1, s2 );
-}
-
-size_t os_strlen(
-	const char *s )
-{
-	return strlen( s );
-}
-
-int os_strncmp(
-	const char *s1,
-	const char *s2,
-	size_t len
-)
-{
-	return strncmp( s1, s2, len );
-}
-
-char *os_strncpy(
-	char *destination,
-	const char *source,
-	size_t num )
-{
-	return strncpy( destination, source, num );
-}
-
 char *os_strpbrk(
 	const char *str1,
 	const char *str2 )
 {
 	return strpbrk( str1, str2 );
-}
-
-char *os_strrchr(
-	const char *s,
-	char c )
-{
-	return strrchr( s, (int)c );
 }
 
 char *os_strstr(
@@ -1079,14 +1041,6 @@ int os_memcmp(
 	return result;
 }
 
-void os_memcpy(
-	void *dest,
-	const void *src,
-	size_t len )
-{
-	memcpy( dest, src, len );
-}
-
 void os_memmove(
 	void *dest,
 	const void *src,
@@ -1101,13 +1055,6 @@ void os_memset(
 	size_t len )
 {
 	memset( dest, c, len );
-}
-
-void os_memzero(
-	void *dest,
-	size_t len )
-{
-	memset( dest, 0, len );
 }
 
 /* print functions */
@@ -1228,31 +1175,7 @@ size_t os_env_get(
 	return result;
 }
 
-int os_fprintf(
-	os_file_t stream,
-	const char *format,
-	... )
-{
-	int result;
-	va_list args;
-	va_start( args, format );
-	result = vfprintf( stream, format, args );
-	va_end( args );
-	return result;
-}
 #endif /* ifndef OS_API_ONLY */
-
-int os_printf(
-	const char *format,
-	... )
-{
-	int result;
-	va_list args;
-	va_start( args, format );
-	result = vprintf( format, args );
-	va_end( args );
-	return result;
-}
 
 int os_sprintf(
 	char *str,
@@ -1264,39 +1187,6 @@ int os_sprintf(
 	va_start( args, format );
 	result = vsprintf( str, format, args );
 	va_end( args );
-	return result;
-}
-
-int os_snprintf(
-	char *str,
-	size_t size,
-	const char *format,
-	... )
-{
-	int result;
-	va_list args;
-	va_start( args, format );
-	result = os_vsnprintf( str, size, format, args );
-	va_end( args );
-	return result;
-}
-int os_vfprintf(
-	os_file_t stream,
-	const char *format,
-	va_list args )
-{
-	return vfprintf( stream, format, args );
-}
-
-int os_vsnprintf(
-	char *str,
-	size_t size,
-	const char *format,
-	va_list args )
-{
-	int result = vsnprintf( str, size, format, args );
-	if ( (size_t)result >= size )
-		result = -1;
 	return result;
 }
 
@@ -1312,20 +1202,6 @@ os_bool_t os_flush( os_file_t stream )
 void *os_heap_calloc( size_t nmemb, size_t size )
 {
 	return calloc( nmemb, size );
-}
-
-void os_heap_free( void **ptr )
-{
-	if ( ptr && *ptr )
-	{
-		free( *ptr );
-		*ptr = NULL;
-	}
-}
-
-void *os_heap_malloc( size_t size )
-{
-	return malloc( size );
 }
 
 void *os_heap_realloc( void *ptr, size_t size )
@@ -2127,12 +2003,6 @@ os_status_t os_stream_echo_set(
 }
 #endif
 
-/* operating system specific */
-int os_system_error_last( void )
-{
-	return errno;
-}
-
 const char *os_system_error_string(
 	int error_number )
 {
@@ -2250,11 +2120,6 @@ os_status_t os_system_info(
 		result = OS_STATUS_SUCCESS;
 	}
 	return result;
-}
-
-os_uint32_t os_system_pid( void )
-{
-	return (os_uint32_t)getpid();
 }
 
 os_status_t os_system_run(

@@ -15,6 +15,17 @@
 
 #include "os_types.h"
 
+#include <dlfcn.h>
+#include <errno.h>
+#include <limits.h> /* for PATH_MAX */
+#include <pthread.h>
+#include <stdio.h>  /* for printf */
+#include <stdlib.h> /* for malloc */
+#include <string.h> /* for bzero, strncmp */
+#include <sys/time.h> /* for gettimeofday */
+#include <unistd.h> /* for sleep */
+#include <time.h>   /* for nanosleep */
+
 /** @brief Signature of the function to handle operating systems signals */
 typedef void (*os_sighandler_t)( int );
 
@@ -889,23 +900,6 @@ OS_API OS_SECTION char *os_strchr(
 );
 
 /**
- * @brief Compares two strings
- *
- * @param[in]      s1                  first string to compare
- * @param[in]      s2                  second string to compare
- *
- * @retval         <0                  the first non-matching character has a
- *                                     lower value in s1 than in s2
- * @retval         0                   the two strings are equal
- * @retval         >0                  the first non-matching character has a
- *                                     higher value in s1 than in s2
- */
-OS_API OS_SECTION int os_strcmp(
-	const char *s1,
-	const char *s2
-);
-
-/**
  * @brief Finds the length of the initial portion of str1 before the first occurrence
  *        of any characters that are part of str2
  *
@@ -918,17 +912,6 @@ OS_API OS_SECTION int os_strcmp(
 size_t os_strcspn(
 	const char *str1,
 	const char *str2
-);
-
-/**
- * @brief Get the length of a string
- *
- * @param[in]      s                   string to get length from
- *
- * @return         Number of characters until a terminating null character
- */
-OS_API OS_SECTION size_t os_strlen(
-	const char *s
 );
 
 /**
@@ -968,41 +951,6 @@ OS_API OS_SECTION char *os_strncat(
 	);
 
 /**
- * @brief Compares two strings up to a certain number of characters
- *
- * @param[in]      s1                  first string to compare
- * @param[in]      s2                  second string to compare
- * @param[in]      len                 maximum number of characters to compare
- *
- * @retval         <0                  the first non-matching character has a
- *                                     lower value in s1 than in s2
- * @retval         0                   the two strings are equal up to len
- *                                     characters
- * @retval         >0                  the first non-matching character has a
- *                                     higher value in s1 than in s2
- */
-OS_API OS_SECTION int os_strncmp(
-	const char *s1,
-	const char *s2,
-	size_t len
-);
-
-/**
- * @brief Copy characters from string
- *
- * @param[out]     destination         string to copy characters to
- * @param[in]      source              string to copy character from
- * @param[in]      num                 maximum number of characters to copy
- *
- * @retval         destination
- */
-OS_API OS_SECTION char *os_strncpy(
-	char *destination,
-	const char *source,
-	size_t num
-);
-
-/**
  * @brief Finds the first occurrence of some specified characters in a string
  *
  * @param[in]      str1                String to search
@@ -1015,20 +963,6 @@ OS_API OS_SECTION char *os_strncpy(
 OS_API OS_SECTION char *os_strpbrk(
 	const char *str1,
 	const char *str2
-);
-
-/**
- * @brief Locate the last occurance of a character in a string
- *
- * @param[in]      s                   string to be searched
- * @param[in]      c                   character to search for as an int
- *
- * @retval         !NULL               pointer to last occurance of c in s
- * @retval         NULL                c was not found in s
- */
-OS_API OS_SECTION char *os_strrchr(
-	const char *s,
-	char c
 );
 
 /**
@@ -1135,21 +1069,6 @@ OS_API OS_SECTION int os_memcmp(
 );
 
 /**
- * @brief Copy a block of memory
- *
- * @warning The destination and source memory block must not overlap
- *
- * @param[out]     dest                destination to write to
- * @param[in]      src                 source block of memory
- * @param[in]      len                 amount of data to copy
- */
-OS_API OS_SECTION void os_memcpy(
-	void *dest,
-	const void *src,
-	size_t len
-);
-
-/**
  * @brief Moves a block of memory
  *
  * @param[out]     dest                destination to write to
@@ -1172,17 +1091,6 @@ OS_API OS_SECTION void os_memmove(
 OS_API OS_SECTION void os_memset(
 	void *dest,
 	int c,
-	size_t len
-);
-
-/**
- * @brief Zeroizes block of memory
- *
- * @param[out]     dest                destination to write to
- * @param[in]      len                 amount of data to zeroize
- */
-OS_API OS_SECTION void os_memzero(
-	void *dest,
 	size_t len
 );
 
@@ -1231,40 +1139,7 @@ OS_API OS_SECTION size_t os_env_get(
 	size_t len
 );
 
-/**
- * @brief Writes output to an open file stream
- *
- * @param[in]      stream              stream to write to
- * @param[in]      format              string format
- * @param[in]      ...                 items to replace based on @p format
- *
- * @return the number of characters printed including the null-terminator
- *
- * @see os_printf
- * @see os_sprintf
- * @see os_vfprintf
- */
-OS_API OS_SECTION int os_fprintf(
-	os_file_t stream,
-	const char *format,
-	...
-) __attribute__((format(printf,2,3)));
 #endif /* ifndef OS_API_ONLY */
-/**
- * @brief Writes output to standard out
- *
- * @param[in]      format              string format
- * @param[in]      ...                 items to replace based on @p format
- *
- * @return the number of characters printed including the null-terminator
- *
- * @see os_fprintf
- * @see os_sprintf
- */
-OS_API OS_SECTION int os_printf(
-	const char *format,
-	...
-) __attribute__((format(printf,1,2)));
 /**
  * @brief Writes output to a string
  *
@@ -1284,65 +1159,6 @@ OS_API OS_SECTION int os_sprintf(
 	const char *format,
 	...
 ) __attribute__((format(printf,2,3)));
-/**
- * @brief Writes output to a string with a maximum size
- *
- * @param[out]     str                 string to output to
- * @param[in]      size                maximum size of buffer
- * @param[in]      format              string format
- * @param[in]      ...                 items to replace based on @p format
- *
- * @return the number of characters printed including the null-terminator,
- *         if the output is truncated then the return value -1
- *
- * @see os_sprintf
- * @see os_vsnprintf
- */
-OS_API OS_SECTION int os_snprintf(
-	char *str,
-	size_t size,
-	const char *format,
-	...
-) __attribute__((format(printf,3,4)));
-/**
- * @brief Writes output to an open file stream using a va_list
- *
- * @param[in]      stream              stream to write to
- * @param[in]      format              string format
- * @param[in]      args                variable containing values for @p format
- *
- * @return the number of characters printed including the null-terminator
- *
- * @see os_fprintf
- * @see os_printf
- * @see os_sprintf
- * @see os_vsnprintf
- */
-OS_API OS_SECTION int os_vfprintf(
-	os_file_t stream,
-	const char *format,
-	va_list args
-) __attribute__((format(printf,2,0)));
-/**
- * @brief Writes output to a string with a maximum size using a va_list
- *
- * @param[out]     str                 string to output to
- * @param[in]      size                maximum size of buffer
- * @param[in]      format              string format
- * @param[in]      args                variable containing values for @p format
- *
- * @return the number of characters printed including the null-terminator,
- *         if the output is truncated then the return value -1
- *
- * @see os_snprintf
- * @see os_vfprintf
- */
-OS_API OS_SECTION int os_vsnprintf(
-	char *str,
-	size_t size,
-	const char *format,
-	va_list args
-) __attribute__((format(printf,3,0)));
 
 /**
  * @brief Flushes a stream to ensure a buffer is transmitted
@@ -1378,38 +1194,6 @@ OS_API OS_SECTION os_bool_t os_flush(
  */
 OS_API OS_SECTION void *os_heap_calloc(
 	size_t nmemb,
-	size_t size
-) __attribute__((malloc));
-
-/**
- * @brief Frees previously allocated memory specified
- *
- * @param[in]      ptr            pointer of pointer to the allocated memory to free
- *
- * @see os_heap_calloc
- * @see os_heap_malloc
- * @see os_heap_realloc
- */
-OS_API OS_SECTION void os_heap_free(
-	void **ptr
-);
-
-/**
- * @brief Allocates the specified amount of bytes
- *
- * The memory returned is NOT initialized. Any allocated memory should be
- * deallocated with the corrosponding @p os_heap_free command
- *
- * @param[in]      size                amount of memory to allocate
- *
- * @retval NULL    the specified amount of memory is not continously available
- * @retval !NULL   a pointer to the allocated memory
- *
- * @see os_heap_calloc
- * @see os_heap_free
- * @see os_heap_realloc
- */
-OS_API OS_SECTION void *os_heap_malloc(
 	size_t size
 ) __attribute__((malloc));
 
@@ -1885,13 +1669,6 @@ OS_API OS_SECTION os_status_t os_stream_echo_set(
 	os_bool_t enable );
 
 /* operating system information */
-/**
- * @brief Returns the operating system code for the last system error
- *        encountered
- *
- * @return The operating system code for the last error encountered
- */
-OS_API OS_SECTION int os_system_error_last( void );
 
 /**
  * @brief Returns the error message for indicated operating system error number
@@ -1918,13 +1695,6 @@ OS_API OS_SECTION const char *os_system_error_string(
 OS_API OS_SECTION os_status_t os_system_info(
 	os_system_info_t *sys_info
 );
-
-/**
- * @brief Returns the process id of the current process
- *
- * @return the process id of the current process
- */
-OS_API OS_SECTION os_uint32_t os_system_pid( void );
 
 /**
  * @brief run an executable on the operating system
@@ -2397,6 +2167,275 @@ OS_API OS_SECTION os_status_t os_uuid_to_string_lower(
 );
 
 #endif /* ifndef OS_API_ONLY */
+
+#ifdef _WIN32
+
+/**
+ * @brief Frees previously allocated memory specified
+ *
+ * @param[in]      ptr            pointer of pointer to the allocated memory to free
+ *
+ * @see os_heap_calloc
+ * @see os_heap_malloc
+ * @see os_heap_realloc
+ */
+OS_API OS_SECTION void os_heap_free(
+	void **ptr
+);
+
+/**
+ * @brief Allocates the specified amount of bytes
+ *
+ * The memory returned is NOT initialized. Any allocated memory should be
+ * deallocated with the corrosponding @p os_heap_free command
+ *
+ * @param[in]      size                amount of memory to allocate
+ *
+ * @retval NULL    the specified amount of memory is not continously available
+ * @retval !NULL   a pointer to the allocated memory
+ *
+ * @see os_heap_calloc
+ * @see os_heap_free
+ * @see os_heap_realloc
+ */
+OS_API OS_SECTION void *os_heap_malloc(
+	size_t size
+) __attribute__((malloc));
+
+/**
+ * @brief Copy a block of memory
+ *
+ * @warning The destination and source memory block must not overlap
+ *
+ * @param[out]     dest                destination to write to
+ * @param[in]      src                 source block of memory
+ * @param[in]      len                 amount of data to copy
+ */
+OS_API OS_SECTION void os_memcpy(
+	void *dest,
+	const void *src,
+	size_t len
+);
+
+/**
+ * @brief Zeroizes block of memory
+ *
+ * @param[out]     dest                destination to write to
+ * @param[in]      len                 amount of data to zeroize
+ */
+OS_API OS_SECTION void os_memzero(
+	void *dest,
+	size_t len
+);
+
+/**
+ * @brief Compares two strings
+ *
+ * @param[in]      s1                  first string to compare
+ * @param[in]      s2                  second string to compare
+ *
+ * @retval         <0                  the first non-matching character has a
+ *                                     lower value in s1 than in s2
+ * @retval         0                   the two strings are equal
+ * @retval         >0                  the first non-matching character has a
+ *                                     higher value in s1 than in s2
+ */
+OS_API OS_SECTION int os_strcmp(
+	const char *s1,
+	const char *s2
+);
+
+/**
+ * @brief Get the length of a string
+ *
+ * @param[in]      s                   string to get length from
+ *
+ * @return         Number of characters until a terminating null character
+ */
+OS_API OS_SECTION size_t os_strlen(
+	const char *s
+);
+
+/**
+ * @brief Compares two strings up to a certain number of characters
+ *
+ * @param[in]      s1                  first string to compare
+ * @param[in]      s2                  second string to compare
+ * @param[in]      len                 maximum number of characters to compare
+ *
+ * @retval         <0                  the first non-matching character has a
+ *                                     lower value in s1 than in s2
+ * @retval         0                   the two strings are equal up to len
+ *                                     characters
+ * @retval         >0                  the first non-matching character has a
+ *                                     higher value in s1 than in s2
+ */
+OS_API OS_SECTION int os_strncmp(
+	const char *s1,
+	const char *s2,
+	size_t len
+);
+
+/**
+ * @brief Copy characters from string
+ *
+ * @param[out]     destination         string to copy characters to
+ * @param[in]      source              string to copy character from
+ * @param[in]      num                 maximum number of characters to copy
+ *
+ * @retval         destination
+ */
+OS_API OS_SECTION char *os_strncpy(
+	char *destination,
+	const char *source,
+	size_t num
+);
+
+/**
+ * @brief Locate the last occurance of a character in a string
+ *
+ * @param[in]      s                   string to be searched
+ * @param[in]      c                   character to search for as an int
+ *
+ * @retval         !NULL               pointer to last occurance of c in s
+ * @retval         NULL                c was not found in s
+ */
+OS_API OS_SECTION char *os_strrchr(
+	const char *s,
+	char c
+);
+
+/**
+ * @brief Returns the process id of the current process
+ *
+ * @return the process id of the current process
+ */
+OS_API OS_SECTION os_uint32_t os_system_pid( void );
+
+/**
+ * @brief Returns the operating system code for the last system error
+ *        encountered
+ *
+ * @return The operating system code for the last error encountered
+ */
+OS_API OS_SECTION int os_system_error_last( void );
+
+/**
+ * @brief Writes output to an open file stream
+ *
+ * @param[in]      stream              stream to write to
+ * @param[in]      format              string format
+ * @param[in]      ...                 items to replace based on @p format
+ *
+ * @return the number of characters printed including the null-terminator
+ *
+ * @see os_printf
+ * @see os_sprintf
+ * @see os_vfprintf
+ */
+OS_API OS_SECTION int os_fprintf(
+	os_file_t stream,
+	const char *format,
+	...
+) __attribute__((format(printf,2,3)));
+/**
+ * @brief Writes output to standard out
+ *
+ * @param[in]      format              string format
+ * @param[in]      ...                 items to replace based on @p format
+ *
+ * @return the number of characters printed including the null-terminator
+ *
+ * @see os_fprintf
+ * @see os_sprintf
+ */
+OS_API OS_SECTION int os_printf(
+	const char *format,
+	...
+) __attribute__((format(printf,1,2)));
+/**
+ * @brief Writes output to a string with a maximum size
+ *
+ * @param[out]     str                 string to output to
+ * @param[in]      size                maximum size of buffer
+ * @param[in]      format              string format
+ * @param[in]      ...                 items to replace based on @p format
+ *
+ * @return the number of characters printed including the null-terminator,
+ *         if the output is truncated then the return value -1
+ *
+ * @see os_sprintf
+ * @see os_vsnprintf
+ */
+OS_API OS_SECTION int os_snprintf(
+	char *str,
+	size_t size,
+	const char *format,
+	...
+) __attribute__((format(printf,3,4)));
+/**
+ * @brief Writes output to an open file stream using a va_list
+ *
+ * @param[in]      stream              stream to write to
+ * @param[in]      format              string format
+ * @param[in]      args                variable containing values for @p format
+ *
+ * @return the number of characters printed including the null-terminator
+ *
+ * @see os_fprintf
+ * @see os_printf
+ * @see os_sprintf
+ * @see os_vsnprintf
+ */
+OS_API OS_SECTION int os_vfprintf(
+	os_file_t stream,
+	const char *format,
+	va_list args
+) __attribute__((format(printf,2,0)));
+/**
+ * @brief Writes output to a string with a maximum size using a va_list
+ *
+ * @param[out]     str                 string to output to
+ * @param[in]      size                maximum size of buffer
+ * @param[in]      format              string format
+ * @param[in]      args                variable containing values for @p format
+ *
+ * @return the number of characters printed including the null-terminator,
+ *         if the output is truncated then the return value -1
+ *
+ * @see os_snprintf
+ * @see os_vfprintf
+ */
+OS_API OS_SECTION int os_vsnprintf(
+	char *str,
+	size_t size,
+	const char *format,
+	va_list args
+) __attribute__((format(printf,3,0)));
+
+#else /* posix */
+
+#define os_free                        free
+#define os_free_null(x)                { if ( *x ) free( *x ); *x = NULL; }
+#define os_malloc                      malloc
+#define os_memcpy                      memcpy
+#define os_memzero                     bzero
+#define os_strcmp                      strcmp
+#define os_strlen                      strlen
+#define os_strncmp                     strncmp
+#define os_strncpy                     strncpy
+#define os_strrchr                     strrchr
+
+#define os_system_pid                  getpid
+#define os_system_error_last           errno
+//#define os_system_error_string         strerror
+
+#define os_fprintf                     fprintf
+#define os_printf                      printf
+#define os_snprintf                    snprintf
+#define os_vfprintf                    vfprintf
+
+#endif /* ifdef _WIN32 */
 
 #ifdef __cplusplus
 }

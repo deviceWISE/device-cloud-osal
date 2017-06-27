@@ -167,6 +167,8 @@ typedef FILE *os_file_t;
 	typedef pthread_rwlock_t os_thread_rwlock_t;
 #endif
 
+#define os_vsnprintf                   vsnprintf
+
 #endif /* ifndef OS_API_ONLY */
 
 #endif /* ifndef OS_POSIX_H */
