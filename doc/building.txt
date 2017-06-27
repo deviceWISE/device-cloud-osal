@@ -1,11 +1,13 @@
 ~~ Manually Building with GCC ~~
 
-Build objects:
+1. Build objects:
 gcc -c -fpic -Wall -Werror os.c os/os_posix.c -D_GNU_SOURCE=1 -l dl -l pthread -l uuid
 
-Create SharedObject library:
+2. Create SharedObject library:
 gcc --shared -o osal.so *.o
 
 ~~ Building with CMake ~~
 
-Not functional yet.
+1. Create a build folder and cd into it
+2. Run `cmake ..`
+3. Run `make`
