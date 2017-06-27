@@ -385,7 +385,6 @@ const char *os_directory_get_temp_dir( char * dest, size_t size )
 	return result;
 }
 
-#ifndef OS_API_ONLY
 /* character testing support */
 os_bool_t os_char_isalnum(
 	char c )
@@ -426,10 +425,8 @@ char os_char_toupper(
 	CharUpperA( str );
 	return str[0u];
 }
-#endif /* ifndef OS_API_ONLY */
 
 /* file & directory support */
-#ifndef OS_API_ONLY
 os_status_t os_directory_create(
 		const char *path,
 		os_millisecond_t timeout )
@@ -1073,8 +1070,6 @@ os_status_t os_library_close(
 	return result;
 }
 
-#endif /* ifndef OS_API_ONLY */
-
 int os_atoi( const char *str )
 {
 	int result = 0;
@@ -1354,7 +1349,6 @@ int os_printf(
 	return result;
 }
 
-#ifndef OS_API_ONLY
 size_t os_env_expand(
 	char *src,
 	size_t len )
@@ -1403,7 +1397,6 @@ int os_fprintf(
 	va_end( args );
 	return result;
 }
-#endif /* ifdnef OS_API_ONLY */
 
 int os_sprintf(
 	char *str,
@@ -1549,7 +1542,6 @@ void *os_heap_realloc( void *ptr, size_t size )
 	return result;
 }
 
-#ifndef OS_API_ONLY
 BOOL WINAPI os_on_terminate( DWORD ctrl_type )
 {
 	BOOL result = FALSE;
@@ -2384,7 +2376,6 @@ os_status_t os_service_restart(
 	}
 	return result;
 }
-#endif /* ifndef OS_API_ONLY */
 
 /* socket functions */
 int os_get_host_address(
@@ -3204,7 +3195,6 @@ os_status_t os_system_shutdown(
 	return os_system_run( cmd, NULL, buf, buf_len, 0u );
 }
 
-#ifndef OS_API_ONLY
 os_bool_t os_terminal_vt100_support(
 	os_file_t stream
 )
@@ -3230,7 +3220,6 @@ os_status_t os_terminate_handler(
 		result = OS_STATUS_SUCCESS;
 	return result;
 }
-#endif /* ifndef OS_API_ONLY */
 
 double os_random(
 	double min,
@@ -3613,7 +3602,6 @@ os_status_t os_thread_rwlock_destroy(
 #endif /* ifndef NO_THREAD_SUPPORT */
 
 /* uuid support */
-#ifndef OS_API_ONLY
 os_status_t os_uuid_generate(
 	os_uuid_t *uuid )
 {
@@ -3650,5 +3638,4 @@ os_status_t os_uuid_to_string_lower(
 	}
 	return result;
 }
-#endif /* ifndef OS_API_ONLY */
 

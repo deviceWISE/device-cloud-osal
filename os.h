@@ -241,7 +241,6 @@ OS_API OS_SECTION os_status_t os_adapters_release(
 );
 
 /* character testing support */
-#ifndef OS_API_ONLY
 /**
  * @brief Checks whether @p c is an alphabetical or numerical character
  *
@@ -315,10 +314,7 @@ OS_API OS_SECTION char *os_string_toupper(
 	const char *in,
 	size_t len
 );
-#endif /* ifndef OS_API_ONLY */
 
-/* file & directory support */
-#ifndef OS_API_ONLY
 
 /** @brief flag indicating read operations */
 #define OS_READ         0x01
@@ -771,7 +767,6 @@ OS_API OS_SECTION os_status_t os_make_path(
 	size_t len,
 	...
 );
-#endif /* ifndef OS_API_ONLY */
 
 /* string functions */
 /**
@@ -984,7 +979,6 @@ OS_API OS_SECTION int os_memcmp(
 );
 
 /* print functions */
-#ifndef OS_API_ONLY
 /**
  * @brief Extracts any environment variables in the source string
  *
@@ -1028,7 +1022,6 @@ OS_API OS_SECTION size_t os_env_get(
 	size_t len
 );
 
-#endif /* ifndef OS_API_ONLY */
 /**
  * @brief Writes output to a string
  *
@@ -1061,7 +1054,6 @@ OS_API OS_SECTION os_bool_t os_flush(
 	os_file_t stream
 );
 
-#ifndef OS_API_ONLY
 /**
  * @brief Determines if a given path is an absolute path
  *
@@ -1261,7 +1253,6 @@ OS_API OS_SECTION os_status_t os_service_query(
 	const char *id,
 	os_millisecond_t max_time_out
 );
-#endif /* ifndef OS_API_ONLY */
 
 /* socket functions */
 /**
@@ -1575,7 +1566,6 @@ OS_API OS_SECTION os_status_t os_system_shutdown(
 	os_bool_t reboot, unsigned int delay
 );
 
-#ifndef OS_API_ONLY
 /**
  * @brief tests the provided steram to determine if it supports vt-100
  *        terminal codes
@@ -1602,7 +1592,6 @@ OS_API OS_SECTION os_bool_t os_terminal_vt100_support(
 OS_API OS_SECTION os_status_t os_terminate_handler(
 	os_sighandler_t signal_handler
 );
-#endif /* ifndef OS_API_ONLY */
 
 /* time functions */
 /**
@@ -1972,7 +1961,6 @@ OS_API OS_SECTION os_status_t os_thread_wait(
 #endif /* ifndef NO_THREAD_SUPPORT */
 
 /* uuid support */
-#ifndef OS_API_ONLY
 /**
  * @brief Generates a universally unique identifier
  *
@@ -2003,7 +1991,6 @@ OS_API OS_SECTION os_status_t os_uuid_to_string_lower(
 	size_t len
 );
 
-#endif /* ifndef OS_API_ONLY */
 
 #ifdef _WIN32
 

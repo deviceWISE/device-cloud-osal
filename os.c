@@ -74,7 +74,6 @@ os_status_t os_time_remaining(
 	return result;
 }
 
-#ifndef OS_API_ONLY
 char *os_string_tolower(
 	char *out,
 	const char *in,
@@ -272,5 +271,4 @@ int os_strncasecmp(
 	}
 	return result;
 }
-#endif /* ifndef OS_API_ONLY */
 

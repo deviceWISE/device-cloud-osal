@@ -24,11 +24,9 @@
 #include <Winsock2.h>
 #include <wincrypt.h>
 
-#ifndef OS_API_ONLY
-#	include <rpc.h>        /* for uuid functions */
+#include <rpc.h>        /* for uuid functions */
 	/** @brief Universally unique id type */
 	typedef struct _GUID os_uuid_t;
-#endif /* ifndef OS_API_ONLY */
 #pragma warning( pop )
 
 /* Define missing signals on Windows */
@@ -116,10 +114,9 @@ typedef HANDLE os_file_t;
 #define OS_STDOUT        GetStdHandle( STD_OUTPUT_HANDLE )
 
 #pragma warning( push, 1 )
-#ifndef OS_API_ONLY
-#	include <iphlpapi.h>
-#	include <strsafe.h>
-#	include <ws2tcpip.h>
+#include <iphlpapi.h>
+#include <strsafe.h>
+#include <ws2tcpip.h>
 #pragma warning( pop )
 	/**
 	 * @def PATH_MAX
@@ -182,7 +179,6 @@ typedef HANDLE os_file_t;
 	 * @brief Thread read/write lock
 	 */
 	typedef SRWLOCK os_thread_rwlock_t;
-#endif /* ifndef OS_API_ONLY */
 
 #endif /* ifndef OS_WIN32_H */
 

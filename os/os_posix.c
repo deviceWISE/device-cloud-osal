@@ -238,7 +238,6 @@ os_status_t os_adapters_release(
 	return result;
 }
 
-#ifndef OS_API_ONLY
 /* character testing support */
 os_bool_t os_char_isalnum(
 	char c )
@@ -269,10 +268,8 @@ char os_char_toupper(
 {
 	return (char)toupper( c );
 }
-#endif /* ifndef OS_API_ONLY */
 
 /* file & directory support */
-#ifndef OS_API_ONLY
 os_status_t os_directory_create(
 		const char *path,
 		os_millisecond_t timeout )
@@ -940,7 +937,6 @@ iot_lib_handle_t os_library_open(
 	return dlopen( path, RTLD_LAZY );
 }
 #endif /* ifndef _WRS_KERNEL */
-#endif /* ifndef OS_API_ONLY */
 
 int os_atoi( const char *str )
 {
@@ -967,7 +963,6 @@ int os_memcmp(
 }
 
 /* print functions */
-#ifndef OS_API_ONLY
 size_t os_env_expand(
 	char *src,
 	size_t len )
@@ -1084,7 +1079,6 @@ size_t os_env_get(
 	return result;
 }
 
-#endif /* ifndef OS_API_ONLY */
 
 int os_sprintf(
 	char *str,
@@ -1109,7 +1103,6 @@ os_bool_t os_flush( os_file_t stream )
 
 /* memory functions */
 
-#ifndef OS_API_ONLY
 os_bool_t os_path_is_absolute( const char *path )
 {
 	os_bool_t result = OS_FALSE;
@@ -1426,7 +1419,6 @@ os_status_t os_service_restart(
 		result = OS_STATUS_FAILURE;
 	return result;
 }
-#endif /* ifndef OS_API_ONLY */
 
 /* socket functions */
 int os_get_host_address(
@@ -2159,7 +2151,6 @@ os_status_t os_system_shutdown(
 }
 
 
-#ifndef OS_API_ONLY
 os_bool_t os_terminal_vt100_support(
 	os_file_t stream
 )
@@ -2199,7 +2190,6 @@ os_status_t os_terminate_handler(
 
 	return OS_STATUS_SUCCESS;
 }
-#endif /* ifndef OS_API_ONLY */
 
 #ifdef _WRS_KERNEL
 static __thread int rand_init = 0;
@@ -2574,7 +2564,6 @@ os_status_t os_thread_rwlock_destroy(
 
 #ifndef _WRS_KERNEL
 /* uuid support */
-#ifndef OS_API_ONLY
 os_status_t os_uuid_generate(
 	os_uuid_t *uuid )
 {
@@ -2604,5 +2593,4 @@ os_status_t os_uuid_to_string_lower(
 	}
 	return result;
 }
-#endif /* ifndef OS_API_ONLY */
 #endif /* _WRS_KERNEL */

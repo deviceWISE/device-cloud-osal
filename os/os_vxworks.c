@@ -62,7 +62,6 @@ os_status_t os_library_close(
 	return OS_STATUS_FAILURE;
 }
 
-#ifndef OS_API_ONLY
 void *os_library_find(
 	iot_lib_handle_t lib,
 	const char *function )
@@ -86,8 +85,6 @@ os_status_t os_process_cleanup( void )
 {
 	return 0;
 }
-
-#endif /* OS_API_ONLY */
 
 os_status_t os_file_chown(
 	const char *path,
@@ -255,7 +252,6 @@ os_status_t os_system_run(
 }
 
 /* uuid support */
-#ifndef OS_API_ONLY
 os_status_t os_uuid_generate(
 	os_uuid_t *uuid )
 {
@@ -287,8 +283,7 @@ os_status_t os_uuid_to_string_lower(
 			result = OS_STATUS_SUCCESS;
 	}
 	return result;
-    }
-#endif /* ifndef OS_API_ONLY */
+}
 
 os_uint32_t os_system_pid( void )
 {

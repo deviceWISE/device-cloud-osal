@@ -24,12 +24,10 @@
 #include <sys/utsname.h> /* for struct utsname */
 #endif
 
-#ifndef OS_API_ONLY
-#   ifndef _WRS_KERNEL
+#ifndef _WRS_KERNEL
 #	include <uuid/uuid.h>   /* for libuuid functions + uuid_t */
-#   endif
-#	define os_uuid_t uuid_t
-#endif /* ifndef OS_API_ONLY */
+#endif
+#define os_uuid_t uuid_t
 
 #ifndef _WRS_KERNEL
 /** @brief Maximum length of a host name on POSIX systems */
@@ -98,7 +96,6 @@ typedef FILE *os_file_t;
  */
 #define OS_STDOUT        stdout
 
-#ifndef OS_API_ONLY
 #	include <arpa/inet.h>  /* for inet_ntoa, inet_htons */
 #	include <dirent.h>     /* for DIR*, opendir, closedir */
 #	include <fcntl.h>      /* for open, O_WRONLY, O_CREAT, O_EXCL, S_IRUSR,
@@ -168,8 +165,6 @@ typedef FILE *os_file_t;
 #endif
 
 #define os_vsnprintf                   vsnprintf
-
-#endif /* ifndef OS_API_ONLY */
 
 #endif /* ifndef OS_POSIX_H */
 
