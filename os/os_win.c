@@ -1073,19 +1073,6 @@ os_status_t os_library_close(
 	return result;
 }
 
-void *os_library_find(
-	iot_lib_handle_t lib,
-	const char *function )
-{
-	return GetProcAddress( lib, function );
-}
-
-iot_lib_handle_t os_library_open(
-	const char *path )
-{
-	return LoadLibrary( path );
-}
-
 #endif /* ifndef OS_API_ONLY */
 
 int os_atoi( const char *str )
@@ -1353,37 +1340,6 @@ int os_memcmp(
 	return result;
 }
 
-void os_memcpy(
-	void *dest,
-	const void *src,
-	size_t len )
-{
-	CopyMemory( dest, src, len );
-}
-
-void os_memmove(
-	void *dest,
-	const void *src,
-	size_t len )
-{
-	MoveMemory( dest, src, len );
-}
-
-void os_memset(
-	void *dest,
-	int c,
-	size_t len )
-{
-	FillMemory( dest, len, c );
-}
-
-void os_memzero(
-	void *dest,
-	size_t len )
-{
-	ZeroMemory( dest, len );
-}
-
 /* print functions */
 int os_printf(
 	const char *format,
@@ -1569,11 +1525,6 @@ os_bool_t os_flush( os_file_t stream )
 }
 
 /* memory functions */
-void *os_heap_calloc( size_t nmemb, size_t size )
-{
-	return HeapAlloc( GetProcessHeap(), 0, nmemb * size );
-}
-
 void os_heap_free( void **ptr )
 {
 	if ( ptr && *ptr )
@@ -2942,10 +2893,6 @@ os_status_t os_stream_echo_set(
 }
 
 /* operating system specific */
-int os_system_error_last( void )
-{
-	return (int)GetLastError();
-}
 
 const char *os_system_error_string(
 	int error_number )

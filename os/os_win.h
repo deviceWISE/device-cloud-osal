@@ -27,7 +27,7 @@
 #ifndef OS_API_ONLY
 #	include <rpc.h>        /* for uuid functions */
 	/** @brief Universally unique id type */
-	typedef struct _GUID os__uuid_t;
+	typedef struct _GUID os_uuid_t;
 #endif /* ifndef OS_API_ONLY */
 #pragma warning( pop )
 
@@ -67,17 +67,17 @@ typedef u_short in_port_t;
 #define OS_FILE_LINE_BREAK         "\r\n"
 /**
  * @brief Seek from start of file
- * @see os__file_fseek
+ * @see os_file_fseek
  */
 #define OS_FILE_SEEK_START         FILE_BEGIN
 /**
  * @brief Seek from current position in file
- * @see os__file_fseek
+ * @see os_file_fseek
  */
 #define OS_FILE_SEEK_CURRENT       FILE_CURRENT
 /**
  * @brief Seek from end of file
- * @see os__file_fseek
+ * @see os_file_fseek
  */
 #define OS_FILE_SEEK_END           FILE_END
 
@@ -97,7 +97,7 @@ typedef u_short in_port_t;
 /**
  * @brief Handle to an open file
  */
-typedef HANDLE os__file_t;
+typedef HANDLE os_file_t;
 /**
  * @brief Defines type for invalid file handle
  */
@@ -132,7 +132,7 @@ typedef HANDLE os__file_t;
 	/**
 	 * @brief Structure holding internal adapter list
 	 */
-	typedef struct os__adapters
+	typedef struct os_adapters
 	{
 		/** @brief Current adapter */
 		IP_ADAPTER_ADDRESSES *adapter_current;
@@ -140,7 +140,7 @@ typedef HANDLE os__file_t;
 		IP_ADAPTER_ADDRESSES *adapter_first;
 		/** @brief Current unicast address */
 		IP_ADAPTER_UNICAST_ADDRESS *current;
-	} os__adapters_t;
+	} os_adapters_t;
 
 	/**
 	 * @brief Directory seperator character
@@ -149,7 +149,7 @@ typedef HANDLE os__file_t;
 	/**
 	 * @brief Structure holding directory list information
 	 */
-	typedef struct os__dir
+	typedef struct os_dir
 	{
 		/** @brief Handle to the open directory */
 		HANDLE dir;
@@ -159,7 +159,7 @@ typedef HANDLE os__file_t;
 		WIN32_FIND_DATA wfd;
 		/** @brief Path to the directory */
 		char path[PATH_MAX];
-	} os__dir_t;
+	} os_dir_t;
 
 	/**
 	 * @brief Handle to an open dynamically-linked library
@@ -169,19 +169,19 @@ typedef HANDLE os__file_t;
 	/**
 	 * @brief Handle to a thread
 	 */
-	typedef HANDLE os__thread_t;
+	typedef HANDLE os_thread_t;
 	/**
 	 * @brief Thread condition lock
 	 */
-	typedef CONDITION_VARIABLE os__thread_condition_t;
+	typedef CONDITION_VARIABLE os_thread_condition_t;
 	/**
 	 * @brief Thread mutually exclusive (mutex) lock
 	 */
-	typedef CRITICAL_SECTION os__thread_mutex_t;
+	typedef CRITICAL_SECTION os_thread_mutex_t;
 	/**
 	 * @brief Thread read/write lock
 	 */
-	typedef SRWLOCK os__thread_rwlock_t;
+	typedef SRWLOCK os_thread_rwlock_t;
 #endif /* ifndef OS_API_ONLY */
 
 #endif /* ifndef OS_WIN32_H */

@@ -15,17 +15,6 @@
 
 #include "os_types.h"
 
-#include <dlfcn.h>
-#include <errno.h>
-#include <limits.h> /* for PATH_MAX */
-#include <pthread.h>
-#include <stdio.h>  /* for printf */
-#include <stdlib.h> /* for malloc */
-#include <string.h> /* for bzero, strncmp */
-#include <sys/time.h> /* for gettimeofday */
-#include <unistd.h> /* for sleep */
-#include <time.h>   /* for nanosleep */
-
 /** @brief Signature of the function to handle operating systems signals */
 typedef void (*os_sighandler_t)( int );
 
@@ -602,63 +591,6 @@ OS_API OS_SECTION os_bool_t os_file_exists(
 );
 
 /**
- * @brief Read bytes from a file into a char array
- *
- * @note Stops when encountering max read, EOF, or null terminator
- *
- * @param[out]     str                 Pointer to array to write to
- * @param[in]      size                Max number of bytes to read
- * @param[in,out]  stream              Pointer file to read from
- *
- * @retval         !NULL               char array written to
- * @retval         NULL                encountered EOF or error
- *
- * @see os_file_fputs
- */
-OS_API OS_SECTION char *os_file_fgets(
-	char *str,
-	size_t size,
-	os_file_t stream
-);
-
-/**
- * @brief Write bytes from an array into a file stream
- *
- * @note Stops writing when encountering a null terminator
- * @note Does not write the null terminator to the stream
- *
- * @param[in]      str                 Pointer to array to write from
- * @param[in,out]  stream              Pointer to file to write to
- *
- * @return         Number of bytes written
- *
- * @see os_file_fgets
- */
-OS_API OS_SECTION size_t os_file_fputs(
-	char *str,
-	os_file_t stream
-);
-
-/**
- * @brief Read bytes from a file into an array
- *
- * @note Stops when encountering max read, EOF, or null terminator
- *
- * @param[in,out]  ptr                 Pointer to array to write to
- * @param[in]      size                Size of each item to read
- * @param[in]      nmemb               Number of items to read
- * @param[in,out]  stream              Pointer to file to read from
- *
- * @return         Number of items read
- */
-OS_API OS_SECTION size_t os_file_fread(
-	void *ptr,
-	size_t size,
-	size_t nmemb,
-	os_file_t stream
-);
-
-/**
  * @brief Move the current position in an file stream
  *
  * @param[in,out]  stream              stream to pointer of
@@ -688,23 +620,6 @@ OS_API OS_SECTION os_status_t os_file_fseek(
  */
 OS_API OS_SECTION os_status_t os_file_fsync(
 	const char *file_path
-);
-
-/**
- * @brief Write bytes from an array into a file stream
- *
- * @param[in]      ptr                 Pointer to array to write from
- * @param[in]      size                Size of each item to be written
- * @param[in]      nmemb               Number of items to be written
- * @param[in,out]  stream              Pointer to file to write to
- *
- * @return         Number of items written
- */
-OS_API OS_SECTION size_t os_file_fwrite(
-	const void *ptr,
-	size_t size,
-	size_t nmemb,
-	os_file_t stream
 );
 
 /**
@@ -1068,32 +983,6 @@ OS_API OS_SECTION int os_memcmp(
 	size_t num
 );
 
-/**
- * @brief Moves a block of memory
- *
- * @param[out]     dest                destination to write to
- * @param[in]      src                 source block of memory
- * @param[in]      len                 amount of data to move
- */
-OS_API OS_SECTION void os_memmove(
-	void *dest,
-	const void *src,
-	size_t len
-);
-
-/**
- * @brief Sets a block of memory to a specific byte
- *
- * @param[out]     dest                destination to write to
- * @param[in]      c                   byte to set
- * @param[in]      len                 amount of data to set
- */
-OS_API OS_SECTION void os_memset(
-	void *dest,
-	int c,
-	size_t len
-);
-
 /* print functions */
 #ifndef OS_API_ONLY
 /**
@@ -1171,58 +1060,6 @@ OS_API OS_SECTION int os_sprintf(
 OS_API OS_SECTION os_bool_t os_flush(
 	os_file_t stream
 );
-
-/* memory functions */
-/**
- * @brief Allocates memory for an array of elements
- *
- * The memory returned is NOT initialized. Any allocated memory should be
- * deallocated with the corrosponding @p os_heap_free command
- *
- * @note Specifying either 0 elements or elements with a size of 0 may return a
- *       valid memory pointer (that can be later freed) or NULL
- *
- * @param[in]      nmemb               number of elements to allocate memory for
- * @param[in]      size                size of each element in bytes
- *
- * @retval NULL    the specified amount of memory is not continously available
- * @retval !NULL   a pointer to the allocated memory
- *
- * @see os_heap_free
- * @see os_heap_malloc
- * @see os_heap_realloc
- */
-OS_API OS_SECTION void *os_heap_calloc(
-	size_t nmemb,
-	size_t size
-) __attribute__((malloc));
-
-/**
- * @brief Change the size of an allocated memory block
- *
- * The contents of the previously allocated memory will be unchanged in the
- * range from the start up to the minimum of the old and new sizes.  If hte new
- * size is larger than the old size the added memory will not be initialized.
- *
- * @param[in]      ptr                 pointer to the previously allocated
- *                                     block, if ptr is NULL the call is
- *                                     equivilant to os_heap_malloc(size).
- *                                     This value must be a value returned by an
- *                                     earlier call to os_heap_calloc,
- *                                     os_heap_malloc or os_heap_realloc
- * @param[in]      size                new size for the allocated block
- *
- * @retval NULL    the specified amount of memory is not continously available
- * @retval !NULL   a pointer to the allocated memory
- *
- * @see os_heap_calloc
- * @see os_heap_free
- * @see os_heap_malloc
- */
-OS_API OS_SECTION void *os_heap_realloc(
-	void *ptr,
-	size_t size
-) __attribute__((malloc));
 
 #ifndef OS_API_ONLY
 /**
@@ -2203,32 +2040,6 @@ OS_API OS_SECTION void *os_heap_malloc(
 ) __attribute__((malloc));
 
 /**
- * @brief Copy a block of memory
- *
- * @warning The destination and source memory block must not overlap
- *
- * @param[out]     dest                destination to write to
- * @param[in]      src                 source block of memory
- * @param[in]      len                 amount of data to copy
- */
-OS_API OS_SECTION void os_memcpy(
-	void *dest,
-	const void *src,
-	size_t len
-);
-
-/**
- * @brief Zeroizes block of memory
- *
- * @param[out]     dest                destination to write to
- * @param[in]      len                 amount of data to zeroize
- */
-OS_API OS_SECTION void os_memzero(
-	void *dest,
-	size_t len
-);
-
-/**
  * @brief Compares two strings
  *
  * @param[in]      s1                  first string to compare
@@ -2311,14 +2122,6 @@ OS_API OS_SECTION char *os_strrchr(
  * @return the process id of the current process
  */
 OS_API OS_SECTION os_uint32_t os_system_pid( void );
-
-/**
- * @brief Returns the operating system code for the last system error
- *        encountered
- *
- * @return The operating system code for the last error encountered
- */
-OS_API OS_SECTION int os_system_error_last( void );
 
 /**
  * @brief Writes output to an open file stream
@@ -2413,8 +2216,133 @@ OS_API OS_SECTION int os_vsnprintf(
 	va_list args
 ) __attribute__((format(printf,3,0)));
 
+/**
+ * @brief Read bytes from a file into a char array
+ *
+ * @note Stops when encountering max read, EOF, or null terminator
+ *
+ * @param[out]     str                 Pointer to array to write to
+ * @param[in]      size                Max number of bytes to read
+ * @param[in,out]  stream              Pointer file to read from
+ *
+ * @retval         !NULL               char array written to
+ * @retval         NULL                encountered EOF or error
+ *
+ * @see os_file_fputs
+ */
+OS_API OS_SECTION char *os_file_fgets(
+	char *str,
+	size_t size,
+	os_file_t stream
+);
+
+/**
+ * @brief Write bytes from an array into a file stream
+ *
+ * @note Stops writing when encountering a null terminator
+ * @note Does not write the null terminator to the stream
+ *
+ * @param[in]      str                 Pointer to array to write from
+ * @param[in,out]  stream              Pointer to file to write to
+ *
+ * @return         Number of bytes written
+ *
+ * @see os_file_fgets
+ */
+OS_API OS_SECTION size_t os_file_fputs(
+	char *str,
+	os_file_t stream
+);
+
+/**
+ * @brief Read bytes from a file into an array
+ *
+ * @note Stops when encountering max read, EOF, or null terminator
+ *
+ * @param[in,out]  ptr                 Pointer to array to write to
+ * @param[in]      size                Size of each item to read
+ * @param[in]      nmemb               Number of items to read
+ * @param[in,out]  stream              Pointer to file to read from
+ *
+ * @return         Number of items read
+ */
+OS_API OS_SECTION size_t os_file_fread(
+	void *ptr,
+	size_t size,
+	size_t nmemb,
+	os_file_t stream
+);
+
+/**
+ * @brief Write bytes from an array into a file stream
+ *
+ * @param[in]      ptr                 Pointer to array to write from
+ * @param[in]      size                Size of each item to be written
+ * @param[in]      nmemb               Number of items to be written
+ * @param[in,out]  stream              Pointer to file to write to
+ *
+ * @return         Number of items written
+ */
+OS_API OS_SECTION size_t os_file_fwrite(
+	const void *ptr,
+	size_t size,
+	size_t nmemb,
+	os_file_t stream
+);
+
+/* memory functions */
+/**
+ * @brief Change the size of an allocated memory block
+ *
+ * The contents of the previously allocated memory will be unchanged in the
+ * range from the start up to the minimum of the old and new sizes.  If hte new
+ * size is larger than the old size the added memory will not be initialized.
+ *
+ * @param[in]      ptr                 pointer to the previously allocated
+ *                                     block, if ptr is NULL the call is
+ *                                     equivilant to os_heap_malloc(size).
+ *                                     This value must be a value returned by an
+ *                                     earlier call to os_heap_calloc,
+ *                                     os_heap_malloc or os_heap_realloc
+ * @param[in]      size                new size for the allocated block
+ *
+ * @retval NULL    the specified amount of memory is not continously available
+ * @retval !NULL   a pointer to the allocated memory
+ *
+ * @see os_heap_calloc
+ * @see os_heap_free
+ * @see os_heap_malloc
+ */
+OS_API OS_SECTION void *os_heap_realloc(
+	void *ptr,
+	size_t size
+) __attribute__((malloc));
+
+/* Use built-ins where possible */
+#define os_library_find                GetProcAddress
+#define os_library_open                LoadLibrary
+#define os_memcpy                      CopyMemory
+#define os_memmove                     MoveMemory
+#define os_memset( ptr, c, size )      FillMemory( ptr, size, c )
+#define os_memzero                     ZeroMemory
+#define os_heap_calloc( nmemb, size )  HeapAlloc( GetProcessHeap(), 0, nmemb * size )
+#define os_system_error_last           (int)GetLastError()
+
 #else /* posix */
 
+/* includes for #defined functions */
+#include <dlfcn.h>
+#include <errno.h>
+#include <limits.h> /* for PATH_MAX */
+#include <pthread.h>
+#include <stdio.h>  /* for printf */
+#include <stdlib.h> /* for malloc */
+#include <string.h> /* for bzero, strncmp */
+#include <sys/time.h> /* for gettimeofday */
+#include <unistd.h> /* for sleep */
+#include <time.h>   /* for nanosleep */
+
+/* Use built-ins where possible */
 #define os_free                        free
 #define os_free_null(x)                { if ( *x ) free( *x ); *x = NULL; }
 #define os_malloc                      malloc
@@ -2434,6 +2362,21 @@ OS_API OS_SECTION int os_vsnprintf(
 #define os_printf                      printf
 #define os_snprintf                    snprintf
 #define os_vfprintf                    vfprintf
+
+#define os_file_fgets                  fgets
+#define os_file_fputs                  fputs
+#define os_file_fread                  fread
+#define os_file_fwrite                 fwrite
+#define os_strchr                      strchr
+#define os_strpbrk                     strpbrk
+#define os_strstr                      strstr
+#define os_strtod                      strtod
+#define os_strtol                      strtol
+#define os_strtoul                     strtoul
+#define os_memmove                     memmove
+#define os_memset                      memset
+#define os_heap_calloc                 calloc
+#define os_heap_realloc                realloc
 
 #endif /* ifdef _WIN32 */
 

@@ -129,19 +129,19 @@ typedef uint64_t                                 os_timestamp_t;
 #	define OS_API
 #else /* ifdef OS_STATIC */
 #	if defined _WIN32 || defined __CYGWIN__
-#		if iot_EXPORTS
+#		if osal_EXPORTS
 #			ifdef __GNUC__
 #				define OS_API __attribute__((dllexport))
 #			else
 #				define OS_API __declspec(dllexport)
 #			endif
-#		else /* if iot_EXPORTS */
+#		else /* if osal_EXPORTS */
 #			ifdef __GNUC__
 #				define OS_API __attribute__((dllimport))
 #			else
 #				define OS_API __declspec(dllimport)
 #			endif
-#		endif /* if iot_EXPORTS */
+#		endif /* if osal_EXPORTS */
 #	else /* if defined _WIN32 || defined __CYGWIN__ */
 #		if __GNUC__ >= 4
 #			define OS_API __attribute__((visibility("default")))
@@ -161,5 +161,8 @@ typedef uint64_t                                 os_timestamp_t;
 #	define  __attribute__(x) /* gcc specific */
 #	define UNUSED(x) x
 #endif /* ifdef __GNUC__ */
+
+/** @brief Maximum name length (128 = Matches AWS name) */
+#define OS_NAME_MAX_LEN               128u
 
 #endif /* ifndef OS_TYPES_H */

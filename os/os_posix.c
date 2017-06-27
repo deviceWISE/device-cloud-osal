@@ -735,30 +735,6 @@ os_bool_t os_file_exists(
 	return result;
 }
 
-char *os_file_fgets(
-	char *str,
-	size_t size,
-	os_file_t stream )
-{
-	return fgets( str, (int)size, stream );
-}
-
-size_t os_file_fputs(
-	char *str,
-	os_file_t stream )
-{
-	return (size_t)fputs( str, stream );
-}
-
-size_t os_file_fread(
-	void *ptr,
-	size_t size,
-	size_t nmemb,
-	os_file_t stream )
-{
-	return fread( ptr, size, nmemb, stream );
-}
-
 os_status_t os_file_fseek(
 	os_file_t stream,
 	long offset,
@@ -802,15 +778,6 @@ os_status_t os_file_fsync( const char *file_path )
 	}
 #endif
 	return result;
-}
-
-size_t os_file_fwrite(
-	const void *ptr,
-	size_t size,
-	size_t nmemb,
-	os_file_t stream )
-{
-	return fwrite( ptr, size, nmemb, stream );
 }
 
 os_uint64_t os_file_get_size(
@@ -983,48 +950,6 @@ int os_atoi( const char *str )
 	return result;
 }
 
-char *os_strchr(
-	const char *s,
-	char c )
-{
-	return strchr( s, (int)c );
-}
-
-char *os_strpbrk(
-	const char *str1,
-	const char *str2 )
-{
-	return strpbrk( str1, str2 );
-}
-
-char *os_strstr(
-	const char *str1,
-	const char *str2 )
-{
-	return strstr( str1, str2 );
-}
-
-double os_strtod(
-	const char *str,
-	char **endptr )
-{
-	return strtod( str, endptr );
-}
-
-long os_strtol(
-	const char *str,
-	char **endptr )
-{
-	return strtol( str, endptr, 10 );
-}
-
-unsigned long os_strtoul(
-	const char *str,
-	char **endptr )
-{
-	return strtoul( str, endptr, 10 );
-}
-
 /* memory functions */
 int os_memcmp(
 	const void *ptr1,
@@ -1039,22 +964,6 @@ int os_memcmp(
 	else
 		result = 1;
 	return result;
-}
-
-void os_memmove(
-	void *dest,
-	const void *src,
-	size_t len )
-{
-	memmove( dest, src, len );
-}
-
-void os_memset(
-	void *dest,
-	int c,
-	size_t len )
-{
-	memset( dest, c, len );
 }
 
 /* print functions */
@@ -1199,15 +1108,6 @@ os_bool_t os_flush( os_file_t stream )
 }
 
 /* memory functions */
-void *os_heap_calloc( size_t nmemb, size_t size )
-{
-	return calloc( nmemb, size );
-}
-
-void *os_heap_realloc( void *ptr, size_t size )
-{
-	return realloc( ptr, size );
-}
 
 #ifndef OS_API_ONLY
 os_bool_t os_path_is_absolute( const char *path )
