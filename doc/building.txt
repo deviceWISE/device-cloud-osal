@@ -20,5 +20,7 @@
 *Windows*
  1. Create a build folder and cd into it
  2. Run `cmake ..`
- 3. Open the newly generated `Project.sln` in Visual Studio
- 4. Run the Build action on the `BUILD ALL` component
+ 3. Run Visual Studio as Administrator
+ 4. Open the newly generated `OSAL.sln`
+ 5. Run the Build action on the `BUILD ALL` component
+ 6. Run the Build action on the `INSTALL` component

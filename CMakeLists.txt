@@ -7,6 +7,8 @@
 # herein.  All rights not licensed by Wind River are reserved by Wind River.
 #
 
+### Functions ###
+
 # get header file full path
 function( get_full_path OUT_VAR )
 	set( SRCS )
@@ -20,11 +22,16 @@ function( get_full_path OUT_VAR )
 	set( ${OUT_VAR} ${SRCS} PARENT_SCOPE )
 endfunction( get_full_path OUT_VAR )
 
+### General Build Config ###
 set( CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/build-sys" "${CMAKE_MODULE_PATH}" )
+set( CMAKE_PROJECT_NAME "OSAL" )
+project( ${CMAKE_PROJECT_NAME} )
 
 include( BuildSupport )
 include( DefineCompilerFlags )
 
+
+### Build Library ###
 set( TARGET "osal" )
 
 add_subdirectory( "os" )
@@ -64,9 +71,16 @@ endif()
 include_directories( SYSTEM ${API_INCS} )
 target_link_libraries( ${TARGET} ${API_LIBS} )
 
+set( LIB_COMPONENT "api" )
+if ( WIN32 )
+	set( LIB_COMPONENT "libs" )
+endif( WIN32 )
+
 install( TARGETS ${TARGET}
 	RUNTIME DESTINATION "${INSTALL_BIN_DIR}" COMPONENT api
 	ARCHIVE DESTINATION "${INSTALL_LIB_DIR}" COMPONENT libs
 	LIBRARY DESTINATION "${INSTALL_LIB_DIR}" COMPONENT ${LIB_COMPONENT}
 	PUBLIC_HEADER DESTINATION "${INSTALL_INCLUDE_DIR}" COMPONENT headers
 )
+
+install( FILES ${C_HDRS} DESTINATION "${INSTALL_INCLUDE_DIR}" COMPONENT headers )
