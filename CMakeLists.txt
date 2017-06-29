@@ -27,16 +27,33 @@ set( CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/build-sys" "${CMAKE_MODULE_PATH}" )
 set( CMAKE_PROJECT_NAME "OSAL" )
 project( ${CMAKE_PROJECT_NAME} )
 
+set( OSAL_LIB_VER 0.0.1 )
+
 include( BuildSupport )
 include( DefineCompilerFlags )
 
+
+### CPack Config ###
+set( CPACK_PACKAGE_NAME ${CMAKE_PROJECT_NAME} )
+set( CPACK_PACKAGE_VERSION ${OSAL_LIB_VER})
+set( CPACK_PACKAGE_DESCRIPTION_SUMMARY "Operating System Abstraction Library" )
+
+if ( WIN32 )
+
+else()
+	set( CPACK_GENERATOR "DEB" )
+	set( CPACK_DEBIAN_PACKAGE_MAINTAINER "bwiebe" )
+	set( CPACK_DEBIAN_PACKAGE_DEPENDS    "libuuid1, sudo, libc6" )
+endif()
+
+include( CPack )
 
 ### Build Library ###
 set( TARGET "osal" )
 
 add_subdirectory( "os" )
 
-set( C_HDRS "os.h" ${C_HDRS} )
+set( C_HDRS "os.h" "os_types.h" ${C_HDRS} )
 set( C_SRCS "os.c" ${C_SRCS} )
 
 get_full_path( C_HDRS ${C_HDRS} )
