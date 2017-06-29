@@ -60,34 +60,34 @@ typedef enum os_status
 #define OS_TRUE                                 (os_bool_t)(1 == 1)
 
 /**
- * @defgroup os_types List of basic IoT types
+ * @defgroup os_types List of basic OS types
  * @{
  */
-/** @brief IoT boolean (true or false) */
+/** @brief OS boolean (true or false) */
 typedef int                                      os_bool_t;
-/** @brief IoT 32-bit floating-point */
+/** @brief OS 32-bit floating-point */
 typedef float                                    os_float32_t;
-/** @brief IoT 64-bit floating-point */
+/** @brief OS 64-bit floating-point */
 typedef double                                   os_float64_t;
-/** @brief IoT 8-bit signed integer */
+/** @brief OS 8-bit signed integer */
 typedef int8_t                                   os_int8_t;
-/** @brief IoT 16-bit signed integer */
+/** @brief OS 16-bit signed integer */
 typedef int16_t                                  os_int16_t;
-/** @brief IoT 32-bit signed integer */
+/** @brief OS 32-bit signed integer */
 typedef int32_t                                  os_int32_t;
-/** @brief IoT 64-bit signed integer */
+/** @brief OS 64-bit signed integer */
 typedef int64_t                                  os_int64_t;
-/** @brief IoT 8-bit unsigned integer */
+/** @brief OS 8-bit unsigned integer */
 typedef uint8_t                                  os_uint8_t;
-/** @brief IoT 16-bit unsigned integer */
+/** @brief OS 16-bit unsigned integer */
 typedef uint16_t                                 os_uint16_t;
-/** @brief IoT 32-bit unsigned integer */
+/** @brief OS 32-bit unsigned integer */
 typedef uint32_t                                 os_uint32_t;
-/** @brief IoT 64-bit unsigned integer */
+/** @brief OS 64-bit unsigned integer */
 typedef uint64_t                                 os_uint64_t;
-/** @brief IoT time interval in milliseconds */
+/** @brief OS time interval in milliseconds */
 typedef uint32_t                                 os_millisecond_t;
-/** @brief IoT time stamp in milliseconds */
+/** @brief OS time stamp in milliseconds */
 typedef uint64_t                                 os_timestamp_t;
 
 /**

@@ -54,6 +54,8 @@ typedef struct
 #include "os/os_win.h"
 #elif defined ( _WRS_KERNEL )
 #include "os/os_vxworks.h"
+#elif defined ( __ANDROID__ )
+#include "os/os_android.h"
 #elif defined( __unix__ )
 #include "os/os_posix.h"
 #else

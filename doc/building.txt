@@ -22,5 +22,4 @@
  2. Run `cmake ..`
  3. Run Visual Studio as Administrator
  4. Open the newly generated `OSAL.sln`
- 5. Run the Build action on the `BUILD ALL` component
- 6. Run the Build action on the `INSTALL` component
+ 5. Run the Build action on the `INSTALL` component

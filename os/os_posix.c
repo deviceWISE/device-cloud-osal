@@ -41,15 +41,6 @@
 #	endif
 #endif
 
-#if defined(__ANDROID__)
-#	define COMMAND_PREFIX           ""
-#	define SERVICE_SHUTDOWN_CMD	"svc power shutdown"
-#	define SERVICE_START_CMD	"start %s"
-#	define SERVICE_STATUS_CMD	"ps | grep %s"
-#	define SERVICE_STOP_CMD		"stop %s"
-#	define SERVICE_REBOOT_CMD	"svc power reboot \"rebooting\""
-#	define OTA_DUP_PATH		"/data/local/tmp"
-#else
 #	define COMMAND_PREFIX           "sudo "
 #	define SERVICE_SHUTDOWN_CMD	"/sbin/shutdown -h "
 #	define SERVICE_START_CMD	"systemctl start %s"
@@ -57,7 +48,6 @@
 #	define SERVICE_STOP_CMD		"systemctl stop %s"
 #	define SERVICE_REBOOT_CMD	"/sbin/shutdown -r "
 #	define OTA_DUP_PATH		"/tmp"
-#endif
 
 #ifdef _WRS_KERNEL
 typedef u_short in_port_t;
@@ -1321,7 +1311,7 @@ os_status_t os_service_restart(
 	os_status_t result;
 	int exit_status;
 	char service_cmd[ 256u ];
-#	ifndef __ANDROID__
+	
 	char buf[1u] = "\0";
 	char *out_buf[2u] = { buf, buf };
 	size_t out_len[2u] = { 1u, 1u };
@@ -1330,79 +1320,7 @@ os_status_t os_service_restart(
 	service_cmd[ 255u ] = '\0';
 	result = os_system_run( service_cmd, &exit_status,
 		out_buf, out_len, timeout );
-#	else /* __ANDROID */
-#define COMMAND_OUTPUT_MAX_LEN   128u
-	char stdout_buf[COMMAND_OUTPUT_MAX_LEN] = "\0";
-	char stderr_buf[COMMAND_OUTPUT_MAX_LEN] = "\0";
-	char *out_buf[2u] = { stdout_buf, stderr_buf };
-	size_t out_len[2u] = { COMMAND_OUTPUT_MAX_LEN, COMMAND_OUTPUT_MAX_LEN };
 
-	if ( !exe )
-		exe = id;
-
-	snprintf( service_cmd, 255u, "ps | grep %s", exe );
-	service_cmd[ 255u ] = '\0';
-	result = os_system_run( service_cmd, &exit_status,
-		out_buf, out_len, timeout );
-	if ( result == OS_STATUS_SUCCESS )
-	{
-		if ( exit_status != 0 )
-		{
-			snprintf( service_cmd, 255u, "start %s", id );
-			service_cmd[ 255u ] = '\0';
-			result = os_system_run( service_cmd, &exit_status,
-				out_buf, out_len, timeout );
-		}
-		else
-		{
-			os_bool_t first_space_found = OS_FALSE;
-			os_bool_t pid_found = OS_FALSE;
-			size_t i = 0u;
-			char *pid = NULL;
-			while ( pid_found == OS_FALSE &&
-				i < COMMAND_OUTPUT_MAX_LEN )
-			{
-				/* search for the first space in stdout */
-				if ( first_space_found == OS_FALSE &&
-					stdout_buf[i] == ' ' )
-					first_space_found = OS_TRUE;
-
-				if ( first_space_found == OS_TRUE )
-				{
-					if ( pid == NULL &&
-						stdout_buf[i] >= '0' &&
-						stdout_buf[i] <= '9' )
-						pid = &stdout_buf[i];
-
-					if ( pid != NULL &&
-						stdout_buf[i] == ' ' )
-					{
-						stdout_buf[i] = '\0';
-						pid_found = OS_TRUE;
-					}
-				}
-				++i;
-			}
-
-			if ( pid_found == OS_FALSE )
-			{
-				/* service is not found */
-				result = OS_STATUS_NOT_FOUND;
-			}
-			else
-			{
-				/* kill the current process
-				 * let the system start it again
-				 */
-				snprintf( service_cmd, 255u, "kill -9 %s", pid );
-				service_cmd[ 255u ] = '\0';
-				result = os_system_run(
-					service_cmd, &exit_status,
-					out_buf, out_len, timeout );
-			}
-		}
-	}
-#	endif
 	if ( result == OS_STATUS_SUCCESS && exit_status != 0 )
 		result = OS_STATUS_FAILURE;
 	return result;
