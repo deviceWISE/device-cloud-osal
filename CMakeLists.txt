@@ -53,7 +53,7 @@ set( TARGET "osal" )
 
 add_subdirectory( "os" )
 
-set( C_HDRS "os.h" "os_types.h" ${C_HDRS} )
+set( C_HDRS "os.h" ${C_HDRS} )
 set( C_SRCS "os.c" ${C_SRCS} )
 
 get_full_path( C_HDRS ${C_HDRS} )
