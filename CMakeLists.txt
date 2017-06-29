@@ -43,7 +43,7 @@ if ( WIN32 )
 else()
 	set( CPACK_GENERATOR "DEB" )
 	set( CPACK_DEBIAN_PACKAGE_MAINTAINER "bwiebe" )
-	set( CPACK_DEBIAN_PACKAGE_DEPENDS    "libuuid1, sudo, libc6" )
+	set( CPACK_DEBIAN_PACKAGE_DEPENDS    "libuuid1, uuid-dev, sudo, libc6" )
 endif()
 
 include( CPack )
