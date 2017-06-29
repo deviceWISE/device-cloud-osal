@@ -34,12 +34,12 @@ os_status_t os_system_info(
 	{
 		memset( sys_info, 0, sizeof( struct os_system_info ) );
 
-	/*
-	* Populate reasonable values, knowing this is on
-	* VxWorks, provided by Wind River Systems.
-	*/
+		/*
+		* Populate reasonable values, knowing this is on
+		* VxWorks, provided by Wind River Systems.
+		*/
 
-	strncpy( sys_info->vendor_name, "Wind River Systems", OS_SYSTEM_INFO_MAX_LEN );
+		strncpy( sys_info->vendor_name, "Wind River Systems", OS_SYSTEM_INFO_MAX_LEN );
 		strncpy( sys_info->system_name, "VxWorks", OS_SYSTEM_INFO_MAX_LEN );
 		strncpy( sys_info->system_version, runtimeVersion, OS_SYSTEM_INFO_MAX_LEN );
 		strncpy( sys_info->system_release, _WRS_CONFIG_CORE_KERNEL_VERSION, OS_SYSTEM_INFO_MAX_LEN );

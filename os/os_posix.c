@@ -924,18 +924,6 @@ os_status_t os_library_close(
 	return result;
 }
 
-void *os_library_find(
-	iot_lib_handle_t lib,
-	const char *function )
-{
-	return dlsym( lib, function );
-}
-
-iot_lib_handle_t os_library_open(
-	const char *path )
-{
-	return dlopen( path, RTLD_LAZY );
-}
 #endif /* ifndef _WRS_KERNEL */
 
 int os_atoi( const char *str )

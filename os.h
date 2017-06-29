@@ -717,36 +717,6 @@ OS_API OS_SECTION char os_key_wait( void );
 OS_API OS_SECTION os_status_t os_library_close(
 	iot_lib_handle_t lib
 );
-/**
- * @brief Finds a function within an open runtime library
- *
- * @param[in]      lib                 open library handle
- * @param[in]      function            function to find
- *
- * @retval NULL    no matching function found (or an error occurred)
- * @retval !NULL   a pointer to the matching function
- *
- * @see os_library_close
- * @see os_library_open
- */
-OS_API OS_SECTION void *os_library_find(
-	iot_lib_handle_t lib,
-	const char *function
-);
-/**
- * @brief Opens a runtime library
- *
- * @param[in]      path                library to open
- *
- * @retval OS_STATUS_FAILURE          on failure
- * @retval OS_STATUS_SUCCESS          on success
- *
- * @see os_library_close
- * @see os_library_find
- */
-OS_API OS_SECTION iot_lib_handle_t os_library_open(
-	const char *path
-);
 #endif /* ifndef _WRS_KERNEL */
 
 /**
@@ -2306,7 +2276,7 @@ OS_API OS_SECTION void *os_heap_realloc(
 ) __attribute__((malloc));
 
 /* Use built-ins where possible */
-#define os_library_find(module, name)          GetProcAddress(module, name)
+#define os_library_find(lib, func)             GetProcAddress(module, name)
 #define os_library_open(name)                  LoadLibrary(name)
 #define os_memcpy(dst, src, num)               CopyMemory(dst, src, num); dst
 #define os_memmove(dst, src, num)               MoveMemory(dst, src, num); dst
@@ -2343,7 +2313,6 @@ OS_API OS_SECTION void *os_heap_realloc(
      
 #define os_system_pid()                        (os_uint32_t)getpid()
 #define os_system_error_last()                 errno
-//#define os_system_error_string                 strerror
      
 #define os_fprintf(file, fmt, ...)             fprintf(file, fmt, ##__VA_ARGS__)
 #define os_printf(fmt, ...)                    printf(fmt, ##__VA_ARGS__)
@@ -2364,6 +2333,9 @@ OS_API OS_SECTION void *os_heap_realloc(
 #define os_memset(ptr, val, num)               memset(ptr, val, num)
 #define os_heap_calloc(num, size)              calloc(num, size)
 #define os_heap_realloc(ptr, size)             realloc(ptr, size)
+
+#define os_library_open(name)                  dlopen(name, 0)
+#define os_library_find(lib, func)             dlsym(lib, func)
 
 #endif /* ifdef _WIN32 */
 

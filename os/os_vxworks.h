@@ -20,7 +20,7 @@
  */
 
 #ifndef OS_H
-#error "This file must be included only by os_.h"
+#error "This file must be included only by os.h"
 #endif /* ifndef OS_H */
 
 #include <vxWorks.h>
