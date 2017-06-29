@@ -142,7 +142,7 @@ typedef FILE *os_file_t;
 	/**
 	 * @brief Handle to an open shared library
 	 */
-	typedef void *iot_lib_handle_t;
+	typedef void *os_lib_handle;
 
 	/**
 	 * @brief Handle to a thread

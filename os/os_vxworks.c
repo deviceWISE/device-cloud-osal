@@ -50,20 +50,20 @@ os_status_t os_system_info(
 	return OS_STATUS_SUCCESS;
 }
 
-iot_lib_handle_t os_library_open(
+os_lib_handle os_library_open(
 	const char *path )
 {
 	return 0;
 }
 
 os_status_t os_library_close(
-	iot_lib_handle_t lib )
+	os_lib_handle lib )
 {
 	return OS_STATUS_FAILURE;
 }
 
 void *os_library_find(
-	iot_lib_handle_t lib,
+	os_lib_handle lib,
 	const char *function )
 {
 	return NULL;

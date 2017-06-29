@@ -1062,7 +1062,7 @@ char os_key_wait( void )
 }
 
 os_status_t os_library_close(
-	iot_lib_handle_t lib )
+	os_lib_handle lib )
 {
 	os_status_t result = OS_STATUS_FAILURE;
 	if ( FreeLibrary( lib ) )

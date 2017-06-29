@@ -161,7 +161,7 @@ typedef HANDLE os_file_t;
 	/**
 	 * @brief Handle to an open dynamically-linked library
 	 */
-	typedef HMODULE iot_lib_handle_t;
+	typedef HMODULE os_lib_handle;
 
 	/**
 	 * @brief Handle to a thread

@@ -715,7 +715,7 @@ OS_API OS_SECTION char os_key_wait( void );
  * @see os_library_open
  */
 OS_API OS_SECTION os_status_t os_library_close(
-	iot_lib_handle_t lib
+	os_lib_handle lib
 );
 #endif /* ifndef _WRS_KERNEL */
 
