@@ -2306,14 +2306,14 @@ OS_API OS_SECTION void *os_heap_realloc(
 ) __attribute__((malloc));
 
 /* Use built-ins where possible */
-#define os_library_find                GetProcAddress
-#define os_library_open                LoadLibrary
-#define os_memcpy(d, s, n)             CopyMemory(d, s, n); d
-#define os_memmove(d, s, n)            MoveMemory(d, s, n); d
-#define os_memset( ptr, c, size )      FillMemory( ptr, size, c )
-#define os_memzero                     ZeroMemory
-#define os_heap_calloc( nmemb, size )  HeapAlloc( GetProcessHeap(), 0, nmemb * size )
-#define os_system_error_last()         (int)GetLastError()
+#define os_library_find(module, name)          GetProcAddress(module, name)
+#define os_library_open(name)                  LoadLibrary(name)
+#define os_memcpy(dst, src, num)               CopyMemory(dst, src, num); dst
+#define os_memmove(dst, src, num)               MoveMemory(dst, src, num); dst
+#define os_memset( ptr, val, num )             FillMemory( ptr, num, val )
+#define os_memzero(ptr, size)                  ZeroMemory(ptr, size)
+#define os_heap_calloc( num, size )            HeapAlloc( GetProcessHeap(), 0, num * size )
+#define os_system_error_last()                 (int)GetLastError()
 
 #else /* posix */
 
@@ -2330,40 +2330,40 @@ OS_API OS_SECTION void *os_heap_realloc(
 #include <time.h>   /* for nanosleep */
 
 /* Use built-ins where possible */
-#define os_heap_free(ptr)              free(*ptr)
-#define os_heap_free_null(x)           { if ( *x ) free( *x ); *x = NULL; }
-#define os_heap_malloc                 malloc
-#define os_memcpy                      memcpy
-#define os_memzero                     bzero
-#define os_strcmp                      strcmp
-#define os_strlen                      strlen
-#define os_strncmp                     strncmp
-#define os_strncpy                     strncpy
-#define os_strrchr                     strrchr
-
-#define os_system_pid()                (os_uint32_t)getpid()
-#define os_system_error_last()         errno
-//#define os_system_error_string         strerror
-
-#define os_fprintf                     fprintf
-#define os_printf                      printf
-#define os_snprintf                    snprintf
-#define os_vfprintf                    vfprintf
-
-#define os_file_fgets(s, n, f)         fgets(s, (int) n, f)
-#define os_file_fputs                  (size_t)fputs
-#define os_file_fread                  fread
-#define os_file_fwrite                 fwrite
-#define os_strchr                      strchr
-#define os_strpbrk                     strpbrk
-#define os_strstr                      strstr
-#define os_strtod                      strtod
-#define os_strtol(s, e)                strtol(s, e, 10)
-#define os_strtoul(s, e)               strtoul(s, e, 10)
-#define os_memmove                     memmove
-#define os_memset                      memset
-#define os_heap_calloc                 calloc
-#define os_heap_realloc                realloc
+#define os_heap_free(ptr)                      free(*ptr)
+#define os_heap_free_null(x)                   { if ( *x ) free( *x ); *x = NULL; }
+#define os_heap_malloc(size)                   malloc(size)
+#define os_memcpy(dst, src, num)               memcpy(dst, src, num)
+#define os_memzero(ptr, num)                   bzero(ptr, num)
+#define os_strcmp(str1, str2)                  strcmp(str1, str2)
+#define os_strlen(str)                         strlen(str)
+#define os_strncmp(str1, str2, num)            strncmp(str1, str2, num)
+#define os_strncpy(dst, src, num)              strncpy(dst, src, num)
+#define os_strrchr(str, chr)                   strrchr(str, chr)
+     
+#define os_system_pid()                        (os_uint32_t)getpid()
+#define os_system_error_last()                 errno
+//#define os_system_error_string                 strerror
+     
+#define os_fprintf(file, fmt, ...)             fprintf(file, fmt, ##__VA_ARGS__)
+#define os_printf(fmt, ...)                    printf(fmt, ##__VA_ARGS__)
+#define os_snprintf(str, num, fmt, ...)        snprintf(str, num, fmt, ##__VA_ARGS__)
+#define os_vfprintf(file, fmt, varg)           vfprintf(file, fmt, varg)
+     
+#define os_file_fgets(str, num, file)          fgets(str, (int) num, file)
+#define os_file_fputs(str, file)               (size_t)fputs(str, file)
+#define os_file_fread(str, size, num, file)    fread(str, size, num, file)
+#define os_file_fwrite(str, size, num, file)   fwrite(str, size, num, file)
+#define os_strchr(str, chr)                    strchr(str, chr)
+#define os_strpbrk(str1, str2)                 strpbrk(str1, str2)
+#define os_strstr(str1, str2)                  strstr(str1, str2)
+#define os_strtod(str, end)                    strtod(str, end)
+#define os_strtol(str, end)                    strtol(str, end, 10)
+#define os_strtoul(str, end)                   strtoul(str, end, 10)
+#define os_memmove(dst, src, num)              memmove(dst, src, num)
+#define os_memset(ptr, val, num)               memset(ptr, val, num)
+#define os_heap_calloc(num, size)              calloc(num, size)
+#define os_heap_realloc(ptr, size)             realloc(ptr, size)
 
 #endif /* ifdef _WIN32 */
 
