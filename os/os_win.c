@@ -3047,7 +3047,7 @@ os_status_t os_system_run(
 	int *exit_status,
 	os_file_t pipe_files[2u] )
 {
-	os_status_t result = OS_STATUS_SUCCESS;
+	os_status_t result = OS_STATUS_NOT_EXECUTABLE;
 	SECURITY_ATTRIBUTES secure_attr;
 	os_timestamp_t start_time;
 
@@ -3061,62 +3061,57 @@ os_status_t os_system_run(
 	if ( exit_status )
 		*exit_status = -1;
 
-	if ( result == OS_STATUS_SUCCESS )
+	DWORD cmd_result = -1;
+	PROCESS_INFORMATION proc_info;
+	STARTUPINFO start_info;
+	/* do not inheritHandles, so that the new process can run separately */
+	BOOL inheritHandles = FALSE;
+	char comspec_path[ PATH_MAX + 1u ];
+	char command_with_comspec[ PATH_MAX + 1u ];
+
+	/* create process */
+	ZeroMemory( &proc_info, sizeof( PROCESS_INFORMATION ) );
+	ZeroMemory( &start_info, sizeof( STARTUPINFO ) );
+	start_info.cb = sizeof( STARTUPINFO );
+
+	/* in order to pipe the stdout/stderr from the new
+	 * process back to the parent process, the
+	 * CreateProcess's bInheritHandles need to be TRUE.
+	 * If the parent is killed, the child process will be
+	 * terminated prematurely.
+	 *
+	 * We test this by checking if either output buffer
+	 * contains a destination to write too
+	 */
+	inheritHandles = TRUE;
+	start_info.hStdError = pipe_files[1];
+	start_info.hStdOutput = pipe_files[0];
+	start_info.hStdInput = NULL;
+	start_info.dwFlags |= STARTF_USESTDHANDLES;
+
+	/* add script prefix.  if the command to
+	  *be run is dos internal
+	 * it needs to be loaded from cmd.exe */
+	os_env_get( "COMSPEC", comspec_path, PATH_MAX );
+	if (comspec_path[0] != '\0')
+		os_snprintf( command_with_comspec,
+			PATH_MAX,
+			"\"%s\" /C \"%s\"",
+			comspec_path,
+			command
+			);
+	else
+		os_strncpy( command_with_comspec,
+			command,
+			PATH_MAX );
+
+	if (CreateProcess(NULL, (LPTSTR)command_with_comspec, NULL, NULL,
+		inheritHandles, DETACHED_PROCESS, NULL, NULL, &start_info, &proc_info))
 	{
-		DWORD cmd_result = -1;
-		PROCESS_INFORMATION proc_info;
-		STARTUPINFO start_info;
-		/* do not inheritHandles, so that the new process can run separately */
-		BOOL inheritHandles = FALSE;
-		char comspec_path[ PATH_MAX + 1u ];
-		char command_with_comspec[ PATH_MAX + 1u ];
+		result = OS_STATUS_INVOKED;
 
-		/* create process */
-		ZeroMemory( &proc_info, sizeof( PROCESS_INFORMATION ) );
-		ZeroMemory( &start_info, sizeof( STARTUPINFO ) );
-		start_info.cb = sizeof( STARTUPINFO );
-
-		/* in order to pipe the stdout/stderr from the new
-		 * process back to the parent process, the
-		 * CreateProcess's bInheritHandles need to be TRUE.
-		 * If the parent is killed, the child process will be
-		 * terminated prematurely.
-		 *
-		 * We test this by checking if either output buffer
-		 * contains a destination to write too
-		 */
-		inheritHandles = TRUE;
-		start_info.hStdError = pipe_files[1];
-		start_info.hStdOutput = pipe_files[0];
-		start_info.hStdInput = NULL;
-		start_info.dwFlags |= STARTF_USESTDHANDLES;
-
-		result = OS_STATUS_NOT_EXECUTABLE;
-
-		/* add script prefix.  if the command to
-		  *be run is dos internal
-		 * it needs to be loaded from cmd.exe */
-		os_env_get( "COMSPEC", comspec_path, PATH_MAX );
-		if (comspec_path[0] != '\0')
-			os_snprintf( command_with_comspec,
-				PATH_MAX,
-				"\"%s\" /C \"%s\"",
-				comspec_path,
-				command
-				);
-		else
-			os_strncpy( command_with_comspec,
-				command,
-				PATH_MAX );
-
-		if (CreateProcess(NULL, (LPTSTR)command_with_comspec, NULL, NULL,
-			inheritHandles, DETACHED_PROCESS, NULL, NULL, &start_info, &proc_info))
-		{
-			result = OS_STATUS_INVOKED;
-
-			CloseHandle( proc_info.hProcess );
-			CloseHandle( proc_info.hThread );
-		}
+		CloseHandle( proc_info.hProcess );
+		CloseHandle( proc_info.hThread );
 	}
 	return result;
 }

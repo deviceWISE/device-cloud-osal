@@ -1924,8 +1924,9 @@ os_status_t os_system_run(
 	size_t i;
 	const int output_fd[2u] = { STDOUT_FILENO, STDERR_FILENO };
 	int command_output_fd[2u] = { -1, -1 };
-	os_status_t result = OS_STATUS_SUCCESS;
+	os_status_t result = OS_STATUS_NOT_EXECUTABLE;
 	os_timestamp_t start_time;
+	pid_t pid;
 
 	os_time( &start_time, NULL );
 
@@ -1937,36 +1938,32 @@ os_status_t os_system_run(
 	if ( exit_status )
 		*exit_status = -1;
 
-	if ( result == OS_STATUS_SUCCESS )
+	pid = fork();
+	if ( pid != -1 )
 	{
-		const pid_t pid = fork();
-		result = OS_STATUS_NOT_EXECUTABLE;
-		if ( pid != -1 )
+		if ( pid == 0 )
 		{
-			if ( pid == 0 )
-			{
-				/* Create a new session for the child process.
-				 */
-				pid_t sid = setsid();
-				if ( sid < 0 )
-					exit( errno );
-				/* redirect child stdout/stderr to the pipe */
-				for ( i = 0u; i < 2u; ++i )
-					dup2( command_output_fd[i], output_fd[i] );
-#ifdef __ANDROID__
-				execl( "/system/bin/sh", "sh", "-c", command, (char *)NULL );
-#else
-				execl( "/bin/sh", "sh", "-c", command, (char *)NULL );
-#endif
-				/* Process failed to be replaced, return failure */
+			/* Create a new session for the child process.
+			 */
+			pid_t sid = setsid();
+			if ( sid < 0 )
 				exit( errno );
-			}
-
+			/* redirect child stdout/stderr to the pipe */
 			for ( i = 0u; i < 2u; ++i )
-				close( command_output_fd[i] );
-
-			result = OS_STATUS_INVOKED;
+				dup2( command_output_fd[i], output_fd[i] );
+#ifdef __ANDROID__
+			execl( "/system/bin/sh", "sh", "-c", command, (char *)NULL );
+#else
+			execl( "/bin/sh", "sh", "-c", command, (char *)NULL );
+#endif
+			/* Process failed to be replaced, return failure */
+			exit( errno );
 		}
+
+		for ( i = 0u; i < 2u; ++i )
+			close( command_output_fd[i] );
+
+		result = OS_STATUS_INVOKED;
 	}
 	return result;
 }
