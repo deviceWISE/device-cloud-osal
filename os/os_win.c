@@ -3045,18 +3045,12 @@ os_uint32_t os_system_pid( void )
 os_status_t os_system_run(
 	const char *command,
 	int *exit_status,
-	char *out_buf[2u],
-	size_t out_len[2u],
-	os_millisecond_t max_time_out )
+	os_file_t pipe_files[2u] )
 {
-	HANDLE child_read[2u];
-	HANDLE child_write[2u];
 	size_t i;
 	os_status_t result = OS_STATUS_SUCCESS;
 	SECURITY_ATTRIBUTES secure_attr;
 	os_timestamp_t start_time;
-	os_bool_t wait_for_return = ( ( out_buf[0] && out_len[0] > 0 ) ||
-		( out_buf[1] && out_len[1] > 0 ) );
 
 	os_time( &start_time, NULL );
 
@@ -3067,12 +3061,6 @@ os_status_t os_system_run(
 
 	if ( exit_status )
 		*exit_status = -1;
-
-	if ( wait_for_return != OS_FALSE )
-		for ( i = 0u; i < 2u && result == OS_STATUS_SUCCESS; ++i )
-			if ( ! CreatePipe( &child_read[i], &child_write[i], &secure_attr, 0 ) ||
-				! SetHandleInformation( child_read[i], HANDLE_FLAG_INHERIT, 0 ) )
-				result = OS_STATUS_IO_ERROR;
 
 	if ( result == OS_STATUS_SUCCESS )
 	{
@@ -3089,23 +3077,21 @@ os_status_t os_system_run(
 		ZeroMemory( &start_info, sizeof( STARTUPINFO ) );
 		start_info.cb = sizeof( STARTUPINFO );
 
-		if ( wait_for_return != OS_FALSE )
-		{
-			/* in order to pipe the stdout/stderr from the new
-			 * process back to the parent process, the
-			 * CreateProcess's bInheritHandles need to be TRUE.
-			 * If the parent is killed, the child process will be
-			 * terminated prematurely.
-			 *
-			 * We test this by checking if either output buffer
-			 * contains a destination to write too
-			 */
-			inheritHandles = TRUE;
-			start_info.hStdError = child_write[1];
-			start_info.hStdOutput = child_write[0];
-			start_info.hStdInput = NULL;
-			start_info.dwFlags |= STARTF_USESTDHANDLES;
-		}
+		/* in order to pipe the stdout/stderr from the new
+		 * process back to the parent process, the
+		 * CreateProcess's bInheritHandles need to be TRUE.
+		 * If the parent is killed, the child process will be
+		 * terminated prematurely.
+		 *
+		 * We test this by checking if either output buffer
+		 * contains a destination to write too
+		 */
+		inheritHandles = TRUE;
+		start_info.hStdError = pipe_files[1];
+		start_info.hStdOutput = pipe_files[0];
+		start_info.hStdInput = NULL;
+		start_info.dwFlags |= STARTF_USESTDHANDLES;
+
 		result = OS_STATUS_NOT_EXECUTABLE;
 
 		/* add script prefix.  if the command to
@@ -3128,53 +3114,135 @@ os_status_t os_system_run(
 			inheritHandles, DETACHED_PROCESS, NULL, NULL, &start_info, &proc_info))
 		{
 			result = OS_STATUS_INVOKED;
-			if ( wait_for_return != OS_FALSE )
-			{
-				os_millisecond_t time_elapsed;
-				cmd_result = STILL_ACTIVE;
-				do {
-					GetExitCodeProcess( proc_info.hProcess,
-						&cmd_result );
-					os_time_elapsed( &start_time, &time_elapsed );
-					os_time_sleep( LOOP_WAIT_TIME, OS_FALSE );
-				} while ( cmd_result == STILL_ACTIVE &&
-					( max_time_out == 0 || time_elapsed < max_time_out ) );
 
-				if ( cmd_result == STILL_ACTIVE )
-				{
-					TerminateProcess( proc_info.hProcess, -1 );
-					result = OS_STATUS_TIMED_OUT;
-				}
-				else
-					result = OS_STATUS_SUCCESS;
+			CloseHandle( proc_info.hProcess );
+			CloseHandle( proc_info.hThread );
+		}
+	}
+	return result;
+}
+
+os_status_t os_system_run_wait(
+	const char *command,
+	int *exit_status,
+	char *out_buf[2u],
+	size_t out_len[2u],
+	os_millisecond_t max_time_out )
+{
+	HANDLE child_read[2u];
+	HANDLE child_write[2u];
+	size_t i;
+	os_status_t result = OS_STATUS_SUCCESS;
+	SECURITY_ATTRIBUTES secure_attr;
+	os_timestamp_t start_time;
+
+	os_time( &start_time, NULL );
+
+	ZeroMemory( &secure_attr, sizeof( SECURITY_ATTRIBUTES ) );
+	secure_attr.nLength = sizeof( SECURITY_ATTRIBUTES );
+	secure_attr.bInheritHandle = TRUE;
+	secure_attr.lpSecurityDescriptor = NULL;
+
+	if ( exit_status )
+		*exit_status = -1;
+
+	for ( i = 0u; i < 2u && result == OS_STATUS_SUCCESS; ++i )
+		if ( ! CreatePipe( &child_read[i], &child_write[i], &secure_attr, 0 ) ||
+			! SetHandleInformation( child_read[i], HANDLE_FLAG_INHERIT, 0 ) )
+			result = OS_STATUS_IO_ERROR;
+
+	if ( result == OS_STATUS_SUCCESS )
+	{
+		DWORD cmd_result = -1;
+		PROCESS_INFORMATION proc_info;
+		STARTUPINFO start_info;
+		/* do not inheritHandles, so that the new process can run separately */
+		BOOL inheritHandles = FALSE;
+		char comspec_path[ PATH_MAX + 1u ];
+		char command_with_comspec[ PATH_MAX + 1u ];
+
+		/* create process */
+		ZeroMemory( &proc_info, sizeof( PROCESS_INFORMATION ) );
+		ZeroMemory( &start_info, sizeof( STARTUPINFO ) );
+		start_info.cb = sizeof( STARTUPINFO );
+
+		/* in order to pipe the stdout/stderr from the new
+		 * process back to the parent process, the
+		 * CreateProcess's bInheritHandles need to be TRUE.
+		 * If the parent is killed, the child process will be
+		 * terminated prematurely.
+		 *
+		 * We test this by checking if either output buffer
+		 * contains a destination to write too
+		 */
+		inheritHandles = TRUE;
+		start_info.hStdError = child_write[1];
+		start_info.hStdOutput = child_write[0];
+		start_info.hStdInput = NULL;
+		start_info.dwFlags |= STARTF_USESTDHANDLES;
+
+		result = OS_STATUS_NOT_EXECUTABLE;
+
+		/* add script prefix.  if the command to
+		  *be run is dos internal
+		 * it needs to be loaded from cmd.exe */
+		os_env_get( "COMSPEC", comspec_path, PATH_MAX );
+		if (comspec_path[0] != '\0')
+			os_snprintf( command_with_comspec,
+				PATH_MAX,
+				"\"%s\" /C \"%s\"",
+				comspec_path,
+				command
+				);
+		else
+			os_strncpy( command_with_comspec,
+				command,
+				PATH_MAX );
+
+		if (CreateProcess(NULL, (LPTSTR)command_with_comspec, NULL, NULL,
+			inheritHandles, DETACHED_PROCESS, NULL, NULL, &start_info, &proc_info))
+		{
+			os_millisecond_t time_elapsed;
+			cmd_result = STILL_ACTIVE;
+			do {
 				GetExitCodeProcess( proc_info.hProcess,
 					&cmd_result );
+				os_time_elapsed( &start_time, &time_elapsed );
+				os_time_sleep( LOOP_WAIT_TIME, OS_FALSE );
+			} while ( cmd_result == STILL_ACTIVE &&
+				( max_time_out == 0 || time_elapsed < max_time_out ) );
+
+			if ( cmd_result == STILL_ACTIVE )
+			{
+				TerminateProcess( proc_info.hProcess, -1 );
+				result = OS_STATUS_TIMED_OUT;
 			}
+			else
+				result = OS_STATUS_SUCCESS;
+			GetExitCodeProcess( proc_info.hProcess,
+				&cmd_result );
 
 			CloseHandle( proc_info.hProcess );
 			CloseHandle( proc_info.hThread );
 		}
 
-		if ( wait_for_return != OS_FALSE )
+		CloseHandle( child_write[0] );
+		CloseHandle( child_write[1] );
+		/* read stdout and stderr output */
+		for ( i = 0u; i < 2u; ++i )
 		{
-			CloseHandle( child_write[0] );
-			CloseHandle( child_write[1] );
-			/* read stdout and stderr output */
-			for ( i = 0u; i < 2u; ++i )
+			if ( out_buf[i] && out_len[i] > 1u )
 			{
-				if ( out_buf[i] && out_len[i] > 1u )
-				{
-					DWORD amount_read = 0;
-					out_buf[i][0] = '\0';
-					ReadFile( child_read[i], out_buf[i],
-						out_len[i] - 1u, &amount_read, NULL );
-					if ( amount_read >= 0 )
-						out_buf[i][amount_read] = '\0';
-				}
+				DWORD amount_read = 0;
+				out_buf[i][0] = '\0';
+				ReadFile( child_read[i], out_buf[i],
+					out_len[i] - 1u, &amount_read, NULL );
+				if ( amount_read >= 0 )
+					out_buf[i][amount_read] = '\0';
 			}
-			if ( exit_status )
-				*exit_status = cmd_result;
 		}
+		if ( exit_status )
+			*exit_status = cmd_result;
 	}
 	return result;
 }

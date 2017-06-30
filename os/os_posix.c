@@ -1923,6 +1923,63 @@ os_status_t os_system_info(
 os_status_t os_system_run(
 	const char *command,
 	int *exit_status,
+	os_file_t pipe_files[2u] )
+{
+	size_t i;
+	const int output_fd[2u] = { STDOUT_FILENO, STDERR_FILENO };
+	int command_output_fd[2u] = { -1, -1 };
+	os_status_t result = OS_STATUS_SUCCESS;
+	os_timestamp_t start_time;
+	int system_result = -1;
+	os_millisecond_t time_elapsed;
+
+	os_time( &start_time, NULL );
+
+	for ( i = 0u; i < 2u; ++i )
+		if( pipe_files[i] != NULL )
+			command_output_fd[i] = fileno( pipe_files[i] );
+
+	/* set a default exit status */
+	if ( exit_status )
+		*exit_status = -1;
+
+	if ( result == OS_STATUS_SUCCESS )
+	{
+		const pid_t pid = fork();
+		result = OS_STATUS_NOT_EXECUTABLE;
+		if ( pid != -1 )
+		{
+			if ( pid == 0 )
+			{
+				/* Create a new session for the child process.
+				 */
+				pid_t sid = setsid();
+				if ( sid < 0 )
+					exit( errno );
+				/* redirect child stdout/stderr to the pipe */
+				for ( i = 0u; i < 2u; ++i )
+					dup2( command_output_fd[i], output_fd[i] );
+#ifdef __ANDROID__
+				execl( "/system/bin/sh", "sh", "-c", command, (char *)NULL );
+#else
+				execl( "/bin/sh", "sh", "-c", command, (char *)NULL );
+#endif
+				/* Process failed to be replaced, return failure */
+				exit( errno );
+			}
+
+			for ( i = 0u; i < 2u; ++i )
+				close( command_output_fd[i] );
+
+			result = OS_STATUS_INVOKED;
+		}
+	}
+	return result;
+}
+
+os_status_t os_system_run_wait(
+	const char *command,
+	int *exit_status,
 	char *out_buf[2u],
 	size_t out_len[2u],
 	os_millisecond_t max_time_out )
@@ -1935,9 +1992,6 @@ os_status_t os_system_run(
 	os_timestamp_t start_time;
 	int system_result = -1;
 	os_millisecond_t time_elapsed;
-	const os_bool_t wait_for_return =
-		( out_buf[0] != NULL && out_len[0] > 0 ) ||
-		( out_buf[1] != NULL && out_len[1] > 0 );
 
 	os_time( &start_time, NULL );
 
@@ -1947,10 +2001,9 @@ os_status_t os_system_run(
 
 	/* capture the stdout & stderr of the command and send it back
 	 * as the response */
-	if ( wait_for_return != OS_FALSE )
-		for ( i = 0u; i < 2u && result == OS_STATUS_SUCCESS; ++i )
-			if ( pipe( command_output_fd[i] ) != 0 )
-				result = OS_STATUS_IO_ERROR;
+	for ( i = 0u; i < 2u && result == OS_STATUS_SUCCESS; ++i )
+		if ( pipe( command_output_fd[i] ) != 0 )
+			result = OS_STATUS_IO_ERROR;
 
 	if ( result == OS_STATUS_SUCCESS )
 	{
@@ -1983,59 +2036,55 @@ os_status_t os_system_run(
 			for ( i = 0u; i < 2u; ++i )
 				close( command_output_fd[i][1] );
 
-			result = OS_STATUS_INVOKED;
-			if ( wait_for_return != OS_FALSE )
+			errno = 0;
+			do {
+				waitpid( pid, &system_result, WNOHANG );
+				os_time_elapsed( &start_time, &time_elapsed );
+				os_time_sleep( LOOP_WAIT_TIME, OS_FALSE );
+			} while ( ( errno != ECHILD ) &&
+				( !WIFEXITED( system_result ) ) &&
+				( !WIFSIGNALED( system_result ) ) &&
+				( max_time_out == 0u || time_elapsed < max_time_out ) );
+
+			if ( ( errno != ECHILD ) &&
+				!WIFEXITED( system_result ) &&
+				!WIFSIGNALED( system_result ) )
 			{
-				errno = 0;
-				do {
-					waitpid( pid, &system_result, WNOHANG );
-					os_time_elapsed( &start_time, &time_elapsed );
-					os_time_sleep( LOOP_WAIT_TIME, OS_FALSE );
-				} while ( ( errno != ECHILD ) &&
-					( !WIFEXITED( system_result ) ) &&
-					( !WIFSIGNALED( system_result ) ) &&
-					( max_time_out == 0u || time_elapsed < max_time_out ) );
+				kill( pid, SIGTERM );
+				waitpid( pid, &system_result, WNOHANG );
+				result = OS_STATUS_TIMED_OUT;
+			}
+			else
+				result = OS_STATUS_SUCCESS;
 
-				if ( ( errno != ECHILD ) &&
-					!WIFEXITED( system_result ) &&
-					!WIFSIGNALED( system_result ) )
+			fflush( stdout );
+			fflush( stderr );
+
+			for ( i = 0u; i < 2u; ++i )
+			{
+				if ( out_buf[i] && out_len[i] > 0u )
 				{
-					kill( pid, SIGTERM );
-					waitpid( pid, &system_result, WNOHANG );
-					result = OS_STATUS_TIMED_OUT;
-				}
-				else
-					result = OS_STATUS_SUCCESS;
-
-				fflush( stdout );
-				fflush( stderr );
-
-				for ( i = 0u; i < 2u; ++i )
-				{
-					if ( out_buf[i] && out_len[i] > 0u )
+					out_buf[i][0] = '\0';
+					/* if we are able to read from pipe */
+					if ( command_output_fd[i][0] != -1 )
 					{
-						out_buf[i][0] = '\0';
-						/* if we are able to read from pipe */
-						if ( command_output_fd[i][0] != -1 )
-						{
-							const ssize_t output_size =
-								read( command_output_fd[i][0],
-								out_buf[i], out_len[i] - 1u );
-							if ( output_size >= 0 )
-								out_buf[i][ output_size ] = '\0';
-						}
+						const ssize_t output_size =
+							read( command_output_fd[i][0],
+							out_buf[i], out_len[i] - 1u );
+						if ( output_size >= 0 )
+							out_buf[i][ output_size ] = '\0';
 					}
 				}
-
-				if ( WIFEXITED( system_result ) )
-					system_result = WEXITSTATUS( system_result );
-				else if ( WIFSIGNALED( system_result ) )
-					system_result = WTERMSIG( system_result );
-				else
-					system_result = WIFEXITED( system_result );
-				if ( exit_status )
-					*exit_status = system_result;
 			}
+
+			if ( WIFEXITED( system_result ) )
+				system_result = WEXITSTATUS( system_result );
+			else if ( WIFSIGNALED( system_result ) )
+				system_result = WTERMSIG( system_result );
+			else
+				system_result = WIFEXITED( system_result );
+			if ( exit_status )
+				*exit_status = system_result;
 		}
 	}
 	return result;

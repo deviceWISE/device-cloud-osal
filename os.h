@@ -1659,7 +1659,23 @@ OS_API OS_SECTION os_status_t os_system_info(
 );
 
 /**
- * @brief run an executable on the operating system
+ * @brief run an executable on the operating system asynchronously
+ *
+ * @param[in]      command             command string to be run
+ * @param[out]     exit_status         return code of the executable (optional)
+ * @param[in]      pipe_files          files/pipes to write 'standard out' & 
+ *									   'standard error' to
+ *
+ * @retval OS_STATUS_INVOKED          command triggered as a background process
+ * @retval OS_STATUS_NOT_EXECUTABLE   the path provided can not be executed
+ */
+OS_API OS_SECTION os_status_t os_system_run(
+	const char *command,
+	int *exit_status,
+	os_file_t pipe_files );
+
+/**
+ * @brief run an executable on the operating system and wait for it to complete
  *
  * @param[in]      command             command string to be run
  * @param[out]     exit_status         return code of the executable (optional)
@@ -1669,17 +1685,12 @@ OS_API OS_SECTION os_status_t os_system_info(
  *                                     'standard error'
  * @param[in]      max_time_out        maximum amount of time to wait
  *
- * @note Setting @p out_buf[0] & @p out_buf[1] both to @p NULL, will result
- * in running the command in a background process and this call returning
- * immediately
- *
- * @retval OS_STATUS_INVOKED          command triggered as a background process
  * @retval OS_STATUS_IO_ERROR         failed to setup error & output capture io
  * @retval OS_STATUS_NOT_EXECUTABLE   the path provided can not be executed
  * @retval OS_STATUS_SUCCESS          on success
  * @retval OS_STATUS_TIMED_OUT        time out exceeded
  */
-OS_API OS_SECTION os_status_t os_system_run(
+os_status_t os_system_run_wait(
 	const char *command,
 	int *exit_status,
 	char *out_buf[2u],

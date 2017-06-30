@@ -236,9 +236,7 @@ os_status_t os_thread_rwlock_destroy(
 os_status_t os_system_run(
 	const char *command,
 	int *exit_status,
-	char *out_buf[2u],
-	size_t out_len[2u],
-	os_millisecond_t UNUSED(max_time_out) )
+	os_file_t pipe_files )
 {
 	/*
 	 * Go through list of supported commands
@@ -249,6 +247,17 @@ os_status_t os_system_run(
 
 	*exit_status = 0;
 	return OS_STATUS_SUCCESS;
+}
+
+os_status_t os_system_run_wait(
+	const char *command,
+	int *exit_status,
+	char *out_buf[2u],
+	size_t out_len[2u],
+	os_millisecond_t UNUSED(max_time_out) )
+{
+	os_file_t pipes[2u] = {NULL, NULL};
+	return os_system_run(command, exit_status, pipes, 0);
 }
 
 /* uuid support */
