@@ -32,6 +32,10 @@ set( OSAL_LIB_VER 0.0.1 )
 include( BuildSupport )
 include( DefineCompilerFlags )
 
+set_target_properties( ${TARGET} PROPERTIES
+	SOVERSION ${OSAL_LIB_VER}
+	VERSION ${OSAL_LIB_VER}
+	)
 
 ### CPack Config ###
 set( CPACK_PACKAGE_NAME ${CMAKE_PROJECT_NAME} )
@@ -39,7 +43,7 @@ set( CPACK_PACKAGE_VERSION ${OSAL_LIB_VER})
 set( CPACK_PACKAGE_DESCRIPTION_SUMMARY "Operating System Abstraction Library" )
 
 if ( WIN32 )
-
+	set( CPACK_GENERATOR "ZIP" )
 else()
 	set( CPACK_GENERATOR "DEB" )
 	set( CPACK_DEBIAN_PACKAGE_MAINTAINER "bwiebe" )
@@ -47,6 +51,10 @@ else()
 endif()
 
 include( CPack )
+
+if( OSAL_OPTIMIZE )
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mfma -O3")
+endif()
 
 ### Build Library ###
 set( TARGET "osal" )
