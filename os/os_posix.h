@@ -61,7 +61,10 @@
  * @see os_file_fseek
  */
 #define OS_FILE_SEEK_END           SEEK_END
-
+/**
+ * @brief Null device, used to discard data
+ */
+#define OS_NULL_DEVICE             "/dev/null"
 /**
  * @brief Invalid socket symbol
  */

@@ -1672,7 +1672,7 @@ OS_API OS_SECTION os_status_t os_system_info(
 OS_API OS_SECTION os_status_t os_system_run(
 	const char *command,
 	int *exit_status,
-	os_file_t pipe_files );
+	os_file_t pipe_files[2u] );
 
 /**
  * @brief run an executable on the operating system and wait for it to complete
@@ -1690,7 +1690,7 @@ OS_API OS_SECTION os_status_t os_system_run(
  * @retval OS_STATUS_SUCCESS          on success
  * @retval OS_STATUS_TIMED_OUT        time out exceeded
  */
-os_status_t os_system_run_wait(
+OS_API OS_SECTION os_status_t os_system_run_wait(
 	const char *command,
 	int *exit_status,
 	char *out_buf[2u],

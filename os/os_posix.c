@@ -1198,13 +1198,12 @@ os_status_t os_service_start(
 {
 	os_status_t result;
 	int exit_status;
-	char buf[1u] = "\0";
-	char *out_buf[2u] = { buf, buf };
-	size_t out_len[2u] = { 1u, 1u };
+	char *out_buf[2u] = { NULL, NULL };
+	size_t out_len[2u] = { 0u, 0u };
 	char service_cmd[ 256u ];
 	snprintf( service_cmd, 255u, SERVICE_START_CMD, id );
 	service_cmd[ 255u ] = '\0';
-	result = os_system_run( service_cmd, &exit_status,
+	result = os_system_run_wait( service_cmd, &exit_status,
 		out_buf, out_len, timeout );
 	if ( result == OS_STATUS_SUCCESS && exit_status != 0 )
 		result = OS_STATUS_FAILURE;
@@ -1219,9 +1218,8 @@ os_status_t os_service_stop(
 {
 	os_status_t result;
 	int exit_status;
-	char buf[1u] = "\0";
-	char *out_buf[2u] = { buf, buf };
-	size_t out_len[2u] = { 1u, 1u };
+	char *out_buf[2u] = { NULL, NULL };
+	size_t out_len[2u] = { 0u, 0u };
 	char service_cmd[ 256u ];
 
 	if ( !exe )
@@ -1234,7 +1232,7 @@ os_status_t os_service_stop(
 	snprintf( service_cmd, 255u, SERVICE_STATUS_CMD, exe );
 #	endif
 	service_cmd[ 255u ] = '\0';
-	result = os_system_run( service_cmd, &exit_status,
+	result = os_system_run_wait( service_cmd, &exit_status,
 		out_buf, out_len, timeout );
 	if ( result == OS_STATUS_SUCCESS && exit_status != 0 )
 		result = OS_STATUS_NOT_FOUND;
@@ -1242,7 +1240,7 @@ os_status_t os_service_stop(
 	{
 		snprintf( service_cmd, 255u, SERVICE_STOP_CMD, id );
 		service_cmd[ 255u ] = '\0';
-		result = os_system_run( service_cmd, &exit_status,
+		result = os_system_run_wait( service_cmd, &exit_status,
 			out_buf, out_len, timeout );
 		if ( result == OS_STATUS_SUCCESS && exit_status != 0 )
 			result = OS_STATUS_FAILURE;
@@ -1268,15 +1266,14 @@ os_status_t os_service_query(
 	for ( i = 0u; result == OS_STATUS_SUCCESS &&
 		i < sizeof( status_cmds ) / sizeof( const char * ); ++i )
 	{
-		char buf[1u] = "\0";
 		int exit_status = 0;
-		char *out_buf[2u] = { buf, buf };
-		size_t out_len[2u] = { 1u, 1u };
+		char *out_buf[2u] = { NULL, NULL };
+		size_t out_len[2u] = { 0u, 0u };
 		char service_cmd[ 256u ];
 		snprintf( service_cmd, 255u, operation_cmd,
 			status_cmds[i], id );
 		service_cmd[ 255u ] = '\0';
-		result = os_system_run( service_cmd, &exit_status,
+		result = os_system_run_wait( service_cmd, &exit_status,
 			out_buf, out_len, timeout );
 #	ifndef __ANDROID__
 		if ( result == OS_STATUS_SUCCESS )
@@ -1312,13 +1309,12 @@ os_status_t os_service_restart(
 	int exit_status;
 	char service_cmd[ 256u ];
 	
-	char buf[1u] = "\0";
-	char *out_buf[2u] = { buf, buf };
-	size_t out_len[2u] = { 1u, 1u };
+	char *out_buf[2u] = { NULL, NULL };
+	size_t out_len[2u] = { 0u, 0u };
 	(void)exe,
 	snprintf( service_cmd, 255u, COMMAND_PREFIX "systemctl restart %s", id );
 	service_cmd[ 255u ] = '\0';
-	result = os_system_run( service_cmd, &exit_status,
+	result = os_system_run_wait( service_cmd, &exit_status,
 		out_buf, out_len, timeout );
 
 	if ( result == OS_STATUS_SUCCESS && exit_status != 0 )
@@ -1930,8 +1926,6 @@ os_status_t os_system_run(
 	int command_output_fd[2u] = { -1, -1 };
 	os_status_t result = OS_STATUS_SUCCESS;
 	os_timestamp_t start_time;
-	int system_result = -1;
-	os_millisecond_t time_elapsed;
 
 	os_time( &start_time, NULL );
 
@@ -2095,14 +2089,14 @@ os_status_t os_system_shutdown(
 	os_bool_t reboot , unsigned int delay)
 {
 	char cmd[ PATH_MAX ];
-	char *buf[2] = { NULL, NULL };
-	size_t buf_len[2] = { 0u, 0u };
+	os_file_t out_files[2] = { NULL, NULL };
+
 	if ( reboot == OS_FALSE )
 		os_snprintf( cmd, PATH_MAX, "%s %d", SERVICE_SHUTDOWN_CMD, delay );
 	else
 		os_snprintf( cmd, PATH_MAX, "%s %d", SERVICE_REBOOT_CMD, delay );
 
-	return os_system_run( cmd, NULL, buf, buf_len, 0u );
+	return os_system_run( cmd, NULL, out_files );
 }
 
 

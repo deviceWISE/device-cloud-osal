@@ -78,7 +78,10 @@ typedef u_short in_port_t;
  * @see os_file_fseek
  */
 #define OS_FILE_SEEK_END           FILE_END
-
+/**
+ * @brief Null device, used to discard data
+ */
+#define OS_NULL_DEVICE             "NUL"
 /**
  * @brief Invalid socket symbol
  */

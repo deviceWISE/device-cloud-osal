@@ -3047,7 +3047,6 @@ os_status_t os_system_run(
 	int *exit_status,
 	os_file_t pipe_files[2u] )
 {
-	size_t i;
 	os_status_t result = OS_STATUS_SUCCESS;
 	SECURITY_ATTRIBUTES secure_attr;
 	os_timestamp_t start_time;
@@ -3251,8 +3250,7 @@ os_status_t os_system_shutdown(
 	os_bool_t reboot, unsigned int delay )
 {
 	char cmd[ PATH_MAX ];
-	char *buf[2] = { NULL, NULL };
-	size_t buf_len[2] = { 0u, 0u };
+	os_file_t pipes[2] = { NULL, NULL };
 	if ( reboot == OS_FALSE )
 		os_snprintf( cmd, PATH_MAX, "%s %d", "shutdown /s /t ",
 			delay * SECONDS_IN_MINUTE );
@@ -3260,7 +3258,7 @@ os_status_t os_system_shutdown(
 		os_snprintf( cmd, PATH_MAX, "%s %d", "shutdown /r /t ",
 			delay * SECONDS_IN_MINUTE );
 
-	return os_system_run( cmd, NULL, buf, buf_len, 0u );
+	return os_system_run( cmd, NULL, pipes );
 }
 
 os_bool_t os_terminal_vt100_support(
