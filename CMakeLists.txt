@@ -23,6 +23,7 @@ function( get_full_path OUT_VAR )
 endfunction( get_full_path OUT_VAR )
 
 ### General Build Config ###
+cmake_minimum_required( VERSION 2.8.5 )
 set( CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/build-sys" "${CMAKE_MODULE_PATH}" )
 set( CMAKE_PROJECT_NAME "OSAL" )
 project( ${CMAKE_PROJECT_NAME} )
@@ -37,24 +38,26 @@ set_target_properties( ${TARGET} PROPERTIES
 	VERSION ${OSAL_LIB_VER}
 	)
 
+if( OSAL_OPTIMIZE )
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mfma -O3")
+endif()
+
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -fpic")
+
 ### CPack Config ###
 set( CPACK_PACKAGE_NAME ${CMAKE_PROJECT_NAME} )
 set( CPACK_PACKAGE_VERSION ${OSAL_LIB_VER})
 set( CPACK_PACKAGE_DESCRIPTION_SUMMARY "Operating System Abstraction Library" )
+set( CPACK_PACKAGE_CONTACT "bwiebe" )
 
 if ( WIN32 )
 	set( CPACK_GENERATOR "ZIP" )
 else()
 	set( CPACK_GENERATOR "DEB" )
-	set( CPACK_DEBIAN_PACKAGE_MAINTAINER "bwiebe" )
-	set( CPACK_DEBIAN_PACKAGE_DEPENDS    "libuuid1, uuid-dev, sudo, libc6" )
+	set( CPACK_DEBIAN_PACKAGE_DEPENDS "libuuid1, uuid-dev, sudo, libc6" )
 endif()
 
 include( CPack )
-
-if( OSAL_OPTIMIZE )
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mfma -O3")
-endif()
 
 ### Build Library ###
 set( TARGET "osal" )
@@ -108,4 +111,6 @@ install( TARGETS ${TARGET}
 	PUBLIC_HEADER DESTINATION "${INSTALL_INCLUDE_DIR}" COMPONENT headers
 )
 
-install( FILES ${C_HDRS} DESTINATION "${INSTALL_INCLUDE_DIR}" COMPONENT headers )
+install( FILES ${C_HDRS} 
+	DESTINATION "${INSTALL_INCLUDE_DIR}" COMPONENT headers 
+)

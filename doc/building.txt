@@ -12,6 +12,10 @@
 
 ~~ Building with CMake ~~
 
+Note: adding `-DOSAL_OPTIMIZE=1` to either of the CMake commands below will
+      modify the build so that the output is optimized for shortening the
+      execution time of methods.
+
 *POSIX*
  1. Create a build folder and cd into it
  2. Run `cmake ..`
