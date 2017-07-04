@@ -169,5 +169,7 @@ typedef FILE *os_file_t;
 
 #define os_vsnprintf                   vsnprintf
 
+#define OS_COMMAND_SH                  "/bin/sh", "sh", "-c"
+
 #endif /* ifndef OS_POSIX_H */
 

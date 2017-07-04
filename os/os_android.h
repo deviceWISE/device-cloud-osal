@@ -31,7 +31,16 @@
 #define SERVICE_REBOOT_CMD       "svc power reboot \"rebooting\""
 #define OTA_DUP_PATH             "/data/local/tmp"
 
+#define OS_COMMAND_SH            "/system/bin/sh", "sh", "-c"
+
 #define COMMAND_OUTPUT_MAX_LEN   128u
+
+/**
+ * @def DIRECTORY_CREATE_MAX_TIMEOUT
+ * @brief Amount of time in milliseconds to wait for a directory to be
+ *        created
+ */
+#define DIRECTORY_CREATE_MAX_TIMEOUT 3000000u
 
 /* 
  * This must come at the end to pickup the definitions and #include values

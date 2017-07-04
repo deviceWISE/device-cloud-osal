@@ -238,11 +238,7 @@ typedef struct
  * @brief Amount of time in milliseconds to wait for a directory to be
  *        created
  */
-#ifdef __ANDROID__
-#	define DIRECTORY_CREATE_MAX_TIMEOUT 3000000u
-#else
-#	define DIRECTORY_CREATE_MAX_TIMEOUT 300u
-#endif /* __ANDROID__ */
+#define DIRECTORY_CREATE_MAX_TIMEOUT 300u
 
 #ifdef __cplusplus
 extern "C" {

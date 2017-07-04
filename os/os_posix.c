@@ -1951,11 +1951,9 @@ os_status_t os_system_run(
 			/* redirect child stdout/stderr to the pipe */
 			for ( i = 0u; i < 2u; ++i )
 				dup2( command_output_fd[i], output_fd[i] );
-#ifdef __ANDROID__
-			execl( "/system/bin/sh", "sh", "-c", command, (char *)NULL );
-#else
-			execl( "/bin/sh", "sh", "-c", command, (char *)NULL );
-#endif
+
+			execl( OS_COMMAND_SH , command, (char *)NULL );
+
 			/* Process failed to be replaced, return failure */
 			exit( errno );
 		}
@@ -2015,11 +2013,9 @@ os_status_t os_system_run_wait(
 					dup2( command_output_fd[i][1], output_fd[i] );
 					close( command_output_fd[i][0] );
 				}
-#ifdef __ANDROID__
-				execl( "/system/bin/sh", "sh", "-c", command, (char *)NULL );
-#else
-				execl( "/bin/sh", "sh", "-c", command, (char *)NULL );
-#endif
+
+				execl( OS_COMMAND_SH, command, (char *)NULL );
+
 				/* Process failed to be replaced, return failure */
 				exit( errno );
 			}
