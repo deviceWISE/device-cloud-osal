@@ -1200,13 +1200,6 @@ char *os_strrchr(
 	return result;
 }
 
-char *os_strstr(
-	const char *str1,
-	const char *str2 )
-{
-	return StrStr( str1, str2 );
-}
-
 double os_strtod(
 	const char *str,
 	char **endptr )
@@ -3495,13 +3488,6 @@ os_status_t os_thread_condition_timed_wait(
 				result = OS_STATUS_SUCCESS;
 	}
 	return result;
-}
-
-os_status_t os_thread_condition_wait(
-	os_thread_condition_t *cond,
-	os_thread_mutex_t *lock )
-{
-	return os_thread_condition_timed_wait( cond, lock, 0 );
 }
 
 os_status_t os_thread_create(

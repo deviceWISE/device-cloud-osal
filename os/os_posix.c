@@ -247,18 +247,6 @@ os_bool_t os_char_isxdigit(
 	return result;
 }
 
-char os_char_tolower(
-	char c )
-{
-	return (char)tolower( c );
-}
-
-char os_char_toupper(
-	char c )
-{
-	return (char)toupper( c );
-}
-
 /* file & directory support */
 os_status_t os_directory_create(
 		const char *path,
@@ -2317,13 +2305,6 @@ os_status_t os_thread_condition_timed_wait(
 			result = OS_STATUS_SUCCESS;
 	}
 	return result;
-}
-
-os_status_t os_thread_condition_wait(
-	os_thread_condition_t *cond,
-	os_thread_mutex_t *lock )
-{
-	return os_thread_condition_timed_wait( cond, lock, 0 );
 }
 
 #ifndef _WRS_KERNEL

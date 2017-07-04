@@ -424,28 +424,6 @@ OS_API OS_SECTION os_bool_t os_char_isxdigit(
 );
 
 /**
- * @brief Converts a character to lower case
- *
- * @param[in]      c                   character to convert
- *
- * @return the lower-case value of the character, or @p c if not possible
- */
-OS_API OS_SECTION char os_char_tolower(
-	char c
-);
-
-/**
- * @brief Converts a character to upper case
- *
- * @param[in]      c                   character to convert
- *
- * @return the upper-case value of the character, or @p c if not possible
- */
-OS_API OS_SECTION char os_char_toupper(
-	char c
-);
-
-/**
  * @brief Converts a string to lower cases only
  *
  * @param[out]     out                 output string
@@ -1019,21 +997,6 @@ OS_API OS_SECTION size_t os_strspn(
 	const char *str1,
 	const char *str2
 );
-
-/**
- * @brief Locate a substring
- *
- * @param[in]      str1                string to be searched
- * @param[in]      str2                string to search for
- *
- * @retval         !NULL               pointer to the substring of str2 in str1
- * @retval         NULL                no substring found
- */
-OS_API OS_SECTION char *os_strstr(
-	const char *str1,
-	const char *str2
-);
-
 
 /**
  * @brief Parse a string to retrieve a double
@@ -1913,21 +1876,6 @@ OS_API OS_SECTION os_status_t os_thread_condition_timed_wait(
 );
 
 /**
- * @brief Wait indefinitely on a condition variable
- *
- * @param[in,out]  cond                condition variable to wait on
- * @param[in,out]  lock                mutex protecting condition variable
- *
- * @retval OS_STATUS_BAD_PARAMETER    invalid parameter passed to function
- * @retval OS_STATUS_FAILURE          function failed
- * @retval OS_STATUS_SUCCESS          on success
- */
-OS_API OS_SECTION os_status_t os_thread_condition_wait(
-	os_thread_condition_t *cond,
-	os_thread_mutex_t *lock
-);
-
-/**
  * @brief Creates a new thread
  *
  * @param[in,out]  thread              newly created thread object
@@ -2418,6 +2366,28 @@ OS_API OS_SECTION size_t os_file_fwrite(
 	os_file_t stream
 );
 
+/**
+ * @brief Converts a character to lower case
+ *
+ * @param[in]      c                   character to convert
+ *
+ * @return the lower-case value of the character, or @p c if not possible
+ */
+OS_API OS_SECTION char os_char_tolower(
+	char c
+);
+
+/**
+ * @brief Converts a character to upper case
+ *
+ * @param[in]      c                   character to convert
+ *
+ * @return the upper-case value of the character, or @p c if not possible
+ */
+OS_API OS_SECTION char os_char_toupper(
+	char c
+);
+
 /* memory functions */
 /**
  * @brief Change the size of an allocated memory block
@@ -2455,10 +2425,14 @@ OS_API OS_SECTION void *os_heap_realloc(
 #define os_memzero(ptr, size)                  ZeroMemory(ptr, size)
 #define os_heap_calloc( num, size )            HeapAlloc( GetProcessHeap(), 0, num * size )
 #define os_system_error_last()                 (int)GetLastError()
+#define os_strstr(str1, str2)                  StrStr(str1, str2)
+
+#define os_thread_condition_wait(cond, lock)   os_thread_condition_timed_wait( cond, lock, 0 )
 
 #else /* posix */
 
 /* includes for #defined functions */
+#include <ctype.h>
 #include <dlfcn.h>
 #include <errno.h>
 #include <limits.h> /* for PATH_MAX */
@@ -2507,6 +2481,11 @@ OS_API OS_SECTION void *os_heap_realloc(
 
 #define os_library_open(name)                  dlopen(name, 0)
 #define os_library_find(lib, func)             dlsym(lib, func)
+
+#define os_char_tolower(c)                     (char)tolower(c)
+#define os_char_toupper(c)                     (char)toupper(c)
+
+#define os_thread_condition_wait(cond, lock)   os_thread_condition_timed_wait( cond, lock, 0 )
 
 #endif /* ifdef _WIN32 */
 
