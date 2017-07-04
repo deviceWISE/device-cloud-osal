@@ -3050,6 +3050,13 @@ os_status_t os_system_run(
 	os_status_t result = OS_STATUS_NOT_EXECUTABLE;
 	SECURITY_ATTRIBUTES secure_attr;
 	os_timestamp_t start_time;
+	DWORD cmd_result = -1;
+	PROCESS_INFORMATION proc_info;
+	STARTUPINFO start_info;
+	/* do not inheritHandles, so that the new process can run separately */
+	BOOL inheritHandles = FALSE;
+	char comspec_path[PATH_MAX + 1u];
+	char command_with_comspec[PATH_MAX + 1u];
 
 	os_time( &start_time, NULL );
 
@@ -3060,14 +3067,6 @@ os_status_t os_system_run(
 
 	if ( exit_status )
 		*exit_status = -1;
-
-	DWORD cmd_result = -1;
-	PROCESS_INFORMATION proc_info;
-	STARTUPINFO start_info;
-	/* do not inheritHandles, so that the new process can run separately */
-	BOOL inheritHandles = FALSE;
-	char comspec_path[ PATH_MAX + 1u ];
-	char command_with_comspec[ PATH_MAX + 1u ];
 
 	/* create process */
 	ZeroMemory( &proc_info, sizeof( PROCESS_INFORMATION ) );

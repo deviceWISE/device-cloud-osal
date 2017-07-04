@@ -39,10 +39,12 @@ set_target_properties( ${TARGET} PROPERTIES
 	)
 
 if( OSAL_OPTIMIZE )
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mfma -O3")
+	if( CMAKE_C_COMPILER_ID MATCHES "(Clang|GNU)" )
+		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mfma -O3")
+	else()
+		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /Ox")
+	endif()
 endif()
-
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -fpic")
 
 ### CPack Config ###
 set( CPACK_PACKAGE_NAME ${CMAKE_PROJECT_NAME} )
