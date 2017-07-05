@@ -1279,6 +1279,7 @@ os_status_t os_service_query(
 	return result;
 }
 
+#ifndef __ANDROID__
 os_status_t os_service_restart(
 	const char *id,
 	const char *exe,
@@ -1301,6 +1302,7 @@ os_status_t os_service_restart(
 		result = OS_STATUS_FAILURE;
 	return result;
 }
+#endif /* __ANDROID__ */
 
 /* socket functions */
 int os_get_host_address(

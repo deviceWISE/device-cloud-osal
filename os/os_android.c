@@ -20,7 +20,7 @@ os_status_t os_service_restart(
 
 	snprintf( service_cmd, 255u, "ps | grep %s", exe );
 	service_cmd[ 255u ] = '\0';
-	result = os_system_run( service_cmd, &exit_status,
+	result = os_system_run_wait( service_cmd, &exit_status,
 		out_buf, out_len, timeout );
 	if ( result == OS_STATUS_SUCCESS )
 	{
@@ -28,7 +28,7 @@ os_status_t os_service_restart(
 		{
 			snprintf( service_cmd, 255u, "start %s", id );
 			service_cmd[ 255u ] = '\0';
-			result = os_system_run( service_cmd, &exit_status,
+			result = os_system_run_wait( service_cmd, &exit_status,
 				out_buf, out_len, timeout );
 		}
 		else
@@ -74,7 +74,7 @@ os_status_t os_service_restart(
 				 */
 				snprintf( service_cmd, 255u, "kill -9 %s", pid );
 				service_cmd[ 255u ] = '\0';
-				result = os_system_run(
+				result = os_system_run_wait(
 					service_cmd, &exit_status,
 					out_buf, out_len, timeout );
 			}
