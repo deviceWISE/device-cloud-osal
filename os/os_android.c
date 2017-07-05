@@ -1,3 +1,5 @@
+#include "../os.h"
+#include "../os/os_posix.h"
 
 os_status_t os_service_restart(
 	const char *id,
