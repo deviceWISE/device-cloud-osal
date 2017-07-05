@@ -37,6 +37,19 @@
 #define OS_HOST_MAX_LEN _POSIX_HOST_NAME_MAX
 #endif
 
+#ifndef __ANDROID__
+#	define COMMAND_PREFIX           "sudo "
+#	define SERVICE_SHUTDOWN_CMD	"/sbin/shutdown -h "
+#	define SERVICE_START_CMD	"systemctl start %s"
+#	define SERVICE_STATUS_CMD	"systemctl status %s"
+#	define SERVICE_STOP_CMD		"systemctl stop %s"
+#	define SERVICE_REBOOT_CMD	"/sbin/shutdown -r "
+#	define OTA_DUP_PATH		"/tmp"
+
+#	define OS_COMMAND_SH                  "/bin/sh", "sh", "-c"
+
+#endif
+
 /**
  * @brief Character used to split environment variables
  */
@@ -168,8 +181,6 @@ typedef FILE *os_file_t;
 #endif
 
 #define os_vsnprintf                   vsnprintf
-
-#define OS_COMMAND_SH                  "/bin/sh", "sh", "-c"
 
 #endif /* ifndef OS_POSIX_H */
 

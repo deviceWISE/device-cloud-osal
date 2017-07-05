@@ -41,14 +41,6 @@
 #	endif
 #endif
 
-#	define COMMAND_PREFIX           "sudo "
-#	define SERVICE_SHUTDOWN_CMD	"/sbin/shutdown -h "
-#	define SERVICE_START_CMD	"systemctl start %s"
-#	define SERVICE_STATUS_CMD	"systemctl status %s"
-#	define SERVICE_STOP_CMD		"systemctl stop %s"
-#	define SERVICE_REBOOT_CMD	"/sbin/shutdown -r "
-#	define OTA_DUP_PATH		"/tmp"
-
 #ifdef _WRS_KERNEL
 typedef u_short in_port_t;
 #endif
