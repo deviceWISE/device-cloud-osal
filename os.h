@@ -13,6 +13,10 @@
 #ifndef OS_H
 #define OS_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif /* ifdef __cplusplus */
+
 #include <stdint.h>
 
 /**
@@ -106,7 +110,6 @@ typedef uint64_t                                 os_timestamp_t;
  * @}
  */
 
-/**** DEFS, may be moved later ****/
 /** @brief Number of microseconds in millisecond */
 #define OS_MICROSECONDS_IN_MILLISECOND 1000u
 /** @brief Number of milliseconds in a second */
@@ -239,10 +242,6 @@ typedef struct
  *        created
  */
 #define DIRECTORY_CREATE_MAX_TIMEOUT 300u
-
-#ifdef __cplusplus
-extern "C" {
-#endif /* ifdef __cplusplus */
 
 /* flags */
 /** @brief Time stamps are relative to uptime */
