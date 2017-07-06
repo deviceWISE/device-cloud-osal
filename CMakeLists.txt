@@ -6,6 +6,19 @@
 # agreement.  No license to Wind River intellectual property rights is granted
 # herein.  All rights not licensed by Wind River are reserved by Wind River.
 #
+cmake_minimum_required( VERSION 2.8.5 )
+project( "OSAL" )
+
+### Definitions ###
+set( PACKAGE_NAME                "OSAL" )
+set( PACKAGE_VERSION             "0.0.1" )
+set( PACKAGE_DESCRIPTION_SUMMARY "Operating System Abstraction Library" )
+set( PACKAGE_VENDOR              "Wind River Systems" )
+
+set( PROJECT_VERSION             "${PACKAGE_VERSION}" )
+set( PROJECT_VENDOR              "${PACKAGE_VENDOR}" )
+
+set( CMAKE_MODULE_PATH           "${CMAKE_SOURCE_DIR}/build-sys" "${CMAKE_MODULE_PATH}" )
 
 ### Functions ###
 
@@ -23,19 +36,13 @@ function( get_full_path OUT_VAR )
 endfunction( get_full_path OUT_VAR )
 
 ### General Build Config ###
-cmake_minimum_required( VERSION 2.8.5 )
-set( CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/build-sys" "${CMAKE_MODULE_PATH}" )
-set( CMAKE_PROJECT_NAME "OSAL" )
-project( ${CMAKE_PROJECT_NAME} )
-
-set( OSAL_LIB_VER 0.0.1 )
 
 include( BuildSupport )
 include( DefineCompilerFlags )
 
 set_target_properties( ${TARGET} PROPERTIES
-	SOVERSION ${OSAL_LIB_VER}
-	VERSION ${OSAL_LIB_VER}
+	SOVERSION ${PACKAGE_VERSION}
+	VERSION ${PACKAGE_VERSION}
 	)
 
 if( OSAL_OPTIMIZE )
@@ -47,8 +54,7 @@ if( OSAL_OPTIMIZE )
 endif()
 
 ### CPack Config ###
-set( CPACK_PACKAGE_NAME ${CMAKE_PROJECT_NAME} )
-set( CPACK_PACKAGE_VERSION ${OSAL_LIB_VER})
+set( CPACK_PACKAGE_VERSION ${PACKAGE_VERSION} )
 set( CPACK_PACKAGE_DESCRIPTION_SUMMARY "Operating System Abstraction Library" )
 set( CPACK_PACKAGE_CONTACT "bwiebe" )
 
@@ -56,6 +62,13 @@ if ( WIN32 )
 	set( CPACK_GENERATOR "ZIP" )
 else()
 	set( CPACK_GENERATOR "DEB" )
+	find_program( RPMBUILD_EXECUTABLE rpmbuild
+		DOC "path to rpmbuild executable" )
+	mark_as_advanced( RPMBUILD_EXECUTABLE )
+	if ( RPMBUILD_EXECUTABLE )
+		set( GENERATOR_DEFAULT "RPM" )
+	endif ( RPMBUILD_EXECUTABLE )
+	set( GENERATOR_LIST "RPM" "DEB" )
 	set( CPACK_DEBIAN_PACKAGE_DEPENDS "libuuid1, uuid-dev, sudo, libc6" )
 endif()
 
