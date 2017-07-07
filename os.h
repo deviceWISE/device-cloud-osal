@@ -2419,11 +2419,13 @@ OS_API OS_SECTION char os_char_toupper(
 /* Use built-ins where possible */
 #define os_library_find(lib, func)             GetProcAddress(module, name)
 #define os_library_open(name)                  LoadLibrary(name)
+
 #define os_memcpy(dst, src, num)               CopyMemory(dst, src, num); dst
-#define os_memmove(dst, src, num)               MoveMemory(dst, src, num); dst
+#define os_memmove(dst, src, num)              MoveMemory(dst, src, num); dst
 #define os_memset( ptr, val, num )             FillMemory( ptr, num, val )
 #define os_memzero(ptr, size)                  ZeroMemory(ptr, size)
 #define os_heap_calloc( num, size )            HeapAlloc( GetProcessHeap(), 0, num * size )
+
 #define os_system_error_last()                 (int)GetLastError()
 #define os_strstr(str1, str2)                  StrStr(str1, str2)
 
@@ -2445,8 +2447,7 @@ OS_API OS_SECTION char os_char_toupper(
 #include <time.h>   /* for nanosleep */
 
 /* Use built-ins where possible */
-#define os_heap_free(ptr)                      free(*ptr)
-#define os_heap_free_null(x)                   { if ( *x ) free( *x ); *x = NULL; }
+#define os_heap_free(ptr)                      { if ( *ptr ) free( *ptr ); *ptr = NULL; }
 #define os_heap_malloc(size)                   malloc(size)
 #define os_heap_calloc(num, size)              calloc(num, size)
 #define os_heap_realloc(ptr, size)             realloc(ptr, size)
