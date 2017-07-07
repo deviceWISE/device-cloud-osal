@@ -74,6 +74,29 @@ endif()
 
 include( CPack )
 
+### Doxygen Config ###
+find_package( Doxygen )
+
+if( DOXYGEN_FOUND )
+	set( DOXYFILE_SOURCE_DIR "build-sys/doxygen" )
+	string( TIMESTAMP DATE_YEAR "%Y" UTC )
+	string( TIMESTAMP DATE_MONTH "%m" UTC )
+	string( TIMESTAMP DATE_DAY "%d" UTC )
+	string( TIMESTAMP DATE_TIME "%H:%M" UTC )
+	configure_file( "${DOXYFILE_SOURCE_DIR}/Doxyfile.in" "${CMAKE_BINARY_DIR}/Doxyfile" @ONLY )
+	configure_file( "${DOXYFILE_SOURCE_DIR}/footer.html.in" "${CMAKE_BINARY_DIR}/footer.html" @ONLY )
+
+	add_custom_target( doc
+		COMMAND "${CMAKE_COMMAND}" -E echo "Generating documentation..."
+		COMMAND "${CMAKE_COMMAND}" -E make_directory "${CMAKE_BINARY_DIR}/doxygen"
+		COMMAND "${DOXYGEN_EXECUTABLE}" "${CMAKE_BINARY_DIR}/Doxyfile"
+		COMMAND "${CMAKE_COMMAND}" -E echo_append "Complete"
+		DEPENDS "${CMAKE_BINARY_DIR}/Doxyfile"
+		WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+		COMMENT "Generating Documentation" VERBATIM
+	)
+endif( DOXYGEN_FOUND )
+
 ### Build Library ###
 set( TARGET "osal" )
 
