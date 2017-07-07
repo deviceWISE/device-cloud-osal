@@ -2082,6 +2082,35 @@ OS_API OS_SECTION os_status_t os_uuid_to_string_lower(
 
 #ifdef _WIN32 /* windows-specific definitions */
 
+
+/* memory functions */
+/**
+ * @brief Change the size of an allocated memory block
+ *
+ * The contents of the previously allocated memory will be unchanged in the
+ * range from the start up to the minimum of the old and new sizes.  If hte new
+ * size is larger than the old size the added memory will not be initialized.
+ *
+ * @param[in]      ptr                 pointer to the previously allocated
+ *                                     block, if ptr is NULL the call is
+ *                                     equivilant to os_heap_malloc(size).
+ *                                     This value must be a value returned by an
+ *                                     earlier call to os_heap_calloc,
+ *                                     os_heap_malloc or os_heap_realloc
+ * @param[in]      size                new size for the allocated block
+ *
+ * @retval NULL    the specified amount of memory is not continously available
+ * @retval !NULL   a pointer to the allocated memory
+ *
+ * @see os_heap_calloc
+ * @see os_heap_free
+ * @see os_heap_malloc
+ */
+OS_API OS_SECTION void *os_heap_realloc(
+	void *ptr,
+	size_t size
+) __attribute__((malloc));
+
 /**
  * @brief Frees previously allocated memory specified
  *
@@ -2387,34 +2416,6 @@ OS_API OS_SECTION char os_char_toupper(
 	char c
 );
 
-/* memory functions */
-/**
- * @brief Change the size of an allocated memory block
- *
- * The contents of the previously allocated memory will be unchanged in the
- * range from the start up to the minimum of the old and new sizes.  If hte new
- * size is larger than the old size the added memory will not be initialized.
- *
- * @param[in]      ptr                 pointer to the previously allocated
- *                                     block, if ptr is NULL the call is
- *                                     equivilant to os_heap_malloc(size).
- *                                     This value must be a value returned by an
- *                                     earlier call to os_heap_calloc,
- *                                     os_heap_malloc or os_heap_realloc
- * @param[in]      size                new size for the allocated block
- *
- * @retval NULL    the specified amount of memory is not continously available
- * @retval !NULL   a pointer to the allocated memory
- *
- * @see os_heap_calloc
- * @see os_heap_free
- * @see os_heap_malloc
- */
-OS_API OS_SECTION void *os_heap_realloc(
-	void *ptr,
-	size_t size
-) __attribute__((malloc));
-
 /* Use built-ins where possible */
 #define os_library_find(lib, func)             GetProcAddress(module, name)
 #define os_library_open(name)                  LoadLibrary(name)
@@ -2447,36 +2448,37 @@ OS_API OS_SECTION void *os_heap_realloc(
 #define os_heap_free(ptr)                      free(*ptr)
 #define os_heap_free_null(x)                   { if ( *x ) free( *x ); *x = NULL; }
 #define os_heap_malloc(size)                   malloc(size)
+#define os_heap_calloc(num, size)              calloc(num, size)
+#define os_heap_realloc(ptr, size)             realloc(ptr, size)
 #define os_memcpy(dst, src, num)               memcpy(dst, src, num)
 #define os_memzero(ptr, num)                   bzero(ptr, num)
+#define os_memmove(dst, src, num)              memmove(dst, src, num)
+#define os_memset(ptr, val, num)               memset(ptr, val, num)
+
 #define os_strcmp(str1, str2)                  strcmp(str1, str2)
 #define os_strlen(str)                         strlen(str)
 #define os_strncmp(str1, str2, num)            strncmp(str1, str2, num)
 #define os_strncpy(dst, src, num)              strncpy(dst, src, num)
 #define os_strrchr(str, chr)                   strrchr(str, chr)
-     
-#define os_system_pid()                        (os_uint32_t)getpid()
-#define os_system_error_last()                 errno
-     
-#define os_fprintf(file, fmt, ...)             fprintf(file, fmt, ##__VA_ARGS__)
-#define os_printf(fmt, ...)                    printf(fmt, ##__VA_ARGS__)
-#define os_snprintf(str, num, fmt, ...)        snprintf(str, num, fmt, ##__VA_ARGS__)
-#define os_vfprintf(file, fmt, varg)           vfprintf(file, fmt, varg)
-     
-#define os_file_fgets(str, num, file)          fgets(str, (int) num, file)
-#define os_file_fputs(str, file)               (size_t)fputs(str, file)
-#define os_file_fread(str, size, num, file)    fread(str, size, num, file)
-#define os_file_fwrite(str, size, num, file)   fwrite(str, size, num, file)
 #define os_strchr(str, chr)                    strchr(str, chr)
 #define os_strpbrk(str1, str2)                 strpbrk(str1, str2)
 #define os_strstr(str1, str2)                  strstr(str1, str2)
 #define os_strtod(str, end)                    strtod(str, end)
 #define os_strtol(str, end)                    strtol(str, end, 10)
 #define os_strtoul(str, end)                   strtoul(str, end, 10)
-#define os_memmove(dst, src, num)              memmove(dst, src, num)
-#define os_memset(ptr, val, num)               memset(ptr, val, num)
-#define os_heap_calloc(num, size)              calloc(num, size)
-#define os_heap_realloc(ptr, size)             realloc(ptr, size)
+
+#define os_system_pid()                        (os_uint32_t)getpid()
+#define os_system_error_last()                 errno
+
+#define os_fprintf(file, fmt, ...)             fprintf(file, fmt, ##__VA_ARGS__)
+#define os_printf(fmt, ...)                    printf(fmt, ##__VA_ARGS__)
+#define os_snprintf(str, num, fmt, ...)        snprintf(str, num, fmt, ##__VA_ARGS__)
+#define os_vfprintf(file, fmt, varg)           vfprintf(file, fmt, varg)
+
+#define os_file_fgets(str, num, file)          fgets(str, (int) num, file)
+#define os_file_fputs(str, file)               (size_t)fputs(str, file)
+#define os_file_fread(str, size, num, file)    fread(str, size, num, file)
+#define os_file_fwrite(str, size, num, file)   fwrite(str, size, num, file)
 
 #define os_library_open(name)                  dlopen(name, 0)
 #define os_library_find(lib, func)             dlsym(lib, func)
