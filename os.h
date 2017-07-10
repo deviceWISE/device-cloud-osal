@@ -2487,7 +2487,9 @@ OS_API OS_SECTION char os_char_toupper(
 #define os_char_tolower(c)                     (char)tolower(c)
 #define os_char_toupper(c)                     (char)toupper(c)
 
+#ifndef NO_THREAD_SUPPORT
 #define os_thread_condition_wait(cond, lock)   os_thread_condition_timed_wait( cond, lock, 0 )
+#endif /* ifndef NO_THREAD_SUPPORT */
 
 #endif /* ifdef _WIN32 */
 

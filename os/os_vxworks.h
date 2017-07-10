@@ -2,7 +2,7 @@
  * @file
  * @brief
  *
- * @copyright Copyright (C) 2016 Wind River Systems, Inc. All Rights Reserved.
+ * @copyright Copyright (C) 2016-2017 Wind River Systems, Inc. All Rights Reserved.
  *
  * @license The right to copy, distribute or otherwise make use of this software
  * may be licensed only pursuant to the terms of an applicable Wind River
