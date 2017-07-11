@@ -2438,8 +2438,7 @@ OS_API OS_SECTION char os_char_toupper(
  *
  * @param[in]      path                library to open
  *
- * @retval IOT_STATUS_FAILURE          on failure
- * @retval IOT_STATUS_SUCCESS          on success
+ * @return         os_lib_handle of the opened library
  *
  * @see iot_os_library_close
  * @see iot_os_library_find
@@ -2931,8 +2930,7 @@ OS_API OS_SECTION char os_char_toupper(
  *
  * @param[in]      path                library to open
  *
- * @retval IOT_STATUS_FAILURE          on failure
- * @retval IOT_STATUS_SUCCESS          on success
+ * @return         os_lib_handle of the opened library
  *
  * @see iot_os_library_close
  * @see iot_os_library_find
