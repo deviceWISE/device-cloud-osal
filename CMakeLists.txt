@@ -18,7 +18,9 @@ set( PACKAGE_VENDOR              "Wind River Systems" )
 set( PROJECT_VERSION             "${PACKAGE_VERSION}" )
 set( PROJECT_VENDOR              "${PACKAGE_VENDOR}" )
 
-set( CMAKE_MODULE_PATH           "${CMAKE_SOURCE_DIR}/build-sys" "${CMAKE_MODULE_PATH}" )
+set( CMAKE_MODULE_PATH           "${CMAKE_SOURCE_DIR}/build-sys/cmake" "${CMAKE_MODULE_PATH}" )
+
+set( OSAL_INSTALL_HEADER_PATH    "${CMAKE_BINARY_DIR}/install/os.h " )
 
 ### Functions ###
 
@@ -35,6 +37,23 @@ function( get_full_path OUT_VAR )
 	set( ${OUT_VAR} ${SRCS} PARENT_SCOPE )
 endfunction( get_full_path OUT_VAR )
 
+# from https://stackoverflow.com/a/15283110/1896516
+function(cat IN_FILE OUT_FILE)
+  file(READ ${IN_FILE} CONTENTS)
+  file(APPEND ${OUT_FILE} "${CONTENTS}")
+endfunction()
+
+# Function to create the header file for installation
+function(create_header OUT_FILE)
+	file(WRITE ${OUT_FILE} "")
+	cat( "${CMAKE_SOURCE_DIR}/build-sys/header/os_h_top.in" ${OUT_FILE})
+	if( WIN32 )
+		cat( "${CMAKE_SOURCE_DIR}/os/os_win.h" ${OUT_FILE})
+	else()
+		cat( "${CMAKE_SOURCE_DIR}/os/os_posix.h" ${OUT_FILE})
+	endif()
+	cat( "${CMAKE_SOURCE_DIR}/build-sys/header/os_h_bot.in" ${OUT_FILE})
+endfunction()
 ### General Build Config ###
 
 include( BuildSupport )
@@ -94,6 +113,9 @@ set( TARGET "osal" )
 
 add_subdirectory( "os" )
 
+create_header("${CMAKE_SOURCE_DIR}/os.h")
+create_header("${OSAL_INSTALL_HEADER_PATH}")
+
 set( C_HDRS "os.h" ${C_HDRS} )
 set( C_SRCS "os.c" ${C_SRCS} )
 
@@ -141,6 +163,6 @@ install( TARGETS ${TARGET}
 	PUBLIC_HEADER DESTINATION "${INSTALL_INCLUDE_DIR}" COMPONENT headers
 )
 
-install( FILES ${C_HDRS} 
+install( FILES ${OSAL_INSTALL_HEADER_PATH} 
 	DESTINATION "${INSTALL_INCLUDE_DIR}" COMPONENT headers 
 )
