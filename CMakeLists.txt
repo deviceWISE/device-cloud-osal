@@ -45,14 +45,6 @@ set_target_properties( ${TARGET} PROPERTIES
 	VERSION ${PACKAGE_VERSION}
 	)
 
-if( OSAL_OPTIMIZE )
-	if( CMAKE_C_COMPILER_ID MATCHES "(Clang|GNU)" )
-		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mfma -O3")
-	else()
-		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /Ox")
-	endif()
-endif()
-
 ### CPack Config ###
 set( CPACK_PACKAGE_VERSION ${PACKAGE_VERSION} )
 set( CPACK_PACKAGE_DESCRIPTION_SUMMARY "Operating System Abstraction Library" )
