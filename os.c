@@ -74,34 +74,6 @@ os_status_t os_time_remaining(
 	return result;
 }
 
-char *os_string_tolower(
-	char *out,
-	const char *in,
-	size_t len )
-{
-	if ( in && out )
-	{
-		size_t i;
-		for ( i = 0; i < len && in[i] != '\0'; i++ )
-			out[i] = os_char_tolower( in[i] );
-	}
-	return out;
-}
-
-char *os_string_toupper(
-	char *out,
-	const char *in,
-	size_t len )
-{
-	if ( in && out )
-	{
-		size_t i;
-		for ( i = 0; i < len && in[i] != '\0'; i++ )
-			out[i] = os_char_toupper( in[i] );
-	}
-	return out;
-}
-
 os_status_t os_make_path( char *path, size_t len, ... )
 {
 	os_status_t result = OS_STATUS_BAD_PARAMETER;

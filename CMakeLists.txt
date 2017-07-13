@@ -20,7 +20,7 @@ set( PROJECT_VENDOR              "${PACKAGE_VENDOR}" )
 
 set( CMAKE_MODULE_PATH           "${CMAKE_SOURCE_DIR}/build-sys/cmake" "${CMAKE_MODULE_PATH}" )
 
-set( OSAL_INSTALL_HEADER_PATH    "${CMAKE_BINARY_DIR}/install/os.h " )
+set( OSAL_INSTALL_HEADER_PATH    "${CMAKE_BINARY_DIR}/install/os.h" )
 
 ### Functions ###
 
@@ -37,23 +37,6 @@ function( get_full_path OUT_VAR )
 	set( ${OUT_VAR} ${SRCS} PARENT_SCOPE )
 endfunction( get_full_path OUT_VAR )
 
-# from https://stackoverflow.com/a/15283110/1896516
-function(cat IN_FILE OUT_FILE)
-  file(READ ${IN_FILE} CONTENTS)
-  file(APPEND ${OUT_FILE} "${CONTENTS}")
-endfunction()
-
-# Function to create the header file for installation
-function(create_header OUT_FILE)
-	file(WRITE ${OUT_FILE} "")
-	cat( "${CMAKE_SOURCE_DIR}/build-sys/header/os_h_top.in" ${OUT_FILE})
-	if( WIN32 )
-		cat( "${CMAKE_SOURCE_DIR}/os/os_win.h" ${OUT_FILE})
-	else()
-		cat( "${CMAKE_SOURCE_DIR}/os/os_posix.h" ${OUT_FILE})
-	endif()
-	cat( "${CMAKE_SOURCE_DIR}/build-sys/header/os_h_bot.in" ${OUT_FILE})
-endfunction()
 ### General Build Config ###
 
 include( BuildSupport )
@@ -113,8 +96,19 @@ set( TARGET "osal" )
 
 add_subdirectory( "os" )
 
-create_header("${CMAKE_SOURCE_DIR}/os.h")
-create_header("${OSAL_INSTALL_HEADER_PATH}")
+# Create empty file. CMake needs this to exist, but the real file will be
+# generated at compile-time (below, in the ${TARGET}-pre target)
+file(WRITE ${CMAKE_SOURCE_DIR}/os.h "")
+
+if( WIN32 )
+	add_custom_target(${TARGET}-pre
+			COMMAND build-sys\\header\\generate_windows.bat
+			WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+else()
+	add_custom_target(${TARGET}-pre
+			COMMAND sh ./build-sys/header/generate_linux.sh
+			WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+endif()
 
 set( C_HDRS "os.h" ${C_HDRS} )
 set( C_SRCS "os.c" ${C_SRCS} )
@@ -137,6 +131,8 @@ add_library( ${TARGET} SHARED
        ${OSAL_SRCS_C}
        ${OSAL_SRCS_CXX}
 )
+
+add_dependencies(${TARGET} ${TARGET}-pre)
 
 if ( OS_API_THREAD_SUPPORT AND THREADS_FOUND )
 	set( API_LIBS ${API_LIBS} ${CMAKE_THREAD_LIBS_INIT} )
@@ -163,6 +159,6 @@ install( TARGETS ${TARGET}
 	PUBLIC_HEADER DESTINATION "${INSTALL_INCLUDE_DIR}" COMPONENT headers
 )
 
-install( FILES ${OSAL_INSTALL_HEADER_PATH} 
+install( FILES ${C_HDRS}
 	DESTINATION "${INSTALL_INCLUDE_DIR}" COMPONENT headers 
 )

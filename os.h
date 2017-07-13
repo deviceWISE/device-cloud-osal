@@ -693,7 +693,7 @@ typedef FILE *os_file_t;
  * @see os_fprintf
  * @see os_sprintf
  */
-#define os_printf(format, ...)                 printf(fmt, ##__VA_ARGS__)
+#define os_printf(format, ...)                 printf(format, ##__VA_ARGS__)
 
 /**
  * @brief Writes output to a string with a maximum size
@@ -725,7 +725,7 @@ typedef FILE *os_file_t;
  * @see os_sprintf
  * @see os_vsnprintf
  */
-#define os_vfprintf(stream, format, args)      vfprintf(stream, fmt, args)
+#define os_vfprintf(stream, format, args)      vfprintf(stream, format, args)
 
 /**
  * @brief Read bytes from a file into a char array
@@ -1037,36 +1037,6 @@ OS_API OS_SECTION os_bool_t os_char_isalnum(
  */
 OS_API OS_SECTION os_bool_t os_char_isxdigit(
 	char c
-);
-
-/**
- * @brief Converts a string to lower cases only
- *
- * @param[out]     out                 output string
- * @param[in]      in                  string to convert
- * @param[in]      len                 string's length
- *
- * @return the string with all the characters in lower case
- */
-OS_API OS_SECTION char *os_string_tolower(
-	char *out,
-	const char *in,
-	size_t len
-);
-
-/**
- * @brief Converts a string to upper cases only
- *
- * @param[out]     out                 output string
- * @param[in]      in                  string to convert
- * @param[in]      len                 string's length
- *
- * @return the string with all the characters in upper case
- */
-OS_API OS_SECTION char *os_string_toupper(
-	char *out,
-	const char *in,
-	size_t len
 );
 
 
@@ -1520,20 +1490,6 @@ OS_API OS_SECTION int os_strcasecmp(
 );
 
 /**
- * @brief Locate the first occurance of a character in a string
- *
- * @param[in]      s                   string to be searched
- * @param[in]      c                   character to search for as an int
- *
- * @retval         !NULL               pointer to last occurance of c in s
- * @retval         NULL                c was not found in s
- */
-OS_API OS_SECTION char *os_strchr(
-	const char *s,
-	char c
-);
-
-/**
  * @brief Finds the length of the initial portion of str1 before the first occurrence
  *        of any characters that are part of str2
  *
@@ -1612,48 +1568,6 @@ OS_API OS_SECTION char *os_strpbrk(
 OS_API OS_SECTION size_t os_strspn(
 	const char *str1,
 	const char *str2
-);
-
-/**
- * @brief Parse a string to retrieve a double
- *
- * @param[in]      str                 string to parse for double
- * @param[out]     endptr              (optional)pointer to character 
- *                                     immediately following double in string
- * @return value of double parsed
- */
-OS_API OS_SECTION double os_strtod(
-	const char *str,
-	char **endptr
-);
-
-/**
- * @brief Parse a string to retrieve a long
- *
- * @note This implementation only supports base-ten numbers
- *
- * @param[in]      str                 string to parse for long
- * @param[out]     endptr              (optional)pointer to character
- *                                     immediately following long in string
- * @return value of long parsed
- */
-OS_API OS_SECTION long os_strtol(
-	const char *str,
-	char **endptr
-);
-
-/**
- * @brief Parse a string to retrieve an unsigned long
- *
- * @param[in]      str                 string to parse for unsigned long
- * @param[out]     endptr              (optional)pointer to character
- *                                     immediately following unsigned long in
- *                                     string
- * @return value of unsigned long parsed
- */
-OS_API OS_SECTION unsigned long os_strtoul(
-	const char *str,
-	char **endptr
 );
 
 /**

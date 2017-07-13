@@ -478,7 +478,7 @@ typedef FILE *os_file_t;
  * @see os_fprintf
  * @see os_sprintf
  */
-#define os_printf(format, ...)                 printf(fmt, ##__VA_ARGS__)
+#define os_printf(format, ...)                 printf(format, ##__VA_ARGS__)
 
 /**
  * @brief Writes output to a string with a maximum size
@@ -510,7 +510,7 @@ typedef FILE *os_file_t;
  * @see os_sprintf
  * @see os_vsnprintf
  */
-#define os_vfprintf(stream, format, args)      vfprintf(stream, fmt, args)
+#define os_vfprintf(stream, format, args)      vfprintf(stream, format, args)
 
 /**
  * @brief Read bytes from a file into a char array
