@@ -106,7 +106,7 @@ if( WIN32 )
 			WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
 else()
 	add_custom_target(${TARGET}-pre
-			COMMAND sh ./build-sys/header/generate_linux.sh
+			COMMAND bash ./build-sys/header/generate_linux.sh
 			WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
 endif()
 
