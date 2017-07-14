@@ -9,13 +9,13 @@
 #pragma warning( pop )
 
 void *os_library_find(
-	iot_lib_handle_t lib,
+	os_lib_handle lib,
 	const char *function )
 {
 	return GetProcAddress( lib, function );
 }
 
-iot_lib_handle_t os_library_open(
+os_lib_handle os_library_open(
 	const char *path )
 {
 	return LoadLibrary( path );
