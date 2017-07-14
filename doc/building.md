@@ -8,7 +8,9 @@
 
 ### Macro-less Build
 To build the library _without_ using macro functions (for running unit tests, 
-etc), add `-DOSAL_WRAP=1` to your CMake command (see below).
+etc), add `-DOSAL_WRAP=1` to your CMake command (see below). The macroless
+library is intended for use with testing/local experiments only, and thus
+attempting to install it on another system via package **will not work**!
 
 ### POSIX
  1. Create a build folder and cd into it
