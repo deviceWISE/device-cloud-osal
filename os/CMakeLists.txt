@@ -19,9 +19,9 @@ endif()
 
 if( OSAL_WRAP )
 	if( WIN32 )
-		set(C_SRCS ${C_SRCS} "os_win_nomacros.c")
+		set(C_SRCS ${C_SRCS} "os_win_wrappers.c")
 	else()
-		set(C_SRCS ${C_SRCS} "os_posix_nomacros.c")
+		set(C_SRCS ${C_SRCS} "os_posix_wrappers.c")
 	endif()
 endif()
 

@@ -26,7 +26,7 @@ declaration in the corresponding header in the os/ directory.
 When declaring a macro function, you must also create a wrapper function for use
 in macro-less builds. Add your macro to os/os_<platform\>_macros.h, the wrapped
 declaration to build-sys/os_h_wrap.in, and the wrapped definition to
-os/os_<platform\>_nomacros.c.
+os/os_<platform\>_wrappers.c.
 
 For example, if `myfunction` is being added and is to be a macro on POSIX but 
 not on Windows:
@@ -34,7 +34,7 @@ not on Windows:
  * Add `#define myfunction() syscall()` to os/os_posix_macros.h
  * Add `OS_API OS_SECTION void myfunction();` to build-sys/header/os_h_wrap.in
  * Add `OS_API OS_SECTION void myfunction();` to os/os_win.h
- * Add your function definition to both os/os_win.c and os/os_posix_nomacros.c
+ * Add your function definition to both os/os_win.c and os/os_posix_wrappers.c
 
 ## Adding Common Declarations
 For declarations that are the same on all sytems, place the new delcaration in
