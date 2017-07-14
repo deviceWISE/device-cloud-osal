@@ -6,6 +6,10 @@
 
 ## Building with CMake
 
+### Macro-less Build
+To build the library _without_ using macro functions (for running unit tests, 
+etc), add `-DOSAL_WRAP=1` to your CMake command (see below).
+
 ### POSIX
  1. Create a build folder and cd into it
  2. Run `cmake <path to osal repo>`

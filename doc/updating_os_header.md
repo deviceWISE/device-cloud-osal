@@ -7,13 +7,15 @@ build-sys/header/:
 * generate_windows.bat runs on Windows-based systems and will create the header
   for Windows systems
 
-Also in that directory are two .in files which contain header content that is
-common to all operating systems.
+Also in that directory are three .in files which contain header content that is
+common to all operating systems. os_h_wrap.in is the header used for building
+the library without using macro functions.
 
 Generating will assemble the files in the following order:
  1. os_h_top.in
  2. os_<system\>.h (for Android and VxWorks systems)
  3. os_<platform\>.h (where platform is either 'win' or 'posix')
+ 4. os_<platform\>_macros.h (for builds that use macro functions)
  4. os_h_bot.in
 
 ## Adding OS-Specific Declarations
@@ -21,11 +23,18 @@ For OS-specific declarations (ie. where the declarations is different on
 different systems, such as when using a macro on one but not others), put the
 declaration in the corresponding header in the os/ directory.
 
+When declaring a macro function, you must also create a wrapper function for use
+in macro-less builds. Add your macro to os/os_<platform\>_macros.h, the wrapped
+declaration to build-sys/os_h_wrap.in, and the wrapped definition to
+os/os_<platform\>_nomacros.c.
+
 For example, if `myfunction` is being added and is to be a macro on POSIX but 
 not on Windows:
 
- * Add `#define myfunction() syscall()` to os/os_posix.h
- * Add `OS_API OS_SECTION void myfunction() {...}` to os/os_win.h
+ * Add `#define myfunction() syscall()` to os/os_posix_macros.h
+ * Add `OS_API OS_SECTION void myfunction();` to build-sys/header/os_h_wrap.in
+ * Add `OS_API OS_SECTION void myfunction();` to os/os_win.h
+ * Add your function definition to both os/os_win.c and os/os_posix_nomacros.c
 
 ## Adding Common Declarations
 For declarations that are the same on all sytems, place the new delcaration in

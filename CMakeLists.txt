@@ -96,19 +96,26 @@ set( TARGET "osal" )
 
 add_subdirectory( "os" )
 
-# Create empty file. CMake needs this to exist, but the real file will be
-# generated at compile-time (below, in the ${TARGET}-pre target)
-file(WRITE ${CMAKE_SOURCE_DIR}/os.h "")
+if( OSAL_WRAP )
+	file(REMOVE ${CMAKE_SOURCE_DIR}/os.h)
+	configure_file(${CMAKE_SOURCE_DIR}/build-sys/header/os_h_wrap.in ${CMAKE_SOURCE_DIR}/os.h COPYONLY)
 
-if( WIN32 )
-	add_custom_target(${TARGET}-pre
-			COMMAND build-sys\\header\\generate_windows.bat
-			WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
 else()
-	add_custom_target(${TARGET}-pre
-			COMMAND bash ./build-sys/header/generate_linux.sh
-			WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
-endif()
+	# Create empty file. CMake needs this to exist, but the real file will be
+	# generated at compile-time (below, in the ${TARGET}-pre target)
+	file(WRITE ${CMAKE_SOURCE_DIR}/os.h "")
+
+	if( WIN32 )
+		add_custom_target(${TARGET}-pre
+				COMMAND build-sys\\header\\generate_windows.bat
+				WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+	else()
+		add_custom_target(${TARGET}-pre
+				COMMAND bash ./build-sys/header/generate_linux.sh
+				WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+	endif()
+
+endif() #wrap
 
 set( C_HDRS "os.h" ${C_HDRS} )
 set( C_SRCS "os.c" ${C_SRCS} )
@@ -132,7 +139,9 @@ add_library( ${TARGET} SHARED
        ${OSAL_SRCS_CXX}
 )
 
-add_dependencies(${TARGET} ${TARGET}-pre)
+if( NOT OSAL_WRAP )
+	add_dependencies(${TARGET} ${TARGET}-pre)
+endif()
 
 if ( OS_API_THREAD_SUPPORT AND THREADS_FOUND )
 	set( API_LIBS ${API_LIBS} ${CMAKE_THREAD_LIBS_INIT} )

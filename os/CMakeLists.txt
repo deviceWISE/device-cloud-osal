@@ -17,6 +17,13 @@ else()
 	set( C_LIBS "dl" )
 endif()
 
+if( OSAL_WRAP )
+	if( WIN32 )
+		set(C_SRCS ${C_SRCS} "os_win_nomacros.c")
+	else()
+		set(C_SRCS ${C_SRCS} "os_posix_nomacros.c")
+	endif()
+endif()
 get_full_path( C_HDRS ${C_HDRS} )
 get_full_path( C_SRCS ${C_SRCS} )
 
