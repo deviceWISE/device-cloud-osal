@@ -214,3 +214,4 @@ typedef struct
 	/** @brief Year (1970-2999) */
 	os_uint16_t year;
 } os_date_time_t;
+

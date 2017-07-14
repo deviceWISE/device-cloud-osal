@@ -127,3 +127,4 @@
  */
 #define os_thread_condition_wait(cond, lock)   os_thread_condition_timed_wait( cond, lock, 0 )
 #endif /* ifndef NO_THREAD_SUPPORT */
+
