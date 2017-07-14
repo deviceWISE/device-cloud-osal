@@ -24,6 +24,7 @@ if( OSAL_WRAP )
 		set(C_SRCS ${C_SRCS} "os_posix_nomacros.c")
 	endif()
 endif()
+
 get_full_path( C_HDRS ${C_HDRS} )
 get_full_path( C_SRCS ${C_SRCS} )
 

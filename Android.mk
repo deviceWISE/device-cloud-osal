@@ -36,11 +36,3 @@ os/os_posix.c \
 os.c \
 
 include $(BUILD_SHARED_LIBRARY)
-
-#include $(CLEAR_VARS)
-
-#LOCAL_C_INCLUDES := \
-#    $(LOCAL_PATH)/../ \
-#    $(LOCAL_PATH)/../../ \
-#    external/e2fsprogs/lib \
-#
