@@ -172,20 +172,22 @@ unsigned long os_strtoul(
 	return strtoul( str, endptr, 10 );
 }
 
-void os_memcpy(
+void *os_memcpy(
 	void *dest,
 	const void *src,
 	size_t len )
 {
 	memcpy( dest, src, len );
+	return dest;
 }
 
-void os_memmove(
+void *os_memmove(
 	void *dest,
 	const void *src,
 	size_t len )
 {
 	memmove( dest, src, len );
+	return dest;
 }
 
 void os_memset(

@@ -1070,7 +1070,7 @@ OS_API OS_SECTION int os_memcmp(
  * @param[in]      src                 source block of memory
  * @param[in]      len                 amount of data to copy
  */
-OS_API OS_SECTION void os_memcpy(
+OS_API OS_SECTION void *os_memcpy(
 	void *dest,
 	const void *src,
 	size_t len
@@ -1083,7 +1083,7 @@ OS_API OS_SECTION void os_memcpy(
  * @param[in]      src                 source block of memory
  * @param[in]      len                 amount of data to move
  */
-OS_API OS_SECTION void os_memmove(
+OS_API OS_SECTION void *os_memmove(
 	void *dest,
 	const void *src,
 	size_t len

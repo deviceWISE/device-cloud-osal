@@ -46,7 +46,7 @@
  * @param[in]      src                 source block of memory
  * @param[in]      len                 amount of data to copy
  */
-#define os_memcpy(dst, src, len)               CopyMemory(dst, src, len); dst
+#define os_memcpy(dst, src, len)               dst; CopyMemory(dst, src, len)
 
 /**
  * @brief Moves a block of memory
@@ -55,7 +55,7 @@
  * @param[in]      src                 source block of memory
  * @param[in]      len                 amount of data to move
  */
-#define os_memmove(dst, src, len)              MoveMemory(dst, src, len); dst
+#define os_memmove(dst, src, len)              dst; MoveMemory(dst, src, len)
 
 /**
  * @brief Sets a block of memory to a specific byte
