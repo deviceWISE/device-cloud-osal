@@ -16,6 +16,8 @@
 
 LOCAL_PATH:= $(call my-dir)
 
+$( info ($(shell ( ${LOCAL_PATH}/build-sys/android/configure_android_build.sh ))))
+
 include $(CLEAR_VARS)
 
 LOCAL_C_INCLUDES := \
