@@ -697,21 +697,6 @@ OS_API OS_SECTION char *os_strncat(
 	);
 
 /**
- * @brief Finds the first occurrence of some specified characters in a string
- *
- * @param[in]      str1                String to search
- * @param[in]      str2                Characters to search for
- *
- * @retval         !NULL               Pointer to the first occurrence of
- *                                     one of the characters in str2 in str1
- * @retval         NULL                None of the characters in str2 appear
- */
-OS_API OS_SECTION char *os_strpbrk(
-	const char *str1,
-	const char *str2
-);
-
-/**
  * @brief Finds the length of the initial portion of str1 which consists only
  *        of characters that are part of str2
  *

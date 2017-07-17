@@ -559,5 +559,20 @@ OS_API OS_SECTION unsigned long os_strtoul(
 	char **endptr
 );
 
+/**
+ * @brief Finds the first occurrence of some specified characters in a string
+ *
+ * @param[in]      str1                String to search
+ * @param[in]      str2                Characters to search for
+ *
+ * @retval         !NULL               Pointer to the first occurrence of
+ *                                     one of the characters in str2 in str1
+ * @retval         NULL                None of the characters in str2 appear
+ */
+OS_API OS_SECTION char *os_strpbrk(
+	const char *str1,
+	const char *str2
+);
+
 #endif /* ifndef OS_WIN32_H */
 
