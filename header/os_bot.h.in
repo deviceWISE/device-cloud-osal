@@ -1,232 +1,3 @@
-/**
- * @file
- * @brief declares functions for the operating system abstraction layer
- *
- * @copyright Copyright (C) 2016-2017 Wind River Systems, Inc. All Rights Reserved.
- *
- * @license The right to copy, distribute or otherwise make use of this software
- * may be licensed only pursuant to the terms of an applicable Wind River
- * license agreement.  No license to Wind River intellectual property rights is
- * granted herein.  All rights not licensed by Wind River are reserved by Wind
- * River.
- */
-#ifndef OS_H
-#define OS_H
-
-#ifdef __cplusplus
-extern "C" {
-#endif /* ifdef __cplusplus */
-
-#include <stdint.h>
-
-/**
- * @brief Possible return code values
- */
-typedef enum os_status
-{
-	/** @brief Success */
-	OS_STATUS_SUCCESS = 0,
-	/** @brief Action successfully invoked (fire & forget) */
-	OS_STATUS_INVOKED,
-	/** @brief Invalid parameter passed */
-	OS_STATUS_BAD_PARAMETER,
-	/** @brief Bad request received */
-	OS_STATUS_BAD_REQUEST,
-	/** @brief Error executing the requested action */
-	OS_STATUS_EXECUTION_ERROR,
-	/** @brief Already exists */
-	OS_STATUS_EXISTS,
-	/** @brief File open failed */
-	OS_STATUS_FILE_OPEN_FAILED,
-	/** @brief Full storage */
-	OS_STATUS_FULL,
-	/** @brief Input/output error */
-	OS_STATUS_IO_ERROR,
-	/** @brief No memory */
-	OS_STATUS_NO_MEMORY,
-	/** @brief No permission */
-	OS_STATUS_NO_PERMISSION,
-	/** @brief Not executable */
-	OS_STATUS_NOT_EXECUTABLE,
-	/** @brief Not found */
-	OS_STATUS_NOT_FOUND,
-	/** @brief Not Initialized */
-	OS_STATUS_NOT_INITIALIZED,
-	/** @brief Parameter out of range */
-	OS_STATUS_OUT_OF_RANGE,
-	/** @brief Failed to parse a message */
-	OS_STATUS_PARSE_ERROR,
-	/** @brief Timed out */
-	OS_STATUS_TIMED_OUT,
-	/** @brief Try again */
-	OS_STATUS_TRY_AGAIN,
-	/** @brief Not supported in this version of the api */
-	OS_STATUS_NOT_SUPPORTED,
-
-	/**
-	 * @brief General failure
-	 * @note This must be the last state
-	 */
-	OS_STATUS_FAILURE
-} os_status_t;
-
-/** @brief False */
-#define OS_FALSE                                (os_bool_t)(0 == 1)
-/** @brief True */
-#define OS_TRUE                                 (os_bool_t)(1 == 1)
-
-/**
- * @defgroup os_types List of basic OS types
- * @{
- */
-/** @brief OS boolean (true or false) */
-typedef int                                      os_bool_t;
-/** @brief OS 32-bit floating-point */
-typedef float                                    os_float32_t;
-/** @brief OS 64-bit floating-point */
-typedef double                                   os_float64_t;
-/** @brief OS 8-bit signed integer */
-typedef int8_t                                   os_int8_t;
-/** @brief OS 16-bit signed integer */
-typedef int16_t                                  os_int16_t;
-/** @brief OS 32-bit signed integer */
-typedef int32_t                                  os_int32_t;
-/** @brief OS 64-bit signed integer */
-typedef int64_t                                  os_int64_t;
-/** @brief OS 8-bit unsigned integer */
-typedef uint8_t                                  os_uint8_t;
-/** @brief OS 16-bit unsigned integer */
-typedef uint16_t                                 os_uint16_t;
-/** @brief OS 32-bit unsigned integer */
-typedef uint32_t                                 os_uint32_t;
-/** @brief OS 64-bit unsigned integer */
-typedef uint64_t                                 os_uint64_t;
-/** @brief OS time interval in milliseconds */
-typedef uint32_t                                 os_millisecond_t;
-/** @brief OS time stamp in milliseconds */
-typedef uint64_t                                 os_timestamp_t;
-
-/**
- * @}
- */
-
-/** @brief Number of microseconds in millisecond */
-#define OS_MICROSECONDS_IN_MILLISECOND 1000u
-/** @brief Number of milliseconds in a second */
-#define OS_MILLISECONDS_IN_SECOND     1000u
-/** @brief Number of nanoseconds in a millisecond */
-#define OS_NANOSECONDS_IN_MILLISECOND 1000000u
-/** @brief Number of nanoseconds in a second */
-#define OS_NANOSECONDS_IN_SECOND      1000000000uL
-/** @brief Number of seconds in a minute */
-#define OS_SECONDS_IN_MINUTE          60u
-/** @brief Number of minutes in an hour */
-#define OS_MINUTES_IN_HOUR            60u
-/** @brief Number of hours in a day */
-#define OS_HOURS_IN_DAY               24u
-
-/**
- * @def OS_SECTION
- * @brief Macro to add compiler specifications for hints where to store library
- * functions in memory
- */
-#ifdef ARDUINO
-#	define OS_SECTION __attribute__((section(".irom0.text")))
-#else
-#	define OS_SECTION
-#endif /* ifdef ARDUINO */
-
-/**
- * @def OS_API
- * @brief Macro to add compiler specifications for external/internal functions
- */
-#ifdef OS_STATIC
-#	define OS_API
-#else /* ifdef OS_STATIC */
-#	if defined _WIN32 || defined __CYGWIN__
-#		if osal_EXPORTS
-#			ifdef __GNUC__
-#				define OS_API __attribute__((dllexport))
-#			else
-#				define OS_API __declspec(dllexport)
-#			endif
-#		else /* if osal_EXPORTS */
-#			ifdef __GNUC__
-#				define OS_API __attribute__((dllimport))
-#			else
-#				define OS_API __declspec(dllimport)
-#			endif
-#		endif /* if osal_EXPORTS */
-#	else /* if defined _WIN32 || defined __CYGWIN__ */
-#		if __GNUC__ >= 4
-#			define OS_API __attribute__((visibility("default")))
-#		else
-#			define OS_API
-#		endif
-#	endif /* if defined _WIN32 || defined __CYGWIN__ */
-#endif /* ifdef OS_STATIC */
-
-/**
- * @def UNUSED
- * @brief Macro used to define an unused attribute to the compiler
- */
-#ifdef __GNUC__
-#	define UNUSED(x) PARAM_ ## x __attribute((__unused__))
-#else
-#	define  __attribute__(x) /* gcc specific */
-#	define UNUSED(x) x
-#endif /* ifdef __GNUC__ */
-
-/** @brief Maximum name length (128 = Matches AWS name) */
-#define OS_NAME_MAX_LEN               128u
-
-/** @brief Signature of the function to handle operating systems signals */
-typedef void (*os_sighandler_t)( int );
-
-/**
- * @brief Prototype for the main function of a service
- *
- * @param[in]      argc                number of arguments passed in
- * @param[in]      argv                array of arguments passed in
- *
- * @retval EXIT_SUCCESS                service completed successfully
- * @retval EXIT_FAILURE                service failed to complete
- */
-typedef int (*os_service_main_t)( int argc, char** argv );
-
-/**
- * @brief Structure used for storing date and time information
- */
-typedef struct
-{
-	/** @brief Milliseconds (0-999) */
-	os_uint16_t millisecond;
-	/** @brief Seconds (0-59) */
-	os_uint8_t second;
-	/** @brief Minutes (0-59) */
-	os_uint8_t minute;
-	/** @brief Hours (0-23) */
-	os_uint8_t hour;
-	/** @brief Day (1-31) */
-	os_uint8_t day;
-	/** @brief Month (1-12) */
-	os_uint8_t month;
-	/** @brief Year (1970-2999) */
-	os_uint16_t year;
-} os_date_time_t;
-
-#if defined( _WIN32 )
-#include "os/os_win.h"
-#elif defined ( _WRS_KERNEL )
-#include "os/os_vxworks.h"
-#elif defined ( __ANDROID__ )
-#include "os/os_android.h"
-#elif defined( __unix__ )
-#include "os/os_posix.h"
-#else
-#error "Unsupported platform"
-#endif
-
 /* if there is no file system */
 /**
  * @def PATH_MAX
@@ -236,12 +7,14 @@ typedef struct
 #	define PATH_MAX 0
 #endif
 
+#ifndef __ANDROID__
 /**
  * @def DIRECTORY_CREATE_MAX_TIMEOUT
  * @brief Amount of time in milliseconds to wait for a directory to be
  *        created
  */
 #define DIRECTORY_CREATE_MAX_TIMEOUT 300u
+#endif /* ifndef android */
 
 /* flags */
 /** @brief Time stamps are relative to uptime */
@@ -420,58 +193,6 @@ OS_API OS_SECTION os_bool_t os_char_isalnum(
  */
 OS_API OS_SECTION os_bool_t os_char_isxdigit(
 	char c
-);
-
-/**
- * @brief Converts a character to lower case
- *
- * @param[in]      c                   character to convert
- *
- * @return the lower-case value of the character, or @p c if not possible
- */
-OS_API OS_SECTION char os_char_tolower(
-	char c
-);
-
-/**
- * @brief Converts a character to upper case
- *
- * @param[in]      c                   character to convert
- *
- * @return the upper-case value of the character, or @p c if not possible
- */
-OS_API OS_SECTION char os_char_toupper(
-	char c
-);
-
-/**
- * @brief Converts a string to lower cases only
- *
- * @param[out]     out                 output string
- * @param[in]      in                  string to convert
- * @param[in]      len                 string's length
- *
- * @return the string with all the characters in lower case
- */
-OS_API OS_SECTION char *os_string_tolower(
-	char *out,
-	const char *in,
-	size_t len
-);
-
-/**
- * @brief Converts a string to upper cases only
- *
- * @param[out]     out                 output string
- * @param[in]      in                  string to convert
- * @param[in]      len                 string's length
- *
- * @return the string with all the characters in upper case
- */
-OS_API OS_SECTION char *os_string_toupper(
-	char *out,
-	const char *in,
-	size_t len
 );
 
 
@@ -746,63 +467,6 @@ OS_API OS_SECTION os_bool_t os_file_exists(
 );
 
 /**
- * @brief Read bytes from a file into a char array
- *
- * @note Stops when encountering max read, EOF, or null terminator
- *
- * @param[out]     str                 Pointer to array to write to
- * @param[in]      size                Max number of bytes to read
- * @param[in,out]  stream              Pointer file to read from
- *
- * @retval         !NULL               char array written to
- * @retval         NULL                encountered EOF or error
- *
- * @see os_file_fputs
- */
-OS_API OS_SECTION char *os_file_fgets(
-	char *str,
-	size_t size,
-	os_file_t stream
-);
-
-/**
- * @brief Write bytes from an array into a file stream
- *
- * @note Stops writing when encountering a null terminator
- * @note Does not write the null terminator to the stream
- *
- * @param[in]      str                 Pointer to array to write from
- * @param[in,out]  stream              Pointer to file to write to
- *
- * @return         Number of bytes written
- *
- * @see os_file_fgets
- */
-OS_API OS_SECTION size_t os_file_fputs(
-	char *str,
-	os_file_t stream
-);
-
-/**
- * @brief Read bytes from a file into an array
- *
- * @note Stops when encountering max read, EOF, or null terminator
- *
- * @param[in,out]  ptr                 Pointer to array to write to
- * @param[in]      size                Size of each item to read
- * @param[in]      nmemb               Number of items to read
- * @param[in,out]  stream              Pointer to file to read from
- *
- * @return         Number of items read
- */
-OS_API OS_SECTION size_t os_file_fread(
-	void *ptr,
-	size_t size,
-	size_t nmemb,
-	os_file_t stream
-);
-
-/**
  * @brief Move the current position in an file stream
  *
  * @param[in,out]  stream              stream to pointer of
@@ -832,23 +496,6 @@ OS_API OS_SECTION os_status_t os_file_fseek(
  */
 OS_API OS_SECTION os_status_t os_file_fsync(
 	const char *file_path
-);
-
-/**
- * @brief Write bytes from an array into a file stream
- *
- * @param[in]      ptr                 Pointer to array to write from
- * @param[in]      size                Size of each item to be written
- * @param[in]      nmemb               Number of items to be written
- * @param[in,out]  stream              Pointer to file to write to
- *
- * @return         Number of items written
- */
-OS_API OS_SECTION size_t os_file_fwrite(
-	const void *ptr,
-	size_t size,
-	size_t nmemb,
-	os_file_t stream
 );
 
 /**
@@ -950,36 +597,6 @@ OS_API OS_SECTION char os_key_wait( void );
 OS_API OS_SECTION os_status_t os_library_close(
 	os_lib_handle lib
 );
-/**
- * @brief Finds a function within an open runtime library
- *
- * @param[in]      lib                 open library handle
- * @param[in]      function            function to find
- *
- * @retval NULL    no matching function found (or an error occurred)
- * @retval !NULL   a pointer to the matching function
- *
- * @see os_library_close
- * @see os_library_open
- */
-OS_API OS_SECTION void *os_library_find(
-	os_lib_handle lib,
-	const char *function
-);
-/**
- * @brief Opens a runtime library
- *
- * @param[in]      path                library to open
- *
- * @retval OS_STATUS_FAILURE          on failure
- * @retval OS_STATUS_SUCCESS          on success
- *
- * @see os_library_close
- * @see os_library_find
- */
-OS_API OS_SECTION os_lib_handle os_library_open(
-	const char *path
-);
 #endif /* ifndef _WRS_KERNEL */
 
 /**
@@ -1029,37 +646,6 @@ OS_API OS_SECTION int os_strcasecmp(
 );
 
 /**
- * @brief Locate the first occurance of a character in a string
- *
- * @param[in]      s                   string to be searched
- * @param[in]      c                   character to search for as an int
- *
- * @retval         !NULL               pointer to last occurance of c in s
- * @retval         NULL                c was not found in s
- */
-OS_API OS_SECTION char *os_strchr(
-	const char *s,
-	char c
-);
-
-/**
- * @brief Compares two strings
- *
- * @param[in]      s1                  first string to compare
- * @param[in]      s2                  second string to compare
- *
- * @retval         <0                  the first non-matching character has a
- *                                     lower value in s1 than in s2
- * @retval         0                   the two strings are equal
- * @retval         >0                  the first non-matching character has a
- *                                     higher value in s1 than in s2
- */
-OS_API OS_SECTION int os_strcmp(
-	const char *s1,
-	const char *s2
-);
-
-/**
  * @brief Finds the length of the initial portion of str1 before the first occurrence
  *        of any characters that are part of str2
  *
@@ -1072,17 +658,6 @@ OS_API OS_SECTION int os_strcmp(
 size_t os_strcspn(
 	const char *str1,
 	const char *str2
-);
-
-/**
- * @brief Get the length of a string
- *
- * @param[in]      s                   string to get length from
- *
- * @return         Number of characters until a terminating null character
- */
-OS_API OS_SECTION size_t os_strlen(
-	const char *s
 );
 
 /**
@@ -1122,41 +697,6 @@ OS_API OS_SECTION char *os_strncat(
 	);
 
 /**
- * @brief Compares two strings up to a certain number of characters
- *
- * @param[in]      s1                  first string to compare
- * @param[in]      s2                  second string to compare
- * @param[in]      len                 maximum number of characters to compare
- *
- * @retval         <0                  the first non-matching character has a
- *                                     lower value in s1 than in s2
- * @retval         0                   the two strings are equal up to len
- *                                     characters
- * @retval         >0                  the first non-matching character has a
- *                                     higher value in s1 than in s2
- */
-OS_API OS_SECTION int os_strncmp(
-	const char *s1,
-	const char *s2,
-	size_t len
-);
-
-/**
- * @brief Copy characters from string
- *
- * @param[out]     destination         string to copy characters to
- * @param[in]      source              string to copy character from
- * @param[in]      num                 maximum number of characters to copy
- *
- * @retval         destination
- */
-OS_API OS_SECTION char *os_strncpy(
-	char *destination,
-	const char *source,
-	size_t num
-);
-
-/**
  * @brief Finds the first occurrence of some specified characters in a string
  *
  * @param[in]      str1                String to search
@@ -1172,20 +712,6 @@ OS_API OS_SECTION char *os_strpbrk(
 );
 
 /**
- * @brief Locate the last occurance of a character in a string
- *
- * @param[in]      s                   string to be searched
- * @param[in]      c                   character to search for as an int
- *
- * @retval         !NULL               pointer to last occurance of c in s
- * @retval         NULL                c was not found in s
- */
-OS_API OS_SECTION char *os_strrchr(
-	const char *s,
-	char c
-);
-
-/**
  * @brief Finds the length of the initial portion of str1 which consists only
  *        of characters that are part of str2
  *
@@ -1198,63 +724,6 @@ OS_API OS_SECTION char *os_strrchr(
 OS_API OS_SECTION size_t os_strspn(
 	const char *str1,
 	const char *str2
-);
-
-/**
- * @brief Locate a substring
- *
- * @param[in]      str1                string to be searched
- * @param[in]      str2                string to search for
- *
- * @retval         !NULL               pointer to the substring of str2 in str1
- * @retval         NULL                no substring found
- */
-OS_API OS_SECTION char *os_strstr(
-	const char *str1,
-	const char *str2
-);
-
-
-/**
- * @brief Parse a string to retrieve a double
- *
- * @param[in]      str                 string to parse for double
- * @param[out]     endptr              (optional)pointer to character 
- *                                     immediately following double in string
- * @return value of double parsed
- */
-OS_API OS_SECTION double os_strtod(
-	const char *str,
-	char **endptr
-);
-
-/**
- * @brief Parse a string to retrieve a long
- *
- * @note This implementation only supports base-ten numbers
- *
- * @param[in]      str                 string to parse for long
- * @param[out]     endptr              (optional)pointer to character
- *                                     immediately following long in string
- * @return value of long parsed
- */
-OS_API OS_SECTION long os_strtol(
-	const char *str,
-	char **endptr
-);
-
-/**
- * @brief Parse a string to retrieve an unsigned long
- *
- * @param[in]      str                 string to parse for unsigned long
- * @param[out]     endptr              (optional)pointer to character
- *                                     immediately following unsigned long in
- *                                     string
- * @return value of unsigned long parsed
- */
-OS_API OS_SECTION unsigned long os_strtoul(
-	const char *str,
-	char **endptr
 );
 
 /**
@@ -1288,58 +757,6 @@ OS_API OS_SECTION int os_memcmp(
 	const void *ptr1,
 	const void *ptr2,
 	size_t num
-);
-
-/**
- * @brief Copy a block of memory
- *
- * @warning The destination and source memory block must not overlap
- *
- * @param[out]     dest                destination to write to
- * @param[in]      src                 source block of memory
- * @param[in]      len                 amount of data to copy
- */
-OS_API OS_SECTION void os_memcpy(
-	void *dest,
-	const void *src,
-	size_t len
-);
-
-/**
- * @brief Moves a block of memory
- *
- * @param[out]     dest                destination to write to
- * @param[in]      src                 source block of memory
- * @param[in]      len                 amount of data to move
- */
-OS_API OS_SECTION void os_memmove(
-	void *dest,
-	const void *src,
-	size_t len
-);
-
-/**
- * @brief Sets a block of memory to a specific byte
- *
- * @param[out]     dest                destination to write to
- * @param[in]      c                   byte to set
- * @param[in]      len                 amount of data to set
- */
-OS_API OS_SECTION void os_memset(
-	void *dest,
-	int c,
-	size_t len
-);
-
-/**
- * @brief Zeroizes block of memory
- *
- * @param[out]     dest                destination to write to
- * @param[in]      len                 amount of data to zeroize
- */
-OS_API OS_SECTION void os_memzero(
-	void *dest,
-	size_t len
 );
 
 /* print functions */
@@ -1387,40 +804,6 @@ OS_API OS_SECTION size_t os_env_get(
 );
 
 /**
- * @brief Writes output to an open file stream
- *
- * @param[in]      stream              stream to write to
- * @param[in]      format              string format
- * @param[in]      ...                 items to replace based on @p format
- *
- * @return the number of characters printed including the null-terminator
- *
- * @see os_printf
- * @see os_sprintf
- * @see os_vfprintf
- */
-OS_API OS_SECTION int os_fprintf(
-	os_file_t stream,
-	const char *format,
-	...
-) __attribute__((format(printf,2,3)));
-#endif /* ifndef OS_API_ONLY */
-/**
- * @brief Writes output to standard out
- *
- * @param[in]      format              string format
- * @param[in]      ...                 items to replace based on @p format
- *
- * @return the number of characters printed including the null-terminator
- *
- * @see os_fprintf
- * @see os_sprintf
- */
-OS_API OS_SECTION int os_printf(
-	const char *format,
-	...
-) __attribute__((format(printf,1,2)));
-/**
  * @brief Writes output to a string
  *
  * @warning this function may write pass the end of the string, for safety
@@ -1439,65 +822,6 @@ OS_API OS_SECTION int os_sprintf(
 	const char *format,
 	...
 ) __attribute__((format(printf,2,3)));
-/**
- * @brief Writes output to a string with a maximum size
- *
- * @param[out]     str                 string to output to
- * @param[in]      size                maximum size of buffer
- * @param[in]      format              string format
- * @param[in]      ...                 items to replace based on @p format
- *
- * @return the number of characters printed including the null-terminator,
- *         if the output is truncated then the return value -1
- *
- * @see os_sprintf
- * @see os_vsnprintf
- */
-OS_API OS_SECTION int os_snprintf(
-	char *str,
-	size_t size,
-	const char *format,
-	...
-) __attribute__((format(printf,3,4)));
-/**
- * @brief Writes output to an open file stream using a va_list
- *
- * @param[in]      stream              stream to write to
- * @param[in]      format              string format
- * @param[in]      args                variable containing values for @p format
- *
- * @return the number of characters printed including the null-terminator
- *
- * @see os_fprintf
- * @see os_printf
- * @see os_sprintf
- * @see os_vsnprintf
- */
-OS_API OS_SECTION int os_vfprintf(
-	os_file_t stream,
-	const char *format,
-	va_list args
-) __attribute__((format(printf,2,0)));
-/**
- * @brief Writes output to a string with a maximum size using a va_list
- *
- * @param[out]     str                 string to output to
- * @param[in]      size                maximum size of buffer
- * @param[in]      format              string format
- * @param[in]      args                variable containing values for @p format
- *
- * @return the number of characters printed including the null-terminator,
- *         if the output is truncated then the return value -1
- *
- * @see os_snprintf
- * @see os_vfprintf
- */
-OS_API OS_SECTION int os_vsnprintf(
-	char *str,
-	size_t size,
-	const char *format,
-	va_list args
-) __attribute__((format(printf,3,0)));
 
 /**
  * @brief Flushes a stream to ensure a buffer is transmitted
@@ -1511,91 +835,6 @@ OS_API OS_SECTION os_bool_t os_flush(
 	os_file_t stream
 );
 
-/* memory functions */
-/**
- * @brief Allocates memory for an array of elements
- *
- * The memory returned is NOT initialized. Any allocated memory should be
- * deallocated with the corrosponding @p os_heap_free command
- *
- * @note Specifying either 0 elements or elements with a size of 0 may return a
- *       valid memory pointer (that can be later freed) or NULL
- *
- * @param[in]      nmemb               number of elements to allocate memory for
- * @param[in]      size                size of each element in bytes
- *
- * @retval NULL    the specified amount of memory is not continously available
- * @retval !NULL   a pointer to the allocated memory
- *
- * @see os_heap_free
- * @see os_heap_malloc
- * @see os_heap_realloc
- */
-OS_API OS_SECTION void *os_heap_calloc(
-	size_t nmemb,
-	size_t size
-) __attribute__((malloc));
-
-/**
- * @brief Frees previously allocated memory specified
- *
- * @param[in]      ptr            pointer of pointer to the allocated memory to free
- *
- * @see os_heap_calloc
- * @see os_heap_malloc
- * @see os_heap_realloc
- */
-OS_API OS_SECTION void os_heap_free(
-	void **ptr
-);
-
-/**
- * @brief Allocates the specified amount of bytes
- *
- * The memory returned is NOT initialized. Any allocated memory should be
- * deallocated with the corrosponding @p os_heap_free command
- *
- * @param[in]      size                amount of memory to allocate
- *
- * @retval NULL    the specified amount of memory is not continously available
- * @retval !NULL   a pointer to the allocated memory
- *
- * @see os_heap_calloc
- * @see os_heap_free
- * @see os_heap_realloc
- */
-OS_API OS_SECTION void *os_heap_malloc(
-	size_t size
-) __attribute__((malloc));
-
-/**
- * @brief Change the size of an allocated memory block
- *
- * The contents of the previously allocated memory will be unchanged in the
- * range from the start up to the minimum of the old and new sizes.  If hte new
- * size is larger than the old size the added memory will not be initialized.
- *
- * @param[in]      ptr                 pointer to the previously allocated
- *                                     block, if ptr is NULL the call is
- *                                     equivilant to os_heap_malloc(size).
- *                                     This value must be a value returned by an
- *                                     earlier call to os_heap_calloc,
- *                                     os_heap_malloc or os_heap_realloc
- * @param[in]      size                new size for the allocated block
- *
- * @retval NULL    the specified amount of memory is not continously available
- * @retval !NULL   a pointer to the allocated memory
- *
- * @see os_heap_calloc
- * @see os_heap_free
- * @see os_heap_malloc
- */
-OS_API OS_SECTION void *os_heap_realloc(
-	void *ptr,
-	size_t size
-) __attribute__((malloc));
-
-#ifndef OS_API_ONLY
 /**
  * @brief Determines if a given path is an absolute path
  *
@@ -2039,13 +1278,6 @@ OS_API OS_SECTION os_status_t os_stream_echo_set(
 	os_bool_t enable );
 
 /* operating system information */
-/**
- * @brief Returns the operating system code for the last system error
- *        encountered
- *
- * @return The operating system code for the last error encountered
- */
-OS_API OS_SECTION int os_system_error_last( void );
 
 /**
  * @brief Returns the error message for indicated operating system error number
@@ -2088,12 +1320,6 @@ OS_API OS_SECTION os_status_t os_system_run(
 	const char *command,
 	int *exit_status,
 	os_file_t pipe_files[2u] );
-	
-/**
- * @brief Returns the process id of the current process
- * @return the process id of the current process
- */
-OS_API OS_SECTION os_uint32_t os_system_pid( void );
 
 /**
  * @brief run an executable on the operating system and wait for it to complete
@@ -2338,21 +1564,6 @@ OS_API OS_SECTION os_status_t os_thread_condition_timed_wait(
 );
 
 /**
- * @brief Wait indefinitely on a condition variable
- *
- * @param[in,out]  cond                condition variable to wait on
- * @param[in,out]  lock                mutex protecting condition variable
- *
- * @retval OS_STATUS_BAD_PARAMETER    invalid parameter passed to function
- * @retval OS_STATUS_FAILURE          function failed
- * @retval OS_STATUS_SUCCESS          on success
- */
-OS_API OS_SECTION os_status_t os_thread_condition_wait(
-	os_thread_condition_t *cond,
-	os_thread_mutex_t *lock
-);
-
-/**
  * @brief Creates a new thread
  *
  * @param[in,out]  thread              newly created thread object
@@ -2556,8 +1767,6 @@ OS_API OS_SECTION os_status_t os_uuid_to_string_lower(
 	char *dest,
 	size_t len
 );
-
-
 
 #ifdef __cplusplus
 }

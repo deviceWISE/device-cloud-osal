@@ -42,11 +42,5 @@
  */
 #define DIRECTORY_CREATE_MAX_TIMEOUT 3000000u
 
-/* 
- * This must come at the end to pickup the definitions and #include values
- * that are specified above.
- */
-#include <osal/os/os_posix.h>
-
 #endif /* ifndef OS_ANDROID_H */
 

@@ -11,7 +11,7 @@
  * River.
  */
 
-#include "../os.h"
+#include "os.h"
 
 #include <ctype.h>       /* for isalha, isalnum */
 #include <errno.h>       /* for errno */

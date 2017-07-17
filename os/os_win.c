@@ -11,7 +11,7 @@
  * River.
  */
 
-#include "../os.h"
+#include "os.h"
 #pragma warning( push, 1 )
 #include <float.h>  /* for DBL_MAX */
 #include <signal.h> /* for SIGINT & SIGTERM */

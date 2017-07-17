@@ -42,11 +42,5 @@
 
 typedef SEM_ID os_thread_rwlock_t;
 
-/* 
- * This must come at the end to pickup the definitions and #include values
- * that are specified above. 
- */
-#include <osal/os/os_posix.h>
-
 #endif /* ifndef OS_VXWORKS_H */
 

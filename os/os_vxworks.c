@@ -13,8 +13,7 @@
 
 #ifdef _WRS_KERNEL
 #include <vxWorks.h>
-#include "../os.h"
-#include "../os/os_posix.h"
+#include "os.h"
 #include <uuid.h>
 #include <semLib.h>
 #include <kernelLib.h>
