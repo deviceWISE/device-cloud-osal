@@ -26,7 +26,7 @@ LOCAL_C_INCLUDES := \
     $(LOCAL_PATH)/../../build-sys/android/ \
     external/e2fsprogs/lib \
 
-LOCAL_SHARED_LIBRARIES := libcutils libdl libjansson libmosquitto libext2_uuid
+LOCAL_SHARED_LIBRARIES := libcutils libdl libext2_uuid
 LOCAL_STATIC_LIBRARIES := libandroidifaddrs
 LOCAL_EXPORT_C_INCLUDE_DIRS := $(LOCAL_PATH)
 
