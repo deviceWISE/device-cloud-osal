@@ -22,6 +22,8 @@ set( CMAKE_MODULE_PATH           "${CMAKE_SOURCE_DIR}/build-sys/cmake" "${CMAKE_
 
 set( OSAL_INSTALL_HEADER_PATH    "${CMAKE_BINARY_DIR}/install/os.h" )
 
+set( TARGET                      "osal" )
+
 ### Functions ###
 
 # get header file full path
@@ -41,11 +43,6 @@ endfunction( get_full_path OUT_VAR )
 
 include( BuildSupport )
 include( DefineCompilerFlags )
-
-set_target_properties( ${TARGET} PROPERTIES
-	SOVERSION ${PACKAGE_VERSION}
-	VERSION ${PACKAGE_VERSION}
-	)
 
 ### CPack Config ###
 set( CPACK_PACKAGE_VERSION ${PACKAGE_VERSION} )
@@ -68,6 +65,19 @@ endif()
 
 include( CPack )
 
+### Header Generation Config ###
+# Create empty file. CMake needs this to exist, but the real file will be
+# generated at compile-time (below, in the ${TARGET}-pre target)
+file(WRITE ${CMAKE_BINARY_DIR}/os.h "")
+
+add_custom_target(${TARGET}-pre
+		COMMAND "${CMAKE_COMMAND}" -E echo "Generating library header file..."
+		COMMAND "${CMAKE_COMMAND}" -DOSAL_TARGET=${OSAL_TARGET} -DOSAL_SOURCE_DIR="${CMAKE_SOURCE_DIR}"
+			-DOSAL_WRAP=${OSAL_WRAP} -P "${CMAKE_SOURCE_DIR}/header/GenerateHeader.cmake"
+		COMMAND "${CMAKE_COMMAND}" -E echo "Complete"
+		)
+include_directories(${CMAKE_BINARY_DIR})
+
 ### Doxygen Config ###
 find_package( Doxygen )
 
@@ -83,30 +93,22 @@ if( DOXYGEN_FOUND )
 	add_custom_target( doc
 		COMMAND "${CMAKE_COMMAND}" -E echo "Generating documentation..."
 		COMMAND "${CMAKE_COMMAND}" -E make_directory "${CMAKE_BINARY_DIR}/doxygen"
+		COMMAND "${CMAKE_COMMAND}" -E copy "${CMAKE_BINARY_DIR}/os.h" "${CMAKE_SOURCE_DIR}"
 		COMMAND "${DOXYGEN_EXECUTABLE}" "${CMAKE_BINARY_DIR}/Doxyfile"
+		COMMAND "${CMAKE_COMMAND}" -E remove "${CMAKE_SOURCE_DIR}/os.h"
 		COMMAND "${CMAKE_COMMAND}" -E echo_append "Complete"
 		DEPENDS "${CMAKE_BINARY_DIR}/Doxyfile"
 		WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
 		COMMENT "Generating Documentation" VERBATIM
 	)
+
+	add_dependencies(doc ${TARGET}-pre)
+
 endif( DOXYGEN_FOUND )
 
 ### Build Library ###
-set( TARGET "osal" )
 
 add_subdirectory( "os" )
-
-# Create empty file. CMake needs this to exist, but the real file will be
-# generated at compile-time (below, in the ${TARGET}-pre target)
-file(WRITE ${CMAKE_BINARY_DIR}/os.h "")
-
-add_custom_target(${TARGET}-pre
-		COMMAND "${CMAKE_COMMAND}" -E echo "Generating library header file..."
-		COMMAND "${CMAKE_COMMAND}" -DOSAL_TARGET=${OSAL_TARGET} -DOSAL_SOURCE_DIR="${CMAKE_SOURCE_DIR}"
-			-DOSAL_WRAP=${OSAL_WRAP} -P "${CMAKE_SOURCE_DIR}/header/GenerateHeader.cmake"
-		COMMAND "${CMAKE_COMMAND}" -E echo "Complete"
-		)
-include_directories(${CMAKE_BINARY_DIR})
 
 set( C_HDRS "${CMAKE_BINARY_DIR}/os.h" ${C_HDRS} )
 set( C_SRCS "os.c" ${C_SRCS} )
@@ -129,6 +131,11 @@ add_library( ${TARGET} SHARED
        ${OSAL_SRCS_C}
        ${OSAL_SRCS_CXX}
 )
+
+set_target_properties( ${TARGET} PROPERTIES
+	SOVERSION ${PACKAGE_VERSION}
+	VERSION ${PACKAGE_VERSION}
+	)
 
 add_dependencies(${TARGET} ${TARGET}-pre)
 
