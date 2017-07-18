@@ -24,7 +24,7 @@ LOCAL_C_INCLUDES := \
     $(LOCAL_PATH)/../ \
     $(LOCAL_PATH)/../../ \
     $(LOCAL_PATH)/../../build-sys/android/ \
-    external/e2fsprogs/lib \
+    external/e2fsprogs/lib
 
 LOCAL_SHARED_LIBRARIES := libcutils libdl libext2_uuid
 LOCAL_STATIC_LIBRARIES := libandroidifaddrs
@@ -35,6 +35,6 @@ LOCAL_MODULE := libosal
 LOCAL_SRC_FILES := \
 os/os_android.c \
 os/os_posix.c \
-os.c \
+os.c
 
 include $(BUILD_SHARED_LIBRARY)

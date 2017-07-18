@@ -32,6 +32,7 @@ endif()
 
 if( ${OSAL_WRAP} )
 	cat( "${OSAL_SOURCE_DIR}/header/os_wrap.h.in" "${HEADER_FILE}" )
-else()
-	cat( "${OSAL_SOURCE_DIR}/header/os_bot.h.in" "${HEADER_FILE}" )
 endif()
+
+cat( "${OSAL_SOURCE_DIR}/header/os_bot.h.in" "${HEADER_FILE}" )
+
