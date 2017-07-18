@@ -1,16 +1,18 @@
 # Updating os.h
 ## Preface
 os.h is now dynamically generated at build-time by the script found in /header.
-Also in that directory are three .in files which contain header content that is
-common to all operating systems. os_wrap.h.in is the header used for building
-the library without using macro functions.
+Also in that directory are two .in files which contain header content that is
+common to all operating systems.
 
 Generating will assemble the files in the following order:
- 1. os_top.h.in
- 2. os_<system\>.h (for Android and VxWorks systems)
- 3. os_<platform\>.h (where platform is either 'win' or 'posix')
- 4. os_<platform\>_macros.h (for builds that use macro functions)
- 4. os_bot.h.in OR os_wrap.h.in (depending on regular or macro-less build)
+
+| Normal (Macro) Build                                             | Wrapped (Macro-less) Build                                       |
+|------------------------------------------------------------------|------------------------------------------------------------------|
+| header/os_top.h.in                                               | header/os_top.h.in                                               |
+| os/os_<system\>.h (for Android and VxWorks systems)              | os/os_<system\>.h (for Android and VxWorks systems)              |
+| os/os_<platform\>.h (where platform is either 'win' or 'posix')  | os/os_<platform\>.h (where platform is either 'win' or 'posix')  |
+| os/os_<platform\>_macros.h                                       | os/os_<platform\>_wrappers.h                                     |
+| header/os_bot.h.in                                               | header/os_bot.h.in                                               |
 
 ## Adding OS-Specific Declarations
 For OS-specific declarations (ie. where the declarations is different on
@@ -26,7 +28,7 @@ For example, if `myfunction` is being added and is to be a macro on POSIX but
 not on Windows:
 
  * Add `#define myfunction() syscall()` to os/os_posix_macros.h
- * Add `OS_API OS_SECTION void myfunction();` to header/os_wrap.h.in
+ * Add `OS_API OS_SECTION void myfunction();` to os/os_posix_wrappers.h
  * Add `OS_API OS_SECTION void myfunction();` to os/os_win.h
  * Add your function definition to both os/os_win.c and os/os_posix_wrappers.c
 

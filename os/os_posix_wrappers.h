@@ -21,36 +21,6 @@ OS_API OS_SECTION char os_char_toupper(
 );
 
 /**
- * @brief Converts a string to lower cases only
- *
- * @param[out]     out                 output string
- * @param[in]      in                  string to convert
- * @param[in]      len                 string's length
- *
- * @return the string with all the characters in lower case
- */
-OS_API OS_SECTION char *os_string_tolower(
-	char *out,
-	const char *in,
-	size_t len
-);
-
-/**
- * @brief Converts a string to upper cases only
- *
- * @param[out]     out                 output string
- * @param[in]      in                  string to convert
- * @param[in]      len                 string's length
- *
- * @return the string with all the characters in upper case
- */
-OS_API OS_SECTION char *os_string_toupper(
-	char *out,
-	const char *in,
-	size_t len
-);
-
-/**
  * @brief Read bytes from a file into a char array
  *
  * @note Stops when encountering max read, EOF, or null terminator
@@ -165,42 +135,6 @@ OS_API OS_SECTION int os_strcmp(
 OS_API OS_SECTION size_t os_strlen(
 	const char *s
 );
-
-/**
- * @brief Compares two strings up to a certain number of characters ignoring case
- *
- * @param[in]      s1                  first string to compare
- * @param[in]      s2                  second string to compare
- * @param[in]      len                 maximum number of characters to compare
- *
- * @retval         <0                  the first non-matching character has a
- *                                     lower value in s1 than in s2
- * @retval         0                   the two strings are equal up to len
- *                                     characters
- * @retval         >0                  the first non-matching character has a
- *                                     higher value in s1 than in s2
- */
-OS_API OS_SECTION int os_strncasecmp(
-	const char *s1,
-	const char *s2,
-	size_t len
-);
-
-/**
- * @brief Concatenates two strings
- *
- * @param[in]      s1                  destination string
- * @param[in]      s2                  string to add to s1
- * @param[in]      count               number of characters to concatenate from s2 to s1
- *
- * @retval         !NULL               pointer to the successfully concatenated string
- * @retval         NULL                indicates an error occurred
- */
-OS_API OS_SECTION char *os_strncat(
-	char *s1,
-	const char *s2,
-	size_t count
-	);
 
 /**
  * @brief Compares two strings up to a certain number of characters
