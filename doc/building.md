@@ -6,11 +6,22 @@
 
 ## Building with CMake
 
+### Build Options
+Some options are available to be set when running CMake by adding 
+`-D<option>=<value>` to your CMake command.
+Below is the list of currently used options and their valid values:
+* `OSAL_WRAP`: Defines whether to build a regular or "wrapped" library.
+  * `0` - regular build
+  * `1` - macro-less ("wrapped") methods
+* `OSAL_TARGET`: Sets what platform to target when building. *Currently this
+  only affects POSIX builds.* If left blank or an invalid string is provided,
+  the library will be built for generic POSIX targets.
+  * `android` - build for Android systems
+  * `vxworks` - build for VxWorks systems
+
 ### Macro-less Build
 To build the library _without_ using macro functions (for running unit tests, 
-etc), add `-DOSAL_WRAP=1` to your CMake command (see below). The macroless
-library is intended for use with testing/local experiments only, and thus
-attempting to install it on another system via package **will not work**!
+etc), add `-DOSAL_WRAP=1` to your CMake command (see below).
 
 ### POSIX
  1. Create a build folder and cd into it
