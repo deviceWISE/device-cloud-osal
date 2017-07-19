@@ -140,23 +140,23 @@ typedef uint64_t                                 os_timestamp_t;
  * @def OS_API
  * @brief Macro to add compiler specifications for external/internal functions
  */
-#ifdef OS_STATIC
+#ifdef OSAL_STATIC
 #	define OS_API
-#else /* ifdef OS_STATIC */
+#else /* ifdef OSAL_STATIC */
 #	if defined _WIN32 || defined __CYGWIN__
-#		if osal_EXPORTS
+#		if OSAL_EXPORTS
 #			ifdef __GNUC__
 #				define OS_API __attribute__((dllexport))
 #			else
 #				define OS_API __declspec(dllexport)
 #			endif
-#		else /* if osal_EXPORTS */
+#		else /* if OSAL_EXPORTS */
 #			ifdef __GNUC__
 #				define OS_API __attribute__((dllimport))
 #			else
 #				define OS_API __declspec(dllimport)
 #			endif
-#		endif /* if osal_EXPORTS */
+#		endif /* if OSAL_EXPORTS */
 #	else /* if defined _WIN32 || defined __CYGWIN__ */
 #		if __GNUC__ >= 4
 #			define OS_API __attribute__((visibility("default")))
@@ -164,7 +164,7 @@ typedef uint64_t                                 os_timestamp_t;
 #			define OS_API
 #		endif
 #	endif /* if defined _WIN32 || defined __CYGWIN__ */
-#endif /* ifdef OS_STATIC */
+#endif /* ifdef OSAL_STATIC */
 
 /**
  * @def UNUSED

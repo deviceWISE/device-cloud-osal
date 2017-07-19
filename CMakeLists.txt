@@ -125,19 +125,35 @@ set( API_LIBS ${API_LIBS} )
 
 set( OSAL_HDRS_C ${C_SRCS} ${API_HDRS_C} )
 set( OSAL_SRCS_C ${C_SRCS} ${API_SRCS_C} )
-add_library( ${TARGET} SHARED
+
+# On Windows, .lib files are for both Shared and Static libraries. For clarity,
+# no renaming of this target is done; the library will exist as libosalStatic
+# and osalStatic.lib on POSIX and Windows, respectively, so as to be consistent.
+add_library( ${TARGET}Static STATIC
        ${OSAL_HDRS_C}
        ${OSAL_HDRS_CXX}
        ${OSAL_SRCS_C}
        ${OSAL_SRCS_CXX}
 )
 
-set_target_properties( ${TARGET} PROPERTIES
+target_compile_definitions( ${TARGET}Static PRIVATE OSAL_STATIC=1 )
+add_dependencies(${TARGET}Static ${TARGET}-pre)
+
+add_library( ${TARGET}Shared SHARED
+       ${OSAL_HDRS_C}
+       ${OSAL_HDRS_CXX}
+       ${OSAL_SRCS_C}
+       ${OSAL_SRCS_CXX}
+)
+
+set_target_properties( ${TARGET}Shared PROPERTIES
+	OUTPUT_NAME ${TARGET}
 	SOVERSION ${PACKAGE_VERSION}
 	VERSION ${PACKAGE_VERSION}
 	)
 
-add_dependencies(${TARGET} ${TARGET}-pre)
+target_compile_definitions( ${TARGET}Shared PRIVATE OSAL_EXPORTS=1 )
+add_dependencies(${TARGET}Shared ${TARGET}-pre)
 
 if ( OS_API_THREAD_SUPPORT AND THREADS_FOUND )
 	set( API_LIBS ${API_LIBS} ${CMAKE_THREAD_LIBS_INIT} )
@@ -150,14 +166,23 @@ else()
 	set( API_LIBS ${API_LIBS} ${LIBUUID_LIBS} )
 endif()
 include_directories( SYSTEM ${API_INCS} )
-target_link_libraries( ${TARGET} ${API_LIBS} )
+
+target_link_libraries( ${TARGET}Static ${API_LIBS} )
+target_link_libraries( ${TARGET}Shared ${API_LIBS} )
 
 set( LIB_COMPONENT "api" )
 if ( WIN32 )
 	set( LIB_COMPONENT "libs" )
 endif( WIN32 )
 
-install( TARGETS ${TARGET}
+install( TARGETS ${TARGET}Shared
+	RUNTIME DESTINATION "${INSTALL_BIN_DIR}" COMPONENT api
+	ARCHIVE DESTINATION "${INSTALL_LIB_DIR}" COMPONENT libs
+	LIBRARY DESTINATION "${INSTALL_LIB_DIR}" COMPONENT ${LIB_COMPONENT}
+	PUBLIC_HEADER DESTINATION "${INSTALL_INCLUDE_DIR}" COMPONENT headers
+)
+
+install( TARGETS ${TARGET}Static
 	RUNTIME DESTINATION "${INSTALL_BIN_DIR}" COMPONENT api
 	ARCHIVE DESTINATION "${INSTALL_LIB_DIR}" COMPONENT libs
 	LIBRARY DESTINATION "${INSTALL_LIB_DIR}" COMPONENT ${LIB_COMPONENT}
