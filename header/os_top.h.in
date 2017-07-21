@@ -215,3 +215,8 @@ typedef struct
 	os_uint16_t year;
 } os_date_time_t;
 
+
+/* FIXME: new osals */
+#define os_lib_open(x)                 dlopen((x), 0)
+#define os_lib_close(x)                dlclose(x)
+#define os_lib_find(x,y)               dlsym((x), (y))

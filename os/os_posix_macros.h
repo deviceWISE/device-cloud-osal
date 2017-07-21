@@ -20,7 +20,19 @@
  * @see os_malloc
  * @see os_realloc
  */
-#define os_free(ptr)                      { if ( *ptr ) free( *ptr ); *ptr = NULL; }
+#define os_free(ptr)                      free( ptr )
+
+/**
+ * @brief Frees previously allocated memory specified and sets pointer
+ * to NULL.
+ *
+ * @param[in]      ptr            pointer of pointer to the allocated memory to free
+ *
+ * @see os_calloc
+ * @see os_malloc
+ * @see os_realloc
+ */
+#define os_free_null(ptr)                  { if ( *ptr ) free( *ptr ); *ptr = NULL; }
 
 /**
  * @brief Allocates the specified amount of bytes
