@@ -77,7 +77,7 @@ void os_memzero(
 }
 
 /* memory functions */
-void *os_heap_calloc( size_t nmemb, size_t size )
+void *os_calloc( size_t nmemb, size_t size )
 {
 	return HeapAlloc( GetProcessHeap(), 0, nmemb * size );
 }

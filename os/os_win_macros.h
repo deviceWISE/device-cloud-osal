@@ -78,7 +78,7 @@
  * @brief Allocates memory for an array of elements
  *
  * The memory returned is NOT initialized. Any allocated memory should be
- * deallocated with the corrosponding @p iot_os_heap_free command
+ * deallocated with the corrosponding @p iot_os_free command
  *
  * @note Specifying either 0 elements or elements with a size of 0 may return a
  *       valid memory pointer (that can be later freed) or NULL
@@ -89,11 +89,11 @@
  * @retval NULL    the specified amount of memory is not continously available
  * @retval !NULL   a pointer to the allocated memory
  *
- * @see iot_os_heap_free
- * @see iot_os_heap_malloc
- * @see iot_os_heap_realloc
+ * @see iot_os_free
+ * @see iot_os_malloc
+ * @see iot_os_realloc
  */
-#define os_heap_calloc( num, size )            HeapAlloc( GetProcessHeap(), 0, num * size )
+#define os_calloc( num, size )            HeapAlloc( GetProcessHeap(), 0, num * size )
 
 /**
  * @brief Returns the operating system code for the last system error

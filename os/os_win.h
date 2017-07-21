@@ -194,20 +194,20 @@ typedef HANDLE os_file_t;
  *
  * @param[in]      ptr                 pointer to the previously allocated
  *                                     block, if ptr is NULL the call is
- *                                     equivilant to os_heap_malloc(size).
+ *                                     equivilant to os_malloc(size).
  *                                     This value must be a value returned by an
- *                                     earlier call to os_heap_calloc,
- *                                     os_heap_malloc or os_heap_realloc
+ *                                     earlier call to os_calloc,
+ *                                     os_malloc or os_realloc
  * @param[in]      size                new size for the allocated block
  *
  * @retval NULL    the specified amount of memory is not continously available
  * @retval !NULL   a pointer to the allocated memory
  *
- * @see os_heap_calloc
- * @see os_heap_free
- * @see os_heap_malloc
+ * @see os_calloc
+ * @see os_free
+ * @see os_malloc
  */
-OS_API OS_SECTION void *os_heap_realloc(
+OS_API OS_SECTION void *os_realloc(
 	void *ptr,
 	size_t size
 ) __attribute__((malloc));
@@ -217,11 +217,11 @@ OS_API OS_SECTION void *os_heap_realloc(
  *
  * @param[in]      ptr            pointer of pointer to the allocated memory to free
  *
- * @see os_heap_calloc
- * @see os_heap_malloc
- * @see os_heap_realloc
+ * @see os_calloc
+ * @see os_malloc
+ * @see os_realloc
  */
-OS_API OS_SECTION void os_heap_free(
+OS_API OS_SECTION void os_free(
 	void **ptr
 );
 
@@ -229,18 +229,18 @@ OS_API OS_SECTION void os_heap_free(
  * @brief Allocates the specified amount of bytes
  *
  * The memory returned is NOT initialized. Any allocated memory should be
- * deallocated with the corrosponding @p os_heap_free command
+ * deallocated with the corrosponding @p os_free command
  *
  * @param[in]      size                amount of memory to allocate
  *
  * @retval NULL    the specified amount of memory is not continously available
  * @retval !NULL   a pointer to the allocated memory
  *
- * @see os_heap_calloc
- * @see os_heap_free
- * @see os_heap_realloc
+ * @see os_calloc
+ * @see os_free
+ * @see os_realloc
  */
-OS_API OS_SECTION void *os_heap_malloc(
+OS_API OS_SECTION void *os_malloc(
 	size_t size
 ) __attribute__((malloc));
 

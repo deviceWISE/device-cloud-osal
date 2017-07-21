@@ -264,12 +264,12 @@ int os_vsnprintf(
 	return result;
 }
 
-void *os_heap_calloc( size_t nmemb, size_t size )
+void *os_calloc( size_t nmemb, size_t size )
 {
 	return calloc( nmemb, size );
 }
 
-void os_heap_free( void **ptr )
+void os_free( void **ptr )
 {
 	if ( ptr && *ptr )
 	{
@@ -278,12 +278,12 @@ void os_heap_free( void **ptr )
 	}
 }
 
-void *os_heap_malloc( size_t size )
+void *os_malloc( size_t size )
 {
 	return malloc( size );
 }
 
-void *os_heap_realloc( void *ptr, size_t size )
+void *os_realloc( void *ptr, size_t size )
 {
 	return realloc( ptr, size );
 }

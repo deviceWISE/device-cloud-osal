@@ -16,34 +16,34 @@
  *
  * @param[in]      ptr            pointer of pointer to the allocated memory to free
  *
- * @see os_heap_calloc
- * @see os_heap_malloc
- * @see os_heap_realloc
+ * @see os_calloc
+ * @see os_malloc
+ * @see os_realloc
  */
-#define os_heap_free(ptr)                      { if ( *ptr ) free( *ptr ); *ptr = NULL; }
+#define os_free(ptr)                      { if ( *ptr ) free( *ptr ); *ptr = NULL; }
 
 /**
  * @brief Allocates the specified amount of bytes
  *
  * The memory returned is NOT initialized. Any allocated memory should be
- * deallocated with the corrosponding @p os_heap_free command
+ * deallocated with the corrosponding @p os_free command
  *
  * @param[in]      size                amount of memory to allocate
  *
  * @retval NULL    the specified amount of memory is not continously available
  * @retval !NULL   a pointer to the allocated memory
  *
- * @see os_heap_calloc
- * @see os_heap_free
- * @see os_heap_realloc
+ * @see os_calloc
+ * @see os_free
+ * @see os_realloc
  */
-#define os_heap_malloc(size)                   malloc(size)
+#define os_malloc(size)                   malloc(size)
 
 /**
  * @brief Allocates memory for an array of elements
  *
  * The memory returned is NOT initialized. Any allocated memory should be
- * deallocated with the corrosponding @p iot_os_heap_free command
+ * deallocated with the corrosponding @p iot_os_free command
  *
  * @note Specifying either 0 elements or elements with a size of 0 may return a
  *       valid memory pointer (that can be later freed) or NULL
@@ -54,11 +54,11 @@
  * @retval NULL    the specified amount of memory is not continously available
  * @retval !NULL   a pointer to the allocated memory
  *
- * @see iot_os_heap_free
- * @see iot_os_heap_malloc
- * @see iot_os_heap_realloc
+ * @see iot_os_free
+ * @see iot_os_malloc
+ * @see iot_os_realloc
  */
-#define os_heap_calloc(num, size)              calloc(num, size)
+#define os_calloc(num, size)              calloc(num, size)
 
 /**
  * @brief Change the size of an allocated memory block
@@ -69,20 +69,20 @@
  *
  * @param[in]      ptr                 pointer to the previously allocated
  *                                     block, if ptr is NULL the call is
- *                                     equivilant to os_heap_malloc(size).
+ *                                     equivilant to os_malloc(size).
  *                                     This value must be a value returned by an
- *                                     earlier call to os_heap_calloc,
- *                                     os_heap_malloc or os_heap_realloc
+ *                                     earlier call to os_calloc,
+ *                                     os_malloc or os_realloc
  * @param[in]      size                new size for the allocated block
  *
  * @retval NULL    the specified amount of memory is not continously available
  * @retval !NULL   a pointer to the allocated memory
  *
- * @see os_heap_calloc
- * @see os_heap_free
- * @see os_heap_malloc
+ * @see os_calloc
+ * @see os_free
+ * @see os_malloc
  */
-#define os_heap_realloc(ptr, size)             realloc(ptr, size)
+#define os_realloc(ptr, size)             realloc(ptr, size)
 
 /**
  * @brief Copy a block of memory

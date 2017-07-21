@@ -68,7 +68,7 @@ OS_API OS_SECTION void os_memzero(
  * @brief Allocates memory for an array of elements
  *
  * The memory returned is NOT initialized. Any allocated memory should be
- * deallocated with the corrosponding @p os_heap_free command
+ * deallocated with the corrosponding @p os_free command
  *
  * @note Specifying either 0 elements or elements with a size of 0 may return a
  *       valid memory pointer (that can be later freed) or NULL
@@ -79,11 +79,11 @@ OS_API OS_SECTION void os_memzero(
  * @retval NULL    the specified amount of memory is not continously available
  * @retval !NULL   a pointer to the allocated memory
  *
- * @see os_heap_free
- * @see os_heap_malloc
- * @see os_heap_realloc
+ * @see os_free
+ * @see os_malloc
+ * @see os_realloc
  */
-OS_API OS_SECTION void *os_heap_calloc(
+OS_API OS_SECTION void *os_calloc(
 	size_t nmemb,
 	size_t size
 ) __attribute__((malloc));

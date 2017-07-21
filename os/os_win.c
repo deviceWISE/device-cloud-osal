@@ -566,7 +566,7 @@ os_status_t os_directory_delete(
 						{
 							size_t buf_len = os_strlen( path ) +
 								os_strlen( wfd.cFileName ) + 2u;
-							char *buf = (char*)os_heap_malloc( buf_len );
+							char *buf = (char*)os_malloc( buf_len );
 
 							result = OS_STATUS_NO_MEMORY;
 							if ( buf )
@@ -579,7 +579,7 @@ os_status_t os_directory_delete(
 									buf,
 									regex,
 									recursive );
-								os_heap_free( (void **)&buf );
+								os_free( (void **)&buf );
 							}
 						}
 					} while ( result == OS_STATUS_SUCCESS &&
@@ -605,7 +605,7 @@ os_status_t os_directory_delete(
 					{
 						size_t buf_len = os_strlen( path ) +
 							os_strlen( wfd.cFileName ) + 2u;
-						char *buf = (char*)os_heap_malloc( buf_len );
+						char *buf = (char*)os_malloc( buf_len );
 
 						result = OS_STATUS_NO_MEMORY;
 						if ( buf )
@@ -619,7 +619,7 @@ os_status_t os_directory_delete(
 								RemoveDirectory( buf );
 							else if ( !DeleteFile( buf ) )
 								result = OS_STATUS_FAILURE;
-							os_heap_free( (void **)&buf );
+							os_free( (void **)&buf );
 						}
 					}
 				} while ( result == OS_STATUS_SUCCESS &&
@@ -818,7 +818,7 @@ char *os_file_fgets(
 	os_file_t stream )
 {
 	DWORD number_of_bytes_read = 0u;
-	char *read = (char *)os_heap_malloc( size );
+	char *read = (char *)os_malloc( size );
 	if ( read )
 	{
 		read[size - 1u] = '\0';
@@ -850,7 +850,7 @@ char *os_file_fgets(
 						NULL, 1 );
 			}
 		}
-		os_heap_free( (void **)&read );
+		os_free( (void **)&read );
 	}
 	if ( number_of_bytes_read == 0u )
 		str =  NULL;
@@ -1427,7 +1427,7 @@ int os_vfprintf(
 	const size_t max_str_len = 1024u;
 	int result = -1;
 
-	buffer = (char *)os_heap_malloc( max_str_len );
+	buffer = (char *)os_malloc( max_str_len );
 	if ( buffer )
 	{
 		const int str_len =
@@ -1483,7 +1483,7 @@ int os_vfprintf(
 			else
 				result = -1;
 		}
-		os_heap_free( (void **)&buffer );
+		os_free( (void **)&buffer );
 	}
 	return result;
 }
@@ -1511,7 +1511,7 @@ os_bool_t os_flush( os_file_t stream )
 }
 
 /* memory functions */
-void os_heap_free( void **ptr )
+void os_free( void **ptr )
 {
 	if ( ptr && *ptr )
 	{
@@ -1520,12 +1520,12 @@ void os_heap_free( void **ptr )
 	}
 }
 
-void *os_heap_malloc( size_t size )
+void *os_malloc( size_t size )
 {
 	return HeapAlloc( GetProcessHeap(), 0, size );
 }
 
-void *os_heap_realloc( void *ptr, size_t size )
+void *os_realloc( void *ptr, size_t size )
 {
 	void *result;
 	if ( ptr )
@@ -1695,7 +1695,7 @@ os_status_t os_service_run(
 				os_strlen( id );
 
 			result = OS_STATUS_NO_MEMORY;
-			SERVICE_KEY = (char *)os_heap_malloc( service_id_len );
+			SERVICE_KEY = (char *)os_malloc( service_id_len );
 			if ( SERVICE_KEY )
 			{
 				os_strncpy( SERVICE_KEY, id, service_id_len );
@@ -1703,7 +1703,7 @@ os_status_t os_service_run(
 
 				SERVICE_MAIN = main;
 				SERVICE_MAIN_ARGC = 0;
-				SERVICE_MAIN_ARGV = (char**)os_heap_malloc(
+				SERVICE_MAIN_ARGV = (char**)os_malloc(
 					sizeof(char*) * argc );
 				if ( SERVICE_MAIN_ARGV )
 				{
@@ -1736,7 +1736,7 @@ os_status_t os_service_run(
 								const size_t arg_len =
 									os_strlen( argv[i] ) + 1u;
 								SERVICE_MAIN_ARGV[SERVICE_MAIN_ARGC] =
-									(char*)os_heap_malloc( sizeof( char ) * arg_len );
+									(char*)os_malloc( sizeof( char ) * arg_len );
 								if ( SERVICE_MAIN_ARGV[SERVICE_MAIN_ARGC] )
 									os_strncpy( SERVICE_MAIN_ARGV[SERVICE_MAIN_ARGC], argv[i], arg_len );
 							}
@@ -1764,9 +1764,9 @@ os_status_t os_service_run(
 					else
 					{
 						while ( SERVICE_MAIN_ARGC > 0 )
-							os_heap_free( (void **)&SERVICE_MAIN_ARGV[SERVICE_MAIN_ARGC - 1] );
-						os_heap_free( (void **)&SERVICE_MAIN_ARGV );
-						os_heap_free( (void **)&SERVICE_KEY );
+							os_free( (void **)&SERVICE_MAIN_ARGV[SERVICE_MAIN_ARGC - 1] );
+						os_free( (void **)&SERVICE_MAIN_ARGV );
+						os_free( (void **)&SERVICE_KEY );
 					}
 				}
 			}
@@ -1873,14 +1873,14 @@ void WINAPI os_service_main( DWORD argc, LPTSTR *argv )
 		{
 			int i;
 			for ( i = 0; i < SERVICE_MAIN_ARGC; ++i )
-				os_heap_free( (void **)&SERVICE_MAIN_ARGV[i] );
-			os_heap_free( (void **)&SERVICE_MAIN_ARGV );
+				os_free( (void **)&SERVICE_MAIN_ARGV[i] );
+			os_free( (void **)&SERVICE_MAIN_ARGV );
 		}
 
 		if ( LOG_HANDLE)
 			os_file_close( LOG_HANDLE );
 
-		os_heap_free( (void **)&SERVICE_KEY );
+		os_free( (void **)&SERVICE_KEY );
 		SERVICE_MAIN = NULL;
 	}
 }
@@ -1913,7 +1913,7 @@ os_status_t os_service_install(
 			/* +1 for space character between arguments */
 			cmd_line_len += os_strlen( args ) + 1u;
 		result = OS_STATUS_NO_MEMORY;
-		cmd_line = (char *)os_heap_malloc( sizeof(char) *
+		cmd_line = (char *)os_malloc( sizeof(char) *
 			( cmd_line_len + 1u ) );
 		if ( cmd_line )
 		{
@@ -1942,7 +1942,7 @@ os_status_t os_service_install(
 						os_strlen( dependencies ) + 1u;
 					/* extra +1 because must be double
 					 * null-terminated */
-					depends = (char*)os_heap_malloc(
+					depends = (char*)os_malloc(
 						 dep_len + 1u );
 					if ( depends )
 					{
@@ -1989,7 +1989,7 @@ os_status_t os_service_install(
 						size_t desc_len =
 							os_strlen( description ) + 1u;
 #endif
-						desc_heap = (LPTSTR)os_heap_malloc( desc_len );
+						desc_heap = (LPTSTR)os_malloc( desc_len );
 						if ( desc_heap )
 						{
 							SERVICE_DESCRIPTION sd;
@@ -2009,7 +2009,7 @@ os_status_t os_service_install(
 							if ( !ChangeServiceConfig2( sc_service,
 								SERVICE_CONFIG_DESCRIPTION, &sd ) )
 								result = OS_STATUS_FAILURE;
-							os_heap_free( (void**)&desc_heap );
+							os_free( (void**)&desc_heap );
 						}
 						else
 							result = OS_STATUS_NO_MEMORY;
@@ -2030,7 +2030,7 @@ os_status_t os_service_install(
 						sfa.lpCommand = NULL;
 
 						sfa.lpsaActions = (SC_ACTION*)
-							os_heap_malloc(
+							os_malloc(
 								sizeof( SC_ACTION ) *
 								SERVICE_RETRY_COUNT_MAX );
 						if ( sfa.lpsaActions )
@@ -2069,7 +2069,7 @@ os_status_t os_service_install(
 								&sfaf ) )
 							result = OS_STATUS_FAILURE;
 
-						os_heap_free( (void**)&sfa.lpsaActions );
+						os_free( (void**)&sfa.lpsaActions );
 					}
 
 					/* on failure, delete the service */
