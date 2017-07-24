@@ -16,25 +16,34 @@
 
 LOCAL_PATH:= $(call my-dir)
 
-$( info ($(shell ( ${LOCAL_PATH}/build-sys/android/configure_android_build.sh ))))
+# $( info ($(shell ( ${LOCAL_PATH}/build-sys/android/configure_android_build.sh ))))
+$( info ($(shell (cd ${LOCAL_PATH}; cat ./header/os_top.h.in os/os_posix.h os/os_posix_macros.h ./os/os_android.h ./header/os_bot.h.in > os.h ))))
 
-include $(CLEAR_VARS)
-
-LOCAL_C_INCLUDES := \
+osal_c_includes := \
     $(LOCAL_PATH)/../ \
     $(LOCAL_PATH)/../../ \
     $(LOCAL_PATH)/../../build-sys/android/ \
     external/e2fsprogs/lib
 
+osal_src_files := \
+    os/os_android.c \
+    os/os_posix.c \
+    os.c
+
+include $(CLEAR_VARS)
+LOCAL_C_INCLUDES := $(osal_c_includes)
+LOCAL_EXPORT_C_INCLUDE_DIRS := $(LOCAL_PATH)
 LOCAL_SHARED_LIBRARIES := libcutils libdl libext2_uuid
 LOCAL_STATIC_LIBRARIES := libandroidifaddrs
-LOCAL_EXPORT_C_INCLUDE_DIRS := $(LOCAL_PATH)
-
 LOCAL_MODULE := libosal
-
-LOCAL_SRC_FILES := \
-os/os_android.c \
-os/os_posix.c \
-os.c
-
+LOCAL_SRC_FILES := $(osal_src_files)
 include $(BUILD_SHARED_LIBRARY)
+
+include $(CLEAR_VARS)
+LOCAL_C_INCLUDES := $(osal_c_includes)
+LOCAL_EXPORT_C_INCLUDE_DIRS := $(LOCAL_PATH)
+LOCAL_SHARED_LIBRARIES := libcutils libdl libext2_uuid
+LOCAL_STATIC_LIBRARIES := libandroidifaddrs
+LOCAL_MODULE := libosal
+LOCAL_SRC_FILES := $(osal_src_files)
+include $(BUILD_STATIC_LIBRARY)
