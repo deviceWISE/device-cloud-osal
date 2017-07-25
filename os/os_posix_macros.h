@@ -131,7 +131,7 @@
  * @param[in]      val                 byte to set
  * @param[in]      len                 amount of data to set
  */
-#define os_memset(dst, val, len)               memset(len, val, num)
+#define os_memset(dst, val, len)               memset(dst, val, len)
 
 /**
  * @brief Compares two strings
