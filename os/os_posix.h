@@ -38,7 +38,7 @@
 #endif
 
 #ifndef _WRS_KERNEL
-#	include <uuid/uuid.h>   /* for libuuid functions + uuid_t */
+#	include "uuid/uuid.h"   /* osals uuid header, not system, for libuuid functions + uuid_t */
 #endif
 #define os_uuid_t uuid_t
 

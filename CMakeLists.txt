@@ -60,7 +60,7 @@ else()
 		set( GENERATOR_DEFAULT "RPM" )
 	endif ( RPMBUILD_EXECUTABLE )
 	set( GENERATOR_LIST "RPM" "DEB" )
-	set( CPACK_DEBIAN_PACKAGE_DEPENDS "libuuid1, uuid-dev, sudo, libc6" )
+	set( CPACK_DEBIAN_PACKAGE_DEPENDS "sudo, libc6" )
 endif()
 
 include( CPack )
@@ -109,9 +109,10 @@ endif( DOXYGEN_FOUND )
 ### Build Library ###
 
 add_subdirectory( "os" )
+add_subdirectory( "uuid" )
 
 set( C_HDRS "${CMAKE_BINARY_DIR}/os.h" ${C_HDRS} )
-set( C_SRCS "os.c" ${C_SRCS} )
+set( C_SRCS "os.c" ${C_SRCS}  )
 
 get_full_path( C_HDRS ${C_HDRS} )
 get_full_path( C_SRCS ${C_SRCS} )
@@ -126,6 +127,19 @@ set( API_LIBS ${API_LIBS} )
 set( OSAL_HDRS_C ${C_SRCS} ${API_HDRS_C} )
 set( OSAL_SRCS_C ${C_SRCS} ${API_SRCS_C} )
 
+
+# For uuid, we need to add defines from config.h, since this was an
+# autoconf project
+add_definitions( -DHAVE_ERR_H=1 -DHAVE_USLEEP=1 -DHAVE_SYS_FILE_H
+-DHAVE_DECL__SC_HOST_NAME_MAX=1 -DHAVE_DLFCN_H=1 -DHAVE_FCNTL_H=1
+-DHAVE_FTRUNCATE=1 -DHAVE_GETTIMEOFDAY=1 -DHAVE_INTTYPES_H=1
+-DHAVE_LIMITS_H=1 -DHAVE_MEMORY_H=1 -DHAVE_MEMSET=1
+-DHAVE_NETINET_IN_H=1 -DHAVE_SOCKET=1 -DHAVE_SRANDOM=1
+-DHAVE_STDINT_H=1 -DHAVE_STDLIB_H=1 -DHAVE_STRINGS_H=1
+-DHAVE_STRING_H=1 -DHAVE_STRTOUL=1 -DHAVE_SYS_FILE_H=1
+-DHAVE_SYS_IOCTL_H=1 -DHAVE_SYS_SOCKET_H=1 -DHAVE_SYS_STAT_H=1
+-DSTDC_HEADERS=1 -DHAVE_SYS_TIME_H=1 -DHAVE_SYS_TYPES_H=1 -DHAVE_UNISTD_H=1 )
+
 # On Windows, .lib files are for both Shared and Static libraries. For clarity,
 # no renaming of this target is done; the library will exist as libosalStatic
 # and osalStatic.lib on POSIX and Windows, respectively, so as to be consistent.
@@ -138,7 +152,6 @@ add_library( ${TARGET}Static STATIC
 
 target_compile_definitions( ${TARGET}Static PRIVATE OSAL_STATIC=1 )
 add_dependencies(${TARGET}Static ${TARGET}-pre)
-
 add_library( ${TARGET}Shared SHARED
        ${OSAL_HDRS_C}
        ${OSAL_HDRS_CXX}
@@ -153,6 +166,7 @@ set_target_properties( ${TARGET}Shared PROPERTIES
 	)
 
 target_compile_definitions( ${TARGET}Shared PRIVATE OSAL_EXPORTS=1 )
+
 add_dependencies(${TARGET}Shared ${TARGET}-pre)
 
 if ( OS_API_THREAD_SUPPORT AND THREADS_FOUND )
@@ -162,8 +176,7 @@ endif()
 if ( WIN32 )
 	set( API_LIBS ${API_LIBS} Iphlpapi Rpcrt4 Shlwapi Ws2_32 )
 else()
-	find_package( Libuuid REQUIRED )
-	set( API_LIBS ${API_LIBS} ${LIBUUID_LIBS} )
+	set( API_LIBS ${API_LIBS} uuid )
 endif()
 include_directories( SYSTEM ${API_INCS} )
 
