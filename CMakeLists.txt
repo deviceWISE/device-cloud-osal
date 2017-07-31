@@ -24,6 +24,9 @@ set( OSAL_INSTALL_HEADER_PATH    "${CMAKE_BINARY_DIR}/install/os.h" )
 
 set( TARGET                      "osal" )
 
+set( TARGET_STATIC_SUFFIX        "-static" )
+set( TARGET_SHARED_SUFFIX        "-shared" )
+
 ### Functions ###
 
 # get header file full path
@@ -130,44 +133,101 @@ set( OSAL_SRCS_C ${C_SRCS} ${API_SRCS_C} )
 
 # For uuid, we need to add defines from config.h, since this was an
 # autoconf project
-add_definitions( -DHAVE_ERR_H=1 -DHAVE_USLEEP=1 -DHAVE_SYS_FILE_H
--DHAVE_DECL__SC_HOST_NAME_MAX=1 -DHAVE_DLFCN_H=1 -DHAVE_FCNTL_H=1
--DHAVE_FTRUNCATE=1 -DHAVE_GETTIMEOFDAY=1 -DHAVE_INTTYPES_H=1
--DHAVE_LIMITS_H=1 -DHAVE_MEMORY_H=1 -DHAVE_MEMSET=1
--DHAVE_NETINET_IN_H=1 -DHAVE_SOCKET=1 -DHAVE_SRANDOM=1
--DHAVE_STDINT_H=1 -DHAVE_STDLIB_H=1 -DHAVE_STRINGS_H=1
--DHAVE_STRING_H=1 -DHAVE_STRTOUL=1 -DHAVE_SYS_FILE_H=1
--DHAVE_SYS_IOCTL_H=1 -DHAVE_SYS_SOCKET_H=1 -DHAVE_SYS_STAT_H=1
--DSTDC_HEADERS=1 -DHAVE_SYS_TIME_H=1 -DHAVE_SYS_TYPES_H=1 -DHAVE_UNISTD_H=1 )
+include( CheckIncludeFiles )
+function( add_definition_if_include_file VAR_NAME )
+	set( FILES "${ARGN}" )
+	check_include_files( ${FILES} INCLUDE_FOUND )
+	if ( INCLUDE_FOUND )
+		add_definitions( "-D${VAR_NAME}=1" )
+	endif( INCLUDE_FOUND )
+endfunction( add_definition_if_include_file )
+
+include( CheckFunctionExists )
+function( add_definition_if_function_exists VAR_NAME )
+	set( FUNCS "${ARGN}" )
+	check_function_exists( ${FUNCS} FUNC_FOUND )
+	if ( FUNC_FOUND )
+		add_definitions( "-D${VAR_NAME}=1" )
+	endif( FUNC_FOUND )
+endfunction( add_definition_if_function_exists )
+
+add_definition_if_function_exists( HAVE_FTRUNCATE "ftruncate" )
+add_definition_if_function_exists( HAVE_GETTIMEOFDAY "gettimeofday" )
+add_definition_if_function_exists( HAVE_MEMSET "memset" )
+add_definition_if_function_exists( HAVE_SOCKET "socket" )
+add_definition_if_function_exists( HAVE_SRANDOM "srandom" )
+add_definition_if_function_exists( HAVE_USLEEP "usleep" )
+add_definition_if_function_exists( HAVE_STRTOUL "strtoul" )
+
+add_definition_if_include_file( HAVE_DLFCN_H "dlfcn.h" )
+add_definition_if_include_file( HAVE_ERR_H "err.h" )
+add_definition_if_include_file( HAVE_FCNTL_H "fcntl.h" )
+add_definition_if_include_file( HAVE_LIMITS_H "limits.h" )
+add_definition_if_include_file( HAVE_INTTYPES_H "inttypes.h" )
+add_definition_if_include_file( HAVE_MEMORY_H "memory.h" )
+add_definition_if_include_file( HAVE_NETINET_IN_H "netinet/in.h" )
+add_definition_if_include_file( HAVE_STDINT_H "stdint.h" )
+add_definition_if_include_file( HAVE_STDLIB_H "stdlib.h" )
+add_definition_if_include_file( HAVE_STRING_H "string.h" )
+add_definition_if_include_file( HAVE_STRINGS_H "strings.h" )
+add_definition_if_include_file( HAVE_SYS_FILE_H "sys/file.h" )
+add_definition_if_include_file( HAVE_SYS_IOCTL_H "sys/ioctl.h" )
+add_definition_if_include_file( HAVE_SYS_SOCKET_H "sys/socket.h" )
+add_definition_if_include_file( HAVE_SYS_STAT_H "sys/stat.h" )
+add_definition_if_include_file( HAVE_SYS_TIME_H "sys/time.h" )
+add_definition_if_include_file( HAVE_SYS_TYPES_H "sys/types.h" )
+add_definition_if_include_file( HAVE_UNISTD_H "unistd.h" )
+add_definition_if_include_file( STDC_HEADERS
+	"dlfcn.h"
+	"float.h"
+	"inttypes.h"
+	"stddef.h"
+	"stdint.h"
+	"stdlib.h"
+	"strings.h"
+	"string.h" )
+
+include( CheckSymbolExists )
+check_symbol_exists( "_SC_HOST_NAME_MAX" "unistd.h" HAVE_SC_HOST_NAME_MAX )
+if( HAVE_SC_HOST_NAME_MAX )
+	add_definitions( "-DHAVE_DECL__SC_HOST_NAME_MAX=1" )
+endif( HAVE_SC_HOST_NAME_MAX )
+add_definitions( "-D_DEFAULT_SOURCE=1" )
+
+
+# Static Library
+################
 
 # On Windows, .lib files are for both Shared and Static libraries. For clarity,
 # no renaming of this target is done; the library will exist as libosalStatic
 # and osalStatic.lib on POSIX and Windows, respectively, so as to be consistent.
-add_library( ${TARGET}Static STATIC
-       ${OSAL_HDRS_C}
-       ${OSAL_HDRS_CXX}
-       ${OSAL_SRCS_C}
-       ${OSAL_SRCS_CXX}
+add_library( "${TARGET}${TARGET_STATIC_SUFFIX}" STATIC
+	${OSAL_HDRS_C}
+	${OSAL_HDRS_CXX}
+	${OSAL_SRCS_C}
+	${OSAL_SRCS_CXX}
 )
+target_compile_definitions( "${TARGET}${TARGET_STATIC_SUFFIX}" PRIVATE OSAL_STATIC=1 )
+add_dependencies( "${TARGET}${TARGET_STATIC_SUFFIX}" ${TARGET}-pre)
 
-target_compile_definitions( ${TARGET}Static PRIVATE OSAL_STATIC=1 )
-add_dependencies(${TARGET}Static ${TARGET}-pre)
-add_library( ${TARGET}Shared SHARED
-       ${OSAL_HDRS_C}
-       ${OSAL_HDRS_CXX}
-       ${OSAL_SRCS_C}
-       ${OSAL_SRCS_CXX}
+# Shared Library
+################
+add_library( "${TARGET}${TARGET_SHARED_SUFFIX}" SHARED
+	${OSAL_HDRS_C}
+	${OSAL_HDRS_CXX}
+	${OSAL_SRCS_C}
+	${OSAL_SRCS_CXX}
 )
+set_target_properties(
+	"${TARGET}${TARGET_STATIC_SUFFIX}" "${TARGET}${TARGET_SHARED_SUFFIX}"
+	PROPERTIES
+		OUTPUT_NAME ${TARGET}
+		SOVERSION ${PACKAGE_VERSION}
+		VERSION ${PACKAGE_VERSION}
+)
+target_compile_definitions( "${TARGET}${TARGET_SHARED_SUFFIX}" PRIVATE OSAL_EXPORTS=1 )
+add_dependencies( "${TARGET}${TARGET_SHARED_SUFFIX}" ${TARGET}-pre)
 
-set_target_properties( ${TARGET}Shared PROPERTIES
-	OUTPUT_NAME ${TARGET}
-	SOVERSION ${PACKAGE_VERSION}
-	VERSION ${PACKAGE_VERSION}
-	)
-
-target_compile_definitions( ${TARGET}Shared PRIVATE OSAL_EXPORTS=1 )
-
-add_dependencies(${TARGET}Shared ${TARGET}-pre)
 
 if ( OS_API_THREAD_SUPPORT AND THREADS_FOUND )
 	set( API_LIBS ${API_LIBS} ${CMAKE_THREAD_LIBS_INIT} )
@@ -180,22 +240,15 @@ else()
 endif()
 include_directories( SYSTEM ${API_INCS} )
 
-target_link_libraries( ${TARGET}Static ${API_LIBS} )
-target_link_libraries( ${TARGET}Shared ${API_LIBS} )
+target_link_libraries( "${TARGET}${TARGET_STATIC_SUFFIX}" ${API_LIBS} )
+target_link_libraries( "${TARGET}${TARGET_SHARED_SUFFIX}" ${API_LIBS} )
 
 set( LIB_COMPONENT "api" )
 if ( WIN32 )
 	set( LIB_COMPONENT "libs" )
 endif( WIN32 )
 
-install( TARGETS ${TARGET}Shared
-	RUNTIME DESTINATION "${INSTALL_BIN_DIR}" COMPONENT api
-	ARCHIVE DESTINATION "${INSTALL_LIB_DIR}" COMPONENT libs
-	LIBRARY DESTINATION "${INSTALL_LIB_DIR}" COMPONENT ${LIB_COMPONENT}
-	PUBLIC_HEADER DESTINATION "${INSTALL_INCLUDE_DIR}" COMPONENT headers
-)
-
-install( TARGETS ${TARGET}Static
+install( TARGETS "${TARGET}${TARGET_STATIC_SUFFIX}" "${TARGET}${TARGET_SHARED_SUFFIX}"
 	RUNTIME DESTINATION "${INSTALL_BIN_DIR}" COMPONENT api
 	ARCHIVE DESTINATION "${INSTALL_LIB_DIR}" COMPONENT libs
 	LIBRARY DESTINATION "${INSTALL_LIB_DIR}" COMPONENT ${LIB_COMPONENT}
@@ -203,5 +256,5 @@ install( TARGETS ${TARGET}Static
 )
 
 install( FILES ${C_HDRS}
-	DESTINATION "${INSTALL_INCLUDE_DIR}" COMPONENT headers 
+	DESTINATION "${INSTALL_INCLUDE_DIR}" COMPONENT headers
 )
