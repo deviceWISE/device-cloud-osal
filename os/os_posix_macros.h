@@ -291,7 +291,7 @@
  * @see os_sprintf
  * @see os_vfprintf
  */
-#define os_fprintf(stream, format, ...)        fprintf(stream, format, ##__VA_ARGS__)
+#define os_fprintf                     fprintf
 
 /**
  * @brief Writes output to standard out
@@ -304,7 +304,7 @@
  * @see os_fprintf
  * @see os_sprintf
  */
-#define os_printf(format, ...)                 printf(format, ##__VA_ARGS__)
+#define os_printf                      printf
 
 /**
  * @brief Writes output to a string with a maximum size
@@ -320,7 +320,7 @@
  * @see os_sprintf
  * @see os_vsnprintf
  */
-#define os_snprintf(str, size, format, ...)    snprintf(str, size, format, ##__VA_ARGS__)
+#define os_snprintf                    snprintf
 
 /**
  * @brief Writes output to an open file stream using a va_list
@@ -336,7 +336,7 @@
  * @see os_sprintf
  * @see os_vsnprintf
  */
-#define os_vfprintf(stream, format, args)      vfprintf(stream, format, args)
+#define os_vfprintf                    vfprintf
 
 /**
  * @brief Read bytes from a file into a char array
