@@ -67,9 +67,9 @@ typedef struct os_system_info
  * @param[out]     address             buffer to fill with the address
  * @param[in]      address_len         size of the address buffer
  *
- * @retval OS_STATUS_BAD_PARAMETER    invalid parameter passed to the function
- * @retval OS_STATUS_FAILURE          system error
- * @retval OS_STATUS_SUCCESS          on success
+ * @retval OS_STATUS_BAD_PARAMETER     invalid parameter passed to the function
+ * @retval OS_STATUS_FAILURE           system error
+ * @retval OS_STATUS_SUCCESS           on success
  *
  * @see os_adapters_next
  * @see os_adapters_obtain
@@ -89,9 +89,9 @@ OS_API OS_SECTION os_status_t os_adapters_address(
  * @param[in,out]  adapters            adapter list to retrieve information from
  * @param[out]     index               index of the adapter
  *
- * @retval OS_STATUS_BAD_PARAMETER    invalid parameter passed to the function
- * @retval OS_STATUS_FAILURE          system error
- * @retval OS_STATUS_SUCCESS          on success
+ * @retval OS_STATUS_BAD_PARAMETER     invalid parameter passed to the function
+ * @retval OS_STATUS_FAILURE           system error
+ * @retval OS_STATUS_SUCCESS           on success
  *
  * @see os_adapters_next
  * @see os_adapters_obtain
@@ -109,9 +109,9 @@ OS_API OS_SECTION os_status_t os_adapters_index(
  * @param[out]     mac                 buffer to fill with the mac address
  * @param[in]      max_len             size of the buffer
  *
- * @retval OS_STATUS_BAD_PARAMETER    invalid parameter passed to the function
- * @retval OS_STATUS_FAILURE          system error
- * @retval OS_STATUS_SUCCESS          on success
+ * @retval OS_STATUS_BAD_PARAMETER     invalid parameter passed to the function
+ * @retval OS_STATUS_FAILURE           system error
+ * @retval OS_STATUS_SUCCESS           on success
  *
  * @see os_adapters_next
  * @see os_adapters_obtain
@@ -128,9 +128,9 @@ OS_API OS_SECTION os_status_t os_adapters_mac(
  *
  * @param[in,out]  adapters            adapter list to iterate
  *
- * @retval OS_STATUS_BAD_PARAMETER    invalid parameter passed to the function
- * @retval OS_STATUS_FAILURE          system error
- * @retval OS_STATUS_SUCCESS          on success
+ * @retval OS_STATUS_BAD_PARAMETER     invalid parameter passed to the function
+ * @retval OS_STATUS_FAILURE           system error
+ * @retval OS_STATUS_SUCCESS           on success
  *
  * @see os_adapters_obtain
  * @see os_adapters_release
@@ -144,10 +144,10 @@ OS_API OS_SECTION os_status_t os_adapters_next(
  *
  * @param[out]     adapters            list of adapters
  *
- * @retval OS_STATUS_BAD_PARAMETER    invalid parameter passed to the function
- * @retval OS_STATUS_FAILURE          system error
- * @retval OS_STATUS_NO_MEMORY        out of memory
- * @retval OS_STATUS_SUCCESS          on success
+ * @retval OS_STATUS_BAD_PARAMETER     invalid parameter passed to the function
+ * @retval OS_STATUS_FAILURE           system error
+ * @retval OS_STATUS_NO_MEMORY         out of memory
+ * @retval OS_STATUS_SUCCESS           on success
  *
  * @see os_adapters_next
  * @see os_adapters_release
@@ -161,9 +161,9 @@ OS_API OS_SECTION os_status_t os_adapters_obtain(
  *
  * @param[in,out]  adapters            adapter list to release
  *
- * @retval OS_STATUS_BAD_PARAMETER    invalid parameter passed to the function
- * @retval OS_STATUS_FAILURE          system error
- * @retval OS_STATUS_SUCCESS          on success
+ * @retval OS_STATUS_BAD_PARAMETER     invalid parameter passed to the function
+ * @retval OS_STATUS_FAILURE           system error
+ * @retval OS_STATUS_SUCCESS           on success
  *
  * @see os_adapters_next
  * @see os_adapters_obtain
@@ -176,9 +176,9 @@ OS_API OS_SECTION os_status_t os_adapters_release(
 /**
  * @brief Checks whether @p c is an alphabetical or numerical character
  *
- * @retval OS_FALSE                   character is not a alphabetical or
+ * @retval OS_FALSE                    character is not a alphabetical or
  *                                     numerical character
- * @retval OS_TRUE                    character is a alphabetical or  numerical
+ * @retval OS_TRUE                     character is a alphabetical or  numerical
  *                                     character
  */
 OS_API OS_SECTION os_bool_t os_char_isalnum(
@@ -194,7 +194,6 @@ OS_API OS_SECTION os_bool_t os_char_isalnum(
 OS_API OS_SECTION os_bool_t os_char_isxdigit(
 	char c
 );
-
 
 /** @brief flag indicating read operations */
 #define OS_READ         0x01
@@ -219,22 +218,23 @@ OS_API OS_SECTION os_bool_t os_char_isxdigit(
  * @param[in]      path                path to directory to be created
  * @param[in]      timeout             maximum timeout for operation to complete
  *
- * @retval OS_STATUS_BAD_PARAMETER    invalid parameter passed to the function
- * @retval OS_STATUS_FAILURE          system error
- * @retval OS_STATUS_SUCCESS          on success
+ * @retval OS_STATUS_BAD_PARAMETER     invalid parameter passed to the function
+ * @retval OS_STATUS_FAILURE           system error
+ * @retval OS_STATUS_SUCCESS           on success
  */
 OS_API OS_SECTION os_status_t os_directory_create(
 	const char *path,
 	os_millisecond_t timeout
 );
+
 /**
  * @brief Create a directory at the path specified
  *
  * @param[in]      path                path to directory to be created
  *
- * @retval OS_STATUS_BAD_PARAMETER    invalid parameter passed to the function
- * @retval OS_STATUS_FAILURE          system error
- * @retval OS_STATUS_SUCCESS          on success
+ * @retval OS_STATUS_BAD_PARAMETER     invalid parameter passed to the function
+ * @retval OS_STATUS_FAILURE           system error
+ * @retval OS_STATUS_SUCCESS           on success
  */
 OS_API OS_SECTION os_status_t os_directory_create_nowait(
 	const char *path
@@ -246,48 +246,54 @@ OS_API OS_SECTION os_status_t os_directory_create_nowait(
  * @param[out]     buffer              output destination
  * @param[in]      size                maximum size of destination buffer
  *
- * @retval OS_STATUS_BAD_PARAMETER    invalid parameter passed to the function
- * @retval OS_STATUS_FAILURE          system error or the buffer is too small
- * @retval OS_STATUS_SUCCESS          on success
+ * @retval OS_STATUS_BAD_PARAMETER     invalid parameter passed to the function
+ * @retval OS_STATUS_FAILURE           system error or the buffer is too small
+ * @retval OS_STATUS_SUCCESS           on success
  */
 OS_API OS_SECTION os_status_t os_directory_current(
 	char *buffer,
 	size_t size
 );
+
 /**
  * @brief Change the specified directory as current working directory
  *
  * @param[in]      path                path to directory to be changed
  *
- * @retval OS_STATUS_BAD_PARAMETER    invalid parameter passed to the function
- * @retval OS_STATUS_FAILURE          failed to change current directory
- * @retval OS_STATUS_SUCCESS          directory was successfully changed
+ * @retval OS_STATUS_BAD_PARAMETER     invalid parameter passed to the function
+ * @retval OS_STATUS_FAILURE           failed to change current directory
+ * @retval OS_STATUS_SUCCESS           directory was successfully changed
  */
-OS_API OS_SECTION os_status_t os_directory_change(const char *path);
+OS_API OS_SECTION os_status_t os_directory_change(
+	const char *path
+);
+
 /**
  * @brief Opens the specified directory for exploration
  *
  * @param[in]      dir_path            path to directory to open
  * @param[out]     out                 pointer to directory stream
  *
- * @retval OS_STATUS_FAILURE          failed to open directory
- * @retval OS_STATUS_SUCCESS          directory was successfully opened
+ * @retval OS_STATUS_FAILURE           failed to open directory
+ * @retval OS_STATUS_SUCCESS           directory was successfully opened
  */
 OS_API OS_SECTION os_status_t os_directory_open(
 	const char *dir_path,
 	os_dir_t* out
 );
+
 /**
  * @brief Closes a previously opened directory stream
  *
  * @param[in]      dir                 directory to close
  *
- * @retval OS_STATUS_FAILURE          failed to close directory
- * @retval OS_STATUS_SUCCESS          successfully closed directory
+ * @retval OS_STATUS_FAILURE           failed to close directory
+ * @retval OS_STATUS_SUCCESS           successfully closed directory
  */
 OS_API OS_SECTION os_status_t os_directory_close(
 	os_dir_t *dir
 );
+
 /**
  * @brief Deletes all files (and empty directories) matching a regular
  *        expression from the given directory
@@ -303,13 +309,13 @@ OS_API OS_SECTION os_status_t os_directory_close(
  *                                     but leaves directory)
  * @param[in]      recursive           go recursively through subdirectories
  *
- * @retval OS_STATUS_BAD_PARAMETER    invalid parameter passed to function
- * @retval OS_STATUS_BAD_REQUEST      regular expression contains invalid
+ * @retval OS_STATUS_BAD_PARAMETER     invalid parameter passed to function
+ * @retval OS_STATUS_BAD_REQUEST       regular expression contains invalid
  *                                     character(s)
- * @retval OS_STATUS_FAILURE          on failure
- * @retval OS_STATUS_NO_MEMORY        out of memory
- * @retval OS_STATUS_SUCCESS          on success
- * @retval OS_STATUS_TRY_AGAIN        directory is not empty
+ * @retval OS_STATUS_FAILURE           on failure
+ * @retval OS_STATUS_NO_MEMORY         out of memory
+ * @retval OS_STATUS_SUCCESS           on success
+ * @retval OS_STATUS_TRY_AGAIN         directory is not empty
  *
  * @see os_directory_delete
  * @see os_directory_exists
@@ -320,17 +326,19 @@ OS_API OS_SECTION os_status_t os_directory_delete(
 	const char *regex,
 	os_bool_t recursive
 );
+
 /**
  * @brief Returns whether or not a directory exists
  *
  * @param[in]      dir_path            path to directory to check existence
  *
- * @retval OS_TRUE                    directory exists
- * @retval OS_FALSE                   directory does not exist
+ * @retval OS_TRUE                     directory exists
+ * @retval OS_FALSE                    directory does not exist
  */
 OS_API OS_SECTION os_bool_t os_directory_exists(
 	const char *dir_path
 );
+
 /**
  * @brief Get amount of free space on partition containing path
  *
@@ -366,9 +374,9 @@ OS_API OS_SECTION const char *os_directory_get_temp_dir(
  * @param[out]     path                buffer to write the path of next file to
  * @param[in]      path_len            size of buffer
  *
- * @retval OS_STATUS_FAILURE          failed to retrieve next file, might have
+ * @retval OS_STATUS_FAILURE           failed to retrieve next file, might have
  *                                     reached the end of the directory
- * @retval OS_STATUS_SUCCESS          successfully retrieved the next file
+ * @retval OS_STATUS_SUCCESS           successfully retrieved the next file
  */
 OS_API OS_SECTION os_status_t os_directory_next(
 	os_dir_t *dir,
@@ -376,13 +384,14 @@ OS_API OS_SECTION os_status_t os_directory_next(
 	char *path,
 	size_t path_len
 );
+
 /**
  * @brief Reset a directory stream to the beginning of its contents
  *
  * @param[in,out]  dir                 directory to reset
  *
- * @retval OS_STATUS_FAILURE          failed to rewind directory
- * @retval OS_STATUS_SUCCESS          successfully rewound directory
+ * @retval OS_STATUS_FAILURE           failed to rewind directory
+ * @retval OS_STATUS_SUCCESS           successfully rewound directory
  *
  *
  */
@@ -396,9 +405,9 @@ OS_API OS_SECTION os_status_t os_directory_rewind(
  * @param[in]      path                path to the specified file
  * @param[in]      user                new owner for the file
  *
- * @retval OS_STATUS_BAD_PARAMETER    invalid parameter passed to function
- * @retval OS_STATUS_FAILURE          Failed to change ownership of the file
- * @retval OS_STATUS_SUCCESS          Successfully changed ownership of the
+ * @retval OS_STATUS_BAD_PARAMETER     invalid parameter passed to function
+ * @retval OS_STATUS_FAILURE           failed to change ownership of the file
+ * @retval OS_STATUS_SUCCESS           successfully changed ownership of the
  *                                     file
  */
 OS_API OS_SECTION os_status_t os_file_chown(
@@ -409,10 +418,10 @@ OS_API OS_SECTION os_status_t os_file_chown(
 /**
  * @brief Close file stream
  *
- * @param[in,out]  handle              Pointer to file stream to close
+ * @param[in,out]  handle              pointer to file stream to close
  *
- * @retval         OS_STATUS_SUCCESS  Successfully closed file stream
- * @retval         OS_STATUS_FAILURE  Failed to close file stream
+ * @retval         OS_STATUS_SUCCESS   successfully closed file stream
+ * @retval         OS_STATUS_FAILURE   failed to close file stream
  *
  * @see os_file_open
  */
@@ -426,9 +435,9 @@ OS_API OS_SECTION os_status_t os_file_close(
  * @param[in]      old_path            path of the file to copy
  * @param[in]      new_path            location to copy file to
  *
- * @retval OS_STATUS_BAD_PARAMETER    invalid parameter passed to function
- * @retval OS_STATUS_FAILURE          on failure
- * @retval OS_STATUS_SUCCESS          on success
+ * @retval OS_STATUS_BAD_PARAMETER     invalid parameter passed to function
+ * @retval OS_STATUS_FAILURE           on failure
+ * @retval OS_STATUS_SUCCESS           on success
  *
  * @see os_file_move
  */
@@ -442,9 +451,9 @@ OS_API OS_SECTION os_status_t os_file_copy(
  *
  * @param[in]      path                path to file to delete
  *
- * @retval OS_STATUS_BAD_PARAMETER    invalid parameter passed to function
- * @retval OS_STATUS_FAILURE          on failure
- * @retval OS_STATUS_SUCCESS          on success
+ * @retval OS_STATUS_BAD_PARAMETER     invalid parameter passed to function
+ * @retval OS_STATUS_FAILURE           on failure
+ * @retval OS_STATUS_SUCCESS           on success
  *
  * @see os_directory_delete
  * @see os_file_exists
@@ -452,13 +461,14 @@ OS_API OS_SECTION os_status_t os_file_copy(
 OS_API OS_SECTION os_status_t os_file_delete(
 	const char *path
 );
+
 /**
  * @brief Determines whether a specified file exists
  *
- * @param[in]      file_path           Path to specified file
+ * @param[in]      file_path           path to specified file
  *
- * @retval         OS_TRUE            File exists
- * @retval         OS_FALSE           File does not exist
+ * @retval         OS_TRUE             file exists
+ * @retval         OS_FALSE            file does not exist
  *
  * @see os_file_remove
  */
@@ -473,28 +483,27 @@ OS_API OS_SECTION os_bool_t os_file_exists(
  * @param[in]      offset              amount to remove file pointer
  * @param[in]      whence              where to apply the offset at
  *
- * @retval OS_STATUS_BAD_PARAMETER    bad parameter passed to the function
- * @retval OS_STATUS_FAILURE          failed to move file pointer
- * @retval OS_STATUS_SUCCESS          on success
+ * @retval OS_STATUS_BAD_PARAMETER     bad parameter passed to the function
+ * @retval OS_STATUS_FAILURE           failed to move file pointer
+ * @retval OS_STATUS_SUCCESS           on success
  */
-OS_API OS_SECTION os_status_t os_file_fseek(
+OS_API OS_SECTION os_status_t os_file_seek(
 	os_file_t stream,
 	long offset,
 	int whence
 );
 
 /**
- * @brief Fsync file
+ * @brief Synchronize a file's in-core state with storage device
  *
- * @param[in]      file_path           path to file to fsync
- *                                     do sync if file_path is NULL (linux)
+ * @param[in]      file_path           path to file to synchronize
  *
- * @retval OS_STATUS_BAD_PARAMETER    bad parameter passed to the function
- * @retval OS_STATUS_SUCCESS          Successfully sync the file
- * @retval OS_STATUS_FAILURE          Failed to sync file stream
+ * @retval OS_STATUS_BAD_PARAMETER     bad parameter passed to the function
+ * @retval OS_STATUS_SUCCESS           successfully sync the file
+ * @retval OS_STATUS_FAILURE           failed to sync file stream
  *
  */
-OS_API OS_SECTION os_status_t os_file_fsync(
+OS_API OS_SECTION os_status_t os_file_sync(
 	const char *file_path
 );
 
@@ -526,9 +535,9 @@ OS_API OS_SECTION os_uint64_t os_file_get_size_handle(
  * @param[in]      old_path            path of the file to move
  * @param[in]      new_path            location to move file to
  *
- * @retval OS_STATUS_BAD_PARAMETER    invalid parameter passed to function
- * @retval OS_STATUS_FAILURE          on failure
- * @retval OS_STATUS_SUCCESS          on success
+ * @retval OS_STATUS_BAD_PARAMETER     invalid parameter passed to function
+ * @retval OS_STATUS_FAILURE           on failure
+ * @retval OS_STATUS_SUCCESS           on success
  *
  * @see os_file_copy
  */
@@ -567,8 +576,8 @@ OS_API OS_SECTION os_file_t os_file_open(
  * @param[in,out]  prototype           prototype to use / temporary file name
  * @param[in]      suffix_len          suffix length
  *
- * @retval OS_STATUS_FAILURE          on failure
- * @retval OS_STATUS_SUCCESS          on success
+ * @retval OS_STATUS_FAILURE           on failure
+ * @retval OS_STATUS_SUCCESS           on success
  */
 OS_API OS_SECTION os_status_t os_file_temp(
 	char *prototype,
@@ -588,8 +597,8 @@ OS_API OS_SECTION char os_key_wait( void );
  *
  * @param[in]      lib                 open library handle to close
  *
- * @retval OS_STATUS_FAILURE          on failure
- * @retval OS_STATUS_SUCCESS          on success
+ * @retval OS_STATUS_FAILURE           on failure
+ * @retval OS_STATUS_SUCCESS           on success
  *
  * @see os_library_find
  * @see os_library_open
@@ -607,10 +616,10 @@ OS_API OS_SECTION os_status_t os_library_close(
  * @param[in]      ...                 directories and file name passed in as
  *                                     strings, until NULL is passed.
  *
- * @retval OS_STATUS_BAD_PARAMETER    invalid parameter passed to function
- * @retval OS_STATUS_FULL             the buffer specified is too small to hold
+ * @retval OS_STATUS_BAD_PARAMETER     invalid parameter passed to function
+ * @retval OS_STATUS_FULL              the buffer specified is too small to hold
  *                                     the path
- * @retval OS_STATUS_SUCCESS          on success
+ * @retval OS_STATUS_SUCCESS           on success
  */
 OS_API OS_SECTION os_status_t os_make_path(
 	char *path,
@@ -626,7 +635,9 @@ OS_API OS_SECTION os_status_t os_make_path(
  *
  * @return an integer value of the string converted (0 is the default)
  */
-OS_API OS_SECTION int os_atoi( const char *str );
+OS_API OS_SECTION int os_atoi(
+	const char *str
+);
 
 /**
  * @brief Compares two strings ignoring case
@@ -813,8 +824,8 @@ OS_API OS_SECTION int os_sprintf(
  *
  * @param[in]      stream              stream to flush
  *
- * @retval OS_FALSE                   on failure
- * @retval OS_TRUE                    on success
+ * @retval OS_FALSE                    on failure
+ * @retval OS_TRUE                     on success
  */
 OS_API OS_SECTION os_bool_t os_flush(
 	os_file_t stream
@@ -840,9 +851,9 @@ OS_API OS_SECTION os_bool_t os_path_is_absolute(
  * @param[out]     path                buffer to put full path to executable
  * @param[in]      size                size of the buffer
  *
- * @retval OS_STATUS_BAD_PARAMETER    invalid parameter
- * @retval OS_STATUS_FAILURE          on failure
- * @retval OS_STATUS_SUCCESS          on success
+ * @retval OS_STATUS_BAD_PARAMETER     invalid parameter
+ * @retval OS_STATUS_FAILURE           on failure
+ * @retval OS_STATUS_SUCCESS           on success
  */
 OS_API OS_SECTION os_status_t os_path_executable(
 	char *path,
@@ -853,8 +864,8 @@ OS_API OS_SECTION os_status_t os_path_executable(
 /**
  * @brief Release resources when a child process exists
  *
- * @retval OS_STATUS_FAILURE          on failure
- * @retval OS_STATUS_SUCCESS          on success
+ * @retval OS_STATUS_FAILURE           on failure
+ * @retval OS_STATUS_SUCCESS           on success
  */
 OS_API OS_SECTION os_status_t os_process_cleanup( void );
 
@@ -863,18 +874,20 @@ OS_API OS_SECTION os_status_t os_process_cleanup( void );
  * @brief Function to call if running as a service
  *
  * @param[in]      id                  id identifying the service
- * @param[in]      service_function    function pointer for service controller to run
- * @param[in]      argc                parameter count for service_function
- * @param[in,out]  argv                array of parameters for service_function
+ * @param[in]      service_function    function pointer for service controller
+ *                                     to run
+ * @param[in]      argc                parameter count for @c service_function
+ * @param[in,out]  argv                array of parameters for
+ *                                     @c service_function
  * @param[in]      remove_argc         size of remove argument array
  * @param[in]      remove_argv         array of arguments to remove before
  *                                     passing to the @c service_function
  * @param[in]      handler             service signal handler
  * @param[in]      logdir              directory where log files will be placed
  *
- * @retval OS_STATUS_SUCCESS          on success
- * @retval OS_STATUS_BAD_PARAMETER    on bad parameters
- * @retval OS_STATUS_FAILURE          on failure to start service
+ * @retval OS_STATUS_SUCCESS           on success
+ * @retval OS_STATUS_BAD_PARAMETER     on bad parameters
+ * @retval OS_STATUS_FAILURE           on failure to start service
  */
 OS_API OS_SECTION os_status_t os_service_run(
 	const char *id,
@@ -893,17 +906,20 @@ OS_API OS_SECTION os_status_t os_service_run(
  * @param[in]      id                  id identifying the service
  * @param[in]      executable          full path to the executable
  * @param[in]      args                arguments to pass to the executable
- * @param[in]      name                name (or short description) of the service
- * @param[in]      description         (optional) brief description of the service
+ * @param[in]      name                name (or short description) of the
+ *                                     service
+ * @param[in]      description         (optional) brief description of the
+ *                                     service
  * @param[in]      dependencies        (optional) list of dependencies,
  *                                     seperated by semi-colons
- * @param[in]      max_time_out        maximum time out for operation to complete
+ * @param[in]      max_time_out        maximum time out for operation to
+ *                                     complete
  *
- * @retval OS_STATUS_SUCCESS          on success
- * @retval OS_STATUS_BAD_PARAMETER    on bad mandatory parameter(s)
- * @retval OS_STATUS_EXISTS           service already exists
- * @retval OS_STATUS_FAILURE          on failure
- * @retval OS_STATUS_NOT_SUPPORTED    if not supported on current OS
+ * @retval OS_STATUS_SUCCESS           on success
+ * @retval OS_STATUS_BAD_PARAMETER     on bad mandatory parameter(s)
+ * @retval OS_STATUS_EXISTS            service already exists
+ * @retval OS_STATUS_FAILURE           on failure
+ * @retval OS_STATUS_NOT_SUPPORTED     if not supported on current OS
  *
  * @note Forward-slashes (/) and Backslashes (\) are not valid within a
  *       service id
@@ -924,10 +940,10 @@ OS_API OS_SECTION os_status_t os_service_install(
  * @param[in]      id                  id identifying the service
  * @param[in]      max_time_out        maximum time out for operation to complete
  *
- * @retval OS_STATUS_SUCCESS          on success
- * @retval OS_STATUS_BAD_PARAMETER    on bad mandatory parameter(s)
- * @retval OS_STATUS_FAILURE          on failure
- * @retval OS_STATUS_NOT_SUPPORTED    if not supported on current OS
+ * @retval OS_STATUS_SUCCESS           on success
+ * @retval OS_STATUS_BAD_PARAMETER     on bad mandatory parameter(s)
+ * @retval OS_STATUS_FAILURE           on failure
+ * @retval OS_STATUS_NOT_SUPPORTED     if not supported on current OS
  *
  * @note Forward-slashes (/) and Backslashes (\) are not valid within a
  *       service id
@@ -943,10 +959,10 @@ OS_API OS_SECTION os_status_t os_service_uninstall(
  * @param[in]      id                  id identifying the service
  * @param[in]      max_time_out        maximum time out for operation to complete
  *
- * @retval OS_STATUS_SUCCESS          on success
- * @retval OS_STATUS_BAD_PARAMETER    on bad mandatory parameter(s)
- * @retval OS_STATUS_FAILURE          on failure
- * @retval OS_STATUS_NOT_SUPPORTED    if not supported on current OS
+ * @retval OS_STATUS_SUCCESS           on success
+ * @retval OS_STATUS_BAD_PARAMETER     on bad mandatory parameter(s)
+ * @retval OS_STATUS_FAILURE           on failure
+ * @retval OS_STATUS_NOT_SUPPORTED     if not supported on current OS
  *
  * @note Forward-slashes (/) and Backslashes (\) are not valid within a
  *       service id.
@@ -963,10 +979,10 @@ OS_API OS_SECTION os_status_t os_service_start(
  * @param[in]      exe                 filename used by the service
  * @param[in]      max_time_out        maximum time out for operation to complete
  *
- * @retval OS_STATUS_SUCCESS          on success
- * @retval OS_STATUS_BAD_PARAMETER    on bad mandatory parameter(s)
- * @retval OS_STATUS_FAILURE          on failure
- * @retval OS_STATUS_NOT_SUPPORTED    if not supported on current OS
+ * @retval OS_STATUS_SUCCESS           on success
+ * @retval OS_STATUS_BAD_PARAMETER     on bad mandatory parameter(s)
+ * @retval OS_STATUS_FAILURE           on failure
+ * @retval OS_STATUS_NOT_SUPPORTED     if not supported on current OS
  *
  * @note Forward-slashes (/) and Backslashes (\) are not valid within a
  *       service id.
@@ -984,10 +1000,10 @@ OS_API OS_SECTION os_status_t os_service_stop(
  * @param[in]      exe                 filename used by the service
  * @param[in]      max_time_out        maximum time out for operation to complete
  *
- * @retval OS_STATUS_SUCCESS          on success
- * @retval OS_STATUS_BAD_PARAMETER    on bad mandatory parameter(s)
- * @retval OS_STATUS_FAILURE          on failure
- * @retval OS_STATUS_NOT_SUPPORTED    if not supported on current OS
+ * @retval OS_STATUS_SUCCESS           on success
+ * @retval OS_STATUS_BAD_PARAMETER     on bad mandatory parameter(s)
+ * @retval OS_STATUS_FAILURE           on failure
+ * @retval OS_STATUS_NOT_SUPPORTED     if not supported on current OS
  *
  * @note Forward-slashes (/) and Backslashes (\) are not valid within a
  *       service id.
@@ -1004,13 +1020,13 @@ OS_API OS_SECTION os_status_t os_service_restart(
  * @param[in]      id                  id identifying the service
  * @param[in]      max_time_out        maximum time out for operation to complete
  *
- * @retval OS_STATUS_BAD_PARAMETER    invalid parameter(s) passed to function
- * @retval OS_STATUS_FAILURE          failed to query service or in a failed state
- * @retval OS_STATUS_NOT_FOUND        service is not found
- * @retval OS_STATUS_NOT_INITIALIZED  service is not active (or connecting)
- * @retval OS_STATUS_NOT_SUPPORTED    if not supported on current OS
- * @retval OS_STATUS_SUCCESS          service is active & running
- * @retval OS_STATUS_TIMED_OUT        the query timed out before completion
+ * @retval OS_STATUS_BAD_PARAMETER     invalid parameter(s) passed to function
+ * @retval OS_STATUS_FAILURE           failed to query service or in a failed state
+ * @retval OS_STATUS_NOT_FOUND         service is not found
+ * @retval OS_STATUS_NOT_INITIALIZED   service is not active (or connecting)
+ * @retval OS_STATUS_NOT_SUPPORTED     if not supported on current OS
+ * @retval OS_STATUS_SUCCESS           service is active & running
+ * @retval OS_STATUS_TIMED_OUT         the query timed out before completion
  *
  * @note Forward-slashes (/) and Backslashes (\) are not valid within a
  *       service id.
@@ -1026,9 +1042,10 @@ OS_API OS_SECTION os_status_t os_service_query(
  *
  * @param[in]      host                hostname to resolve
  * @param[in]      service             service or port to use for resolution
- * @param[out]     address             the resulting IP address that the host resolves to
+ * @param[out]     address             the resulting IP address that the host
+ *                                     resolves to
  * @param[in]      address_len         length of the IP address char array
- * @param[in] family         address family to use for resolution
+ * @param[in]      family              address family to use for resolution
  *
  * @retval 0       on success
  * @retval !0      on failure (see getaddrinfo() return codes)
@@ -1049,10 +1066,10 @@ OS_API OS_SECTION os_status_t os_service_query(
  * @param[in]      max_time_out        maximum time to wait for operation to
  *                                     complete
  *
- * @retval OS_STATUS_BAD_PARAMETER    invalid parameter(s) passed to function
- * @retval OS_STATUS_FAILURE          failed to accept connection
- * @retval OS_STATUS_SUCCESS          successfully bound to socket
- * @retval OS_STATUS_TIMED_OUT        time out exceeded
+ * @retval OS_STATUS_BAD_PARAMETER     invalid parameter(s) passed to function
+ * @retval OS_STATUS_FAILURE           failed to accept connection
+ * @retval OS_STATUS_SUCCESS           successfully bound to socket
+ * @retval OS_STATUS_TIMED_OUT         time out exceeded
  *
  * @see os_socket_bind
  */
@@ -1068,9 +1085,9 @@ OS_API OS_SECTION os_status_t os_socket_accept(
  * @param[in]      socket              socket to bind to
  * @param[in]      queue_size          size of queue to hold incoming
  *
- * @retval OS_STATUS_BAD_PARAMETER    invalid parameter(s) passed to function
- * @retval OS_STATUS_FAILURE          failed to bind to socket
- * @retval OS_STATUS_SUCCESS          successfully bound to socket
+ * @retval OS_STATUS_BAD_PARAMETER     invalid parameter(s) passed to function
+ * @retval OS_STATUS_FAILURE           failed to bind to socket
+ * @retval OS_STATUS_SUCCESS           successfully bound to socket
  *
  * @see os_socket_accept
  * @see os_socket_open
@@ -1092,10 +1109,10 @@ OS_API OS_SECTION os_status_t os_socket_bind(
  * @param[in]      max_time_out        maximum time to wait for operation to
  *                                     complete
  *
- * @retval OS_STATUS_BAD_PARAMETER    invalid parameter(s) passed to function
- * @retval OS_STATUS_FAILURE          failed to accept connection
- * @retval OS_STATUS_SUCCESS          successfully bound to socket
- * @retval OS_STATUS_TIMED_OUT        time out exceeded
+ * @retval OS_STATUS_BAD_PARAMETER     invalid parameter(s) passed to function
+ * @retval OS_STATUS_FAILURE           failed to accept connection
+ * @retval OS_STATUS_SUCCESS           successfully bound to socket
+ * @retval OS_STATUS_TIMED_OUT         time out exceeded
  */
 OS_API OS_SECTION os_status_t os_socket_broadcast(
 	const os_socket_t *socket,
@@ -1111,36 +1128,39 @@ OS_API OS_SECTION os_status_t os_socket_broadcast(
  *
  * @param[in,out]  socket              socket to close
  *
- * @retval OS_STATUS_BAD_PARAMETER    invalid parameter passed to the function
- * @retval OS_STATUS_FAILURE          on failure
- * @retval OS_STATUS_SUCCESS          on success
+ * @retval OS_STATUS_BAD_PARAMETER     invalid parameter passed to the function
+ * @retval OS_STATUS_FAILURE           on failure
+ * @retval OS_STATUS_SUCCESS           on success
  *
  * @see os_socket_open
  */
 OS_API OS_SECTION os_status_t os_socket_close(
 	os_socket_t *socket
 );
+
 /**
  * @brief Connects to a socket to send and receive data
  *
  * @param[in]      socket              socket to connect to
  *
- * @retval OS_STATUS_BAD_PARAMETER    invalid parameter passed to the function
- * @retval OS_STATUS_FAILURE          on failure
- * @retval OS_STATUS_SUCCESS          on success
+ * @retval OS_STATUS_BAD_PARAMETER     invalid parameter passed to the function
+ * @retval OS_STATUS_FAILURE           on failure
+ * @retval OS_STATUS_SUCCESS           on success
  */
 OS_API OS_SECTION os_status_t os_socket_connect(
 	const os_socket_t *socket
 );
+
 /**
  * @brief Initializes resources for raw socket communicationa within a process
  *
- * @retval OS_STATUS_FAILURE          on failure
- * @retval OS_STATUS_SUCCESS          on success
+ * @retval OS_STATUS_FAILURE           on failure
+ * @retval OS_STATUS_SUCCESS           on success
  *
  * @see os_socket_terminate
  */
 OS_API OS_SECTION os_status_t os_socket_initialize( void );
+
 /**
  * @brief Opens an open socket
  *
@@ -1151,10 +1171,10 @@ OS_API OS_SECTION os_status_t os_socket_initialize( void );
  * @param[in]      protocol            protocol index to use in family
  * @param[in]      max_time_out        maximum time out for operation to complete
  *
- * @retval OS_STATUS_BAD_PARAMETER    invalid parameter passed to function
- * @retval OS_STATUS_FAILURE          on failure
- * @retval OS_STATUS_SUCCESS          on success
- * @retval OS_STATUS_TIMED_OUT        time out exceeded
+ * @retval OS_STATUS_BAD_PARAMETER     invalid parameter passed to function
+ * @retval OS_STATUS_FAILURE           on failure
+ * @retval OS_STATUS_SUCCESS           on success
+ * @retval OS_STATUS_TIMED_OUT         time out exceeded
  *
  * @see os_socket_close
  */
@@ -1166,6 +1186,7 @@ OS_API OS_SECTION os_status_t os_socket_open(
 	int protocol,
 	os_millisecond_t max_time_out
 );
+
 OS_API OS_SECTION os_status_t os_socket_option(
 	const os_socket_t *socket,
 	int level,
@@ -1173,6 +1194,7 @@ OS_API OS_SECTION os_status_t os_socket_option(
 	const void *optval,
 	size_t optlen
 );
+
 /**
  * @brief reads data for an open socket
  *
@@ -1180,13 +1202,14 @@ OS_API OS_SECTION os_status_t os_socket_option(
  * @param[out]     buf                 destination buffer
  * @param[in]      len                 size of buffer
  * @param[out]     bytes_read          amount of data read in bytes
- * @param[in]      max_time_out        maximum time out for operation to complete
+ * @param[in]      max_time_out        maximum time out for operation to
+ *                                     complete
  *
- * @retval OS_STATUS_BAD_PARAMETER    invalid parameter passed to function
- * @retval OS_STATUS_FAILURE          on failure
- * @retval OS_STATUS_SUCCESS          on success
- * @retval OS_STATUS_TIMED_OUT        time out exceeded
- * @retval OS_STATUS_TRY_AGAIN        socket not connected
+ * @retval OS_STATUS_BAD_PARAMETER     invalid parameter passed to function
+ * @retval OS_STATUS_FAILURE           on failure
+ * @retval OS_STATUS_SUCCESS           on success
+ * @retval OS_STATUS_TIMED_OUT         time out exceeded
+ * @retval OS_STATUS_TRY_AGAIN         socket not connected
  *
  * @see os_socket_write
  */
@@ -1197,6 +1220,7 @@ OS_API OS_SECTION os_status_t os_socket_read(
 	size_t* bytes_read,
 	os_millisecond_t max_time_out
 );
+
 OS_API OS_SECTION ssize_t os_socket_receive(
 	const os_socket_t *socket,
 	void *buf,
@@ -1206,6 +1230,7 @@ OS_API OS_SECTION ssize_t os_socket_receive(
 	os_uint16_t *port,
 	os_millisecond_t max_time_out
 );
+
 OS_API OS_SECTION ssize_t os_socket_send(
 	const os_socket_t *socket,
 	const void *buf,
@@ -1214,16 +1239,18 @@ OS_API OS_SECTION ssize_t os_socket_send(
 	os_uint16_t port,
 	os_millisecond_t max_time_out
 );
+
 /**
  * @brief Cleans up resources utilized for raw socket communication
  *        within a process
  *
- * @retval OS_STATUS_FAILURE          on failure
- * @retval OS_STATUS_SUCCESS          on success
+ * @retval OS_STATUS_FAILURE           on failure
+ * @retval OS_STATUS_SUCCESS           on success
  *
  * @see os_socket_initialize
  */
 OS_API OS_SECTION os_status_t os_socket_terminate( void );
+
 /**
  * @brief Writes data to an open socket
  *
@@ -1233,10 +1260,10 @@ OS_API OS_SECTION os_status_t os_socket_terminate( void );
  * @param[out]     bytes_written       number of bytes written in bytes
  * @param[in]      max_time_out        maximum amount of time to wait
  *
- * @retval OS_STATUS_BAD_PARAMETER    invalid parameter passed to function
- * @retval OS_STATUS_FAILURE          on failure
- * @retval OS_STATUS_SUCCESS          on success
- * @retval OS_STATUS_TIMED_OUT        time out exceeded
+ * @retval OS_STATUS_BAD_PARAMETER     invalid parameter passed to function
+ * @retval OS_STATUS_FAILURE           on failure
+ * @retval OS_STATUS_SUCCESS           on success
+ * @retval OS_STATUS_TIMED_OUT         time out exceeded
  *
  * @see os_socket_read
  */
@@ -1254,9 +1281,9 @@ OS_API OS_SECTION os_status_t os_socket_write(
  * @param[in]      stream              handle to stream to set
  * @param[in]      enable              true to enable, false to disable
  *
- * @retval OS_STATUS_BAD_PARAMETER    invalid parameter
- * @retval OS_STATUS_FAILURE          on failure
- * @retval OS_STATUS_SUCCESS          on success
+ * @retval OS_STATUS_BAD_PARAMETER     invalid parameter
+ * @retval OS_STATUS_FAILURE           on failure
+ * @retval OS_STATUS_SUCCESS           on success
  */
 OS_API OS_SECTION os_status_t os_stream_echo_set(
 	os_file_t stream,
@@ -1283,8 +1310,8 @@ OS_API OS_SECTION const char *os_system_error_string(
  * @param[in,out]  sys_info            structure to fill with operating system
  *                                     information
  *
- * @retval OS_STATUS_FAILURE          on failure
- * @retval OS_STATUS_SUCCESS          on success
+ * @retval OS_STATUS_FAILURE           on failure
+ * @retval OS_STATUS_SUCCESS           on success
  */
 OS_API OS_SECTION os_status_t os_system_info(
 	os_system_info_t *sys_info
@@ -1295,11 +1322,11 @@ OS_API OS_SECTION os_status_t os_system_info(
  *
  * @param[in]      command             command string to be run
  * @param[out]     exit_status         return code of the executable (optional)
- * @param[in]      pipe_files          files/pipes to write 'standard out' & 
- *									   'standard error' to
+ * @param[in]      pipe_files          files/pipes to write 'standard out' &
+ *                                     'standard error' to
  *
- * @retval OS_STATUS_INVOKED          command triggered as a background process
- * @retval OS_STATUS_NOT_EXECUTABLE   the path provided can not be executed
+ * @retval OS_STATUS_INVOKED           command triggered as a background process
+ * @retval OS_STATUS_NOT_EXECUTABLE    the path provided can not be executed
  */
 OS_API OS_SECTION os_status_t os_system_run(
 	const char *command,
@@ -1317,10 +1344,10 @@ OS_API OS_SECTION os_status_t os_system_run(
  *                                     'standard error'
  * @param[in]      max_time_out        maximum amount of time to wait
  *
- * @retval OS_STATUS_IO_ERROR         failed to setup error & output capture io
- * @retval OS_STATUS_NOT_EXECUTABLE   the path provided can not be executed
- * @retval OS_STATUS_SUCCESS          on success
- * @retval OS_STATUS_TIMED_OUT        time out exceeded
+ * @retval OS_STATUS_IO_ERROR          failed to setup error & output capture io
+ * @retval OS_STATUS_NOT_EXECUTABLE    the path provided can not be executed
+ * @retval OS_STATUS_SUCCESS           on success
+ * @retval OS_STATUS_TIMED_OUT         time out exceeded
  */
 OS_API OS_SECTION os_status_t os_system_run_wait(
 	const char *command,
@@ -1336,8 +1363,8 @@ OS_API OS_SECTION os_status_t os_system_run_wait(
  *                                     device
  * @param[in]      delay               time delay in minutes to reboot or shutdown
  *
- * @retval OS_STATUS_INVOKED          shutdown triggered
- * @retval OS_STATUS_NOT_EXECUTABLE   shutdown failed to be triggered
+ * @retval OS_STATUS_INVOKED           shutdown triggered
+ * @retval OS_STATUS_NOT_EXECUTABLE    shutdown failed to be triggered
  */
 OS_API OS_SECTION os_status_t os_system_shutdown(
 	os_bool_t reboot, unsigned int delay
@@ -1349,8 +1376,8 @@ OS_API OS_SECTION os_status_t os_system_shutdown(
  *
  * @param[in]      stream              stream to test
  *
- * @retval OS_TRUE                    terminal supports vt-100 codes
- * @retval OS_FALSE                   terminal does not support vt-100 codes
+ * @retval OS_TRUE                     terminal supports vt-100 codes
+ * @retval OS_FALSE                    terminal does not support vt-100 codes
  */
 OS_API OS_SECTION os_bool_t os_terminal_vt100_support(
 	os_file_t stream
@@ -1363,8 +1390,8 @@ OS_API OS_SECTION os_bool_t os_terminal_vt100_support(
  *                                     signal is encountered, NULL to remove a
  *                                     previously registered signal handler
  *
- * @retval OS_STATUS_FAILURE          on failure
- * @retval OS_STATUS_SUCCESS          on success
+ * @retval OS_STATUS_FAILURE           on failure
+ * @retval OS_STATUS_SUCCESS           on success
  */
 OS_API OS_SECTION os_status_t os_terminate_handler(
 	os_sighandler_t signal_handler
@@ -1396,9 +1423,9 @@ OS_API OS_SECTION double os_random(
  *                                     correctly independent of this function's
  *                                     return code (optional)
  *
- * @retval OS_STATUS_BAD_PARAMETER    invalid parameter
- * @retval OS_STATUS_FAILURE          system call failed
- * @retval OS_STATUS_SUCCESS          on success
+ * @retval OS_STATUS_BAD_PARAMETER     invalid parameter
+ * @retval OS_STATUS_FAILURE           system call failed
+ * @retval OS_STATUS_SUCCESS           on success
  */
 OS_API OS_SECTION os_status_t os_time(
 	os_timestamp_t *time_stamp,
@@ -1408,16 +1435,27 @@ OS_API OS_SECTION os_status_t os_time(
 /**
  * @brief Returns the system time in a formatted string
  *
- * @param[out]     buf                 pointer to buffer to place the time string
+ * @param[out]     buf                 pointer to buffer to place the time
+ *                                     string
  * @param[in]      len                 length of the buffer
+ * @param[in]      format              format to use for the string following
+ *                                     @c strffmt function format style
+ * @param[in]      time_stamp          time stamp to format
+ * @param[in]      to_local_time       format the time in the local time zone
+ *                                     versus UTC time zone
  *
- * @retval OS_STATUS_BAD_PARAMETER    invalid parameter
- * @retval OS_STATUS_FAILURE          system call failed
- * @retval OS_STATUS_SUCCESS          on success
+ * @return returns the number of bytes (excluding the null-terminating
+ * character) placed into the output buffer.  If the length of the result
+ * string (including the null-terminating character) would exceed @c len bytes
+ * then this function returns a value of 0 and the contents include only the
+ * null-terminating character.
  */
-OS_API OS_SECTION os_status_t os_time_format(
+OS_API OS_SECTION size_t os_time_format(
 	char *buf,
-	size_t len );
+	size_t len,
+	const char *format,
+	os_timestamp_t time_stamp,
+	os_bool_t to_local_time );
 
 /**
  * @brief Calculates the amount of time elapsed from a given time
@@ -1425,9 +1463,9 @@ OS_API OS_SECTION os_status_t os_time_format(
  * @param[in]      start_time          starting time
  * @param[out]     elapsed_time        elapsed time in milliseconds
  *
- * @retval OS_STATUS_BAD_PARAMETER    invalid parameter
- * @retval OS_STATUS_BAD_REQUEST      starting time is in the future
- * @retval OS_STATUS_SUCCESS          on success
+ * @retval OS_STATUS_BAD_PARAMETER     invalid parameter
+ * @retval OS_STATUS_BAD_REQUEST       starting time is in the future
+ * @retval OS_STATUS_SUCCESS           on success
  */
 OS_API OS_SECTION os_status_t os_time_elapsed(
 	os_timestamp_t *start_time,
@@ -1440,10 +1478,10 @@ OS_API OS_SECTION os_status_t os_time_elapsed(
  * @param[in]      max_time_out        max amount of time (0 means forever)
  * @param[out]     remaining           amount of time remaining
  *
- * @retval OS_STATUS_BAD_PARAMETER    invalid parameter
- * @retval OS_STATUS_BAD_REQUEST      starting time is in the future
- * @retval OS_STATUS_TIMED_OUT        time out exceeded
- * @retval OS_STATUS_SUCCESS          on success
+ * @retval OS_STATUS_BAD_PARAMETER     invalid parameter
+ * @retval OS_STATUS_BAD_REQUEST       starting time is in the future
+ * @retval OS_STATUS_TIMED_OUT         time out exceeded
+ * @retval OS_STATUS_SUCCESS           on success
  */
 OS_API OS_SECTION os_status_t os_time_remaining(
 	os_timestamp_t *start_time,
@@ -1456,8 +1494,8 @@ OS_API OS_SECTION os_status_t os_time_remaining(
  * @param[in]      ms                  number of milliseconds to sleep for
  * @param[in]      allow_interrupts    allow the sleep to break on an interrupt
  *
- * @retval OS_STATUS_FAILURE          on system failure or system interruption
- * @retval OS_STATUS_SUCCESS          on success
+ * @retval OS_STATUS_FAILURE           on system failure or system interruption
+ * @retval OS_STATUS_SUCCESS           on success
  */
 OS_API OS_SECTION os_status_t os_time_sleep(
 	os_millisecond_t ms,
@@ -1481,9 +1519,9 @@ typedef OS_THREAD_RETURN
  *
  * @param[in,out]  cond                condition variable to wake up
  *
- * @retval OS_STATUS_BAD_PARAMETER    invalid parameter passed to function
- * @retval OS_STATUS_FAILURE          function failed
- * @retval OS_STATUS_SUCCESS          on success
+ * @retval OS_STATUS_BAD_PARAMETER     invalid parameter passed to function
+ * @retval OS_STATUS_FAILURE           function failed
+ * @retval OS_STATUS_SUCCESS           on success
  */
 OS_API OS_SECTION os_status_t os_thread_condition_broadcast(
 	os_thread_condition_t *cond
@@ -1494,9 +1532,9 @@ OS_API OS_SECTION os_status_t os_thread_condition_broadcast(
  *
  * @param[in,out]  cond                newly created condition variable
  *
- * @retval OS_STATUS_BAD_PARAMETER    invalid parameter passed to function
- * @retval OS_STATUS_FAILURE          function failed
- * @retval OS_STATUS_SUCCESS          on success
+ * @retval OS_STATUS_BAD_PARAMETER     invalid parameter passed to function
+ * @retval OS_STATUS_FAILURE           function failed
+ * @retval OS_STATUS_SUCCESS           on success
  */
 OS_API OS_SECTION os_status_t os_thread_condition_create(
 	os_thread_condition_t *cond
@@ -1507,9 +1545,9 @@ OS_API OS_SECTION os_status_t os_thread_condition_create(
  *
  * @param[in,out]  cond                previously created condition variable
  *
- * @retval OS_STATUS_BAD_PARAMETER    invalid parameter passed to function
- * @retval OS_STATUS_FAILURE          function failed
- * @retval OS_STATUS_SUCCESS          on success
+ * @retval OS_STATUS_BAD_PARAMETER     invalid parameter passed to function
+ * @retval OS_STATUS_FAILURE           function failed
+ * @retval OS_STATUS_SUCCESS           on success
  */
 OS_API OS_SECTION os_status_t os_thread_condition_destroy(
 	os_thread_condition_t *cond
@@ -1521,9 +1559,9 @@ OS_API OS_SECTION os_status_t os_thread_condition_destroy(
  * @param[in,out]  cond                condition variable to signal
  * @param[in,out]  lock                lock prototecting condition variable
  *
- * @retval OS_STATUS_BAD_PARAMETER    invalid parameter passed to function
- * @retval OS_STATUS_FAILURE          function failed
- * @retval OS_STATUS_SUCCESS          on success
+ * @retval OS_STATUS_BAD_PARAMETER     invalid parameter passed to function
+ * @retval OS_STATUS_FAILURE           function failed
+ * @retval OS_STATUS_SUCCESS           on success
  */
 OS_API OS_SECTION os_status_t os_thread_condition_signal(
 	os_thread_condition_t *cond,
@@ -1537,10 +1575,10 @@ OS_API OS_SECTION os_status_t os_thread_condition_signal(
  * @param[in,out]  lock                lock protecting condition variable
  * @param[in]      max_time_out        maximum amount of time to wait
  *
- * @retval OS_STATUS_BAD_PARAMETER    invalid parameter passed to function
- * @retval OS_STATUS_FAILURE          function failed
- * @retval OS_STATUS_SUCCESS          on success
- * @retval OS_STATUS_TIMED_OUT        maximum wait time reached
+ * @retval OS_STATUS_BAD_PARAMETER     invalid parameter passed to function
+ * @retval OS_STATUS_FAILURE           function failed
+ * @retval OS_STATUS_SUCCESS           on success
+ * @retval OS_STATUS_TIMED_OUT         maximum wait time reached
  */
 OS_API OS_SECTION os_status_t os_thread_condition_timed_wait(
 	os_thread_condition_t *cond,
@@ -1555,9 +1593,9 @@ OS_API OS_SECTION os_status_t os_thread_condition_timed_wait(
  * @param[in]      main                main method to call for the thread
  * @param[in]      arg                 user specific data
  *
- * @retval OS_STATUS_BAD_PARAMETER    invalid parameter passed to function
- * @retval OS_STATUS_FAILURE          function failed
- * @retval OS_STATUS_SUCCESS          on success
+ * @retval OS_STATUS_BAD_PARAMETER     invalid parameter passed to function
+ * @retval OS_STATUS_FAILURE           function failed
+ * @retval OS_STATUS_SUCCESS           on success
  */
 OS_API OS_SECTION os_status_t os_thread_create(
 	os_thread_t *thread,
@@ -1570,9 +1608,9 @@ OS_API OS_SECTION os_status_t os_thread_create(
  *
  * @param[in,out]  thread              thread object to destroy
  *
- * @retval OS_STATUS_BAD_PARAMETER    invalid parameter passed to function
- * @retval OS_STATUS_FAILURE          function failed
- * @retval OS_STATUS_SUCCESS          on success
+ * @retval OS_STATUS_BAD_PARAMETER     invalid parameter passed to function
+ * @retval OS_STATUS_FAILURE           function failed
+ * @retval OS_STATUS_SUCCESS           on success
  */
 OS_API OS_SECTION os_status_t os_thread_destroy(
 	os_thread_t *thread
@@ -1583,9 +1621,9 @@ OS_API OS_SECTION os_status_t os_thread_destroy(
  *
  * @param[in,out]  lock                newly created lock
  *
- * @retval OS_STATUS_BAD_PARAMETER    invalid parameter passed to function
- * @retval OS_STATUS_FAILURE          function failed
- * @retval OS_STATUS_SUCCESS          on success
+ * @retval OS_STATUS_BAD_PARAMETER     invalid parameter passed to function
+ * @retval OS_STATUS_FAILURE           function failed
+ * @retval OS_STATUS_SUCCESS           on success
  */
 OS_API OS_SECTION os_status_t os_thread_mutex_create(
 	os_thread_mutex_t *lock
@@ -1596,9 +1634,9 @@ OS_API OS_SECTION os_status_t os_thread_mutex_create(
  *
  * @param[in,out]  lock                previously created lock
  *
- * @retval OS_STATUS_BAD_PARAMETER    invalid parameter passed to function
- * @retval OS_STATUS_FAILURE          function failed
- * @retval OS_STATUS_SUCCESS          on success
+ * @retval OS_STATUS_BAD_PARAMETER     invalid parameter passed to function
+ * @retval OS_STATUS_FAILURE           function failed
+ * @retval OS_STATUS_SUCCESS           on success
  */
 OS_API OS_SECTION os_status_t os_thread_mutex_destroy(
 	os_thread_mutex_t *lock
@@ -1609,9 +1647,9 @@ OS_API OS_SECTION os_status_t os_thread_mutex_destroy(
  *
  * @param[in,out]  lock                previously created lock
  *
- * @retval OS_STATUS_BAD_PARAMETER    invalid parameter passed to function
- * @retval OS_STATUS_FAILURE          function failed
- * @retval OS_STATUS_SUCCESS          on success
+ * @retval OS_STATUS_BAD_PARAMETER     invalid parameter passed to function
+ * @retval OS_STATUS_FAILURE           function failed
+ * @retval OS_STATUS_SUCCESS           on success
  */
 OS_API OS_SECTION os_status_t os_thread_mutex_lock(
 	os_thread_mutex_t *lock
@@ -1622,9 +1660,9 @@ OS_API OS_SECTION os_status_t os_thread_mutex_lock(
  *
  * @param[in,out]  lock                previously created lock
  *
- * @retval OS_STATUS_BAD_PARAMETER    invalid parameter passed to function
- * @retval OS_STATUS_FAILURE          function failed
- * @retval OS_STATUS_SUCCESS          on success
+ * @retval OS_STATUS_BAD_PARAMETER     invalid parameter passed to function
+ * @retval OS_STATUS_FAILURE           function failed
+ * @retval OS_STATUS_SUCCESS           on success
  */
 OS_API OS_SECTION os_status_t os_thread_mutex_unlock(
 	os_thread_mutex_t *lock
@@ -1635,9 +1673,9 @@ OS_API OS_SECTION os_status_t os_thread_mutex_unlock(
  *
  * @param[in,out]  lock                newly created lock
  *
- * @retval OS_STATUS_BAD_PARAMETER    invalid parameter passed to function
- * @retval OS_STATUS_FAILURE          function failed
- * @retval OS_STATUS_SUCCESS          on success
+ * @retval OS_STATUS_BAD_PARAMETER     invalid parameter passed to function
+ * @retval OS_STATUS_FAILURE           function failed
+ * @retval OS_STATUS_SUCCESS           on success
  */
 OS_API OS_SECTION os_status_t os_thread_rwlock_create(
 	os_thread_rwlock_t *lock
@@ -1648,9 +1686,9 @@ OS_API OS_SECTION os_status_t os_thread_rwlock_create(
  *
  * @param[in,out]  lock                previously created lock
  *
- * @retval OS_STATUS_BAD_PARAMETER    invalid parameter passed to function
- * @retval OS_STATUS_FAILURE          function failed
- * @retval OS_STATUS_SUCCESS          on success
+ * @retval OS_STATUS_BAD_PARAMETER     invalid parameter passed to function
+ * @retval OS_STATUS_FAILURE           function failed
+ * @retval OS_STATUS_SUCCESS           on success
  */
 OS_API OS_SECTION os_status_t os_thread_rwlock_destroy(
 	os_thread_rwlock_t *lock
@@ -1661,9 +1699,9 @@ OS_API OS_SECTION os_status_t os_thread_rwlock_destroy(
  *
  * @param[in,out]  lock                previously created lock
  *
- * @retval OS_STATUS_BAD_PARAMETER    invalid parameter passed to function
- * @retval OS_STATUS_FAILURE          function failed
- * @retval OS_STATUS_SUCCESS          on success
+ * @retval OS_STATUS_BAD_PARAMETER     invalid parameter passed to function
+ * @retval OS_STATUS_FAILURE           function failed
+ * @retval OS_STATUS_SUCCESS           on success
  */
 OS_API OS_SECTION os_status_t os_thread_rwlock_read_lock(
 	os_thread_rwlock_t *lock
@@ -1674,9 +1712,9 @@ OS_API OS_SECTION os_status_t os_thread_rwlock_read_lock(
  *
  * @param[in,out]  lock                previously created lock
  *
- * @retval OS_STATUS_BAD_PARAMETER    invalid parameter passed to function
- * @retval OS_STATUS_FAILURE          function failed
- * @retval OS_STATUS_SUCCESS          on success
+ * @retval OS_STATUS_BAD_PARAMETER     invalid parameter passed to function
+ * @retval OS_STATUS_FAILURE           function failed
+ * @retval OS_STATUS_SUCCESS           on success
  */
 OS_API OS_SECTION os_status_t os_thread_rwlock_read_unlock(
 	os_thread_rwlock_t *lock
@@ -1687,9 +1725,9 @@ OS_API OS_SECTION os_status_t os_thread_rwlock_read_unlock(
  *
  * @param[in,out]  lock                previously created lock
  *
- * @retval OS_STATUS_BAD_PARAMETER    invalid parameter passed to function
- * @retval OS_STATUS_FAILURE          function failed
- * @retval OS_STATUS_SUCCESS          on success
+ * @retval OS_STATUS_BAD_PARAMETER     invalid parameter passed to function
+ * @retval OS_STATUS_FAILURE           function failed
+ * @retval OS_STATUS_SUCCESS           on success
  */
 OS_API OS_SECTION os_status_t os_thread_rwlock_write_lock(
 	os_thread_rwlock_t *lock
@@ -1700,9 +1738,9 @@ OS_API OS_SECTION os_status_t os_thread_rwlock_write_lock(
  *
  * @param[in,out]  lock                previously created lock
  *
- * @retval OS_STATUS_BAD_PARAMETER    invalid parameter passed to function
- * @retval OS_STATUS_FAILURE          function failed
- * @retval OS_STATUS_SUCCESS          on success
+ * @retval OS_STATUS_BAD_PARAMETER     invalid parameter passed to function
+ * @retval OS_STATUS_FAILURE           function failed
+ * @retval OS_STATUS_SUCCESS           on success
  */
 OS_API OS_SECTION os_status_t os_thread_rwlock_write_unlock(
 	os_thread_rwlock_t *lock
@@ -1713,9 +1751,9 @@ OS_API OS_SECTION os_status_t os_thread_rwlock_write_unlock(
  *
  * @param[in,out]  thread              thread object to wait on
  *
- * @retval OS_STATUS_BAD_PARAMETER    invalid parameter passed to function
- * @retval OS_STATUS_FAILURE          function failed
- * @retval OS_STATUS_SUCCESS          on success
+ * @retval OS_STATUS_BAD_PARAMETER     invalid parameter passed to function
+ * @retval OS_STATUS_FAILURE           function failed
+ * @retval OS_STATUS_SUCCESS           on success
  */
 OS_API OS_SECTION os_status_t os_thread_wait(
 	os_thread_t *thread
@@ -1728,9 +1766,9 @@ OS_API OS_SECTION os_status_t os_thread_wait(
  *
  * @param[out]     uuid                generated identifier
  *
- * @retval OS_STATUS_BAD_PARAMETER    invalid parameter passed to function
- * @retval OS_STATUS_FAILURE          function failed
- * @retval OS_STATUS_SUCCESS          on success
+ * @retval OS_STATUS_BAD_PARAMETER     invalid parameter passed to function
+ * @retval OS_STATUS_FAILURE           function failed
+ * @retval OS_STATUS_SUCCESS           on success
  */
 OS_API OS_SECTION os_status_t os_uuid_generate(
 	os_uuid_t *uuid
@@ -1743,9 +1781,9 @@ OS_API OS_SECTION os_status_t os_uuid_generate(
  * @param[out]     dest                destination buffer
  * @param[in]      len                 size of destination buffer
  *
- * @retval OS_STATUS_BAD_PARAMETER    invalid parameter passed to function
- * @retval OS_STATUS_NO_MEMORY        buffer length is not large enough
- * @retval OS_STATUS_SUCCESS          on success
+ * @retval OS_STATUS_BAD_PARAMETER     invalid parameter passed to function
+ * @retval OS_STATUS_NO_MEMORY         buffer length is not large enough
+ * @retval OS_STATUS_SUCCESS           on success
  */
 OS_API OS_SECTION os_status_t os_uuid_to_string_lower(
 	os_uuid_t *uuid,

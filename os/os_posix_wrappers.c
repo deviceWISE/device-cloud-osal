@@ -46,7 +46,7 @@ char os_char_toupper(
 	return (char)toupper( c );
 }
 
-char *os_file_fgets(
+char *os_file_gets(
 	char *str,
 	size_t size,
 	os_file_t stream )
@@ -54,14 +54,20 @@ char *os_file_fgets(
 	return fgets( str, (int)size, stream );
 }
 
-size_t os_file_fputs(
+size_t os_file_puts(
 	char *str,
 	os_file_t stream )
 {
 	return (size_t)fputs( str, stream );
 }
 
-size_t os_file_fread(
+os_bool_t os_file_eof(
+	os_file_t stream )
+{
+	return feof( stream ) == 0 ? OS_FALSE : OS_TRUE;
+}
+
+size_t os_file_read(
 	void *ptr,
 	size_t size,
 	size_t nmemb,
@@ -70,7 +76,7 @@ size_t os_file_fread(
 	return fread( ptr, size, nmemb, stream );
 }
 
-size_t os_file_fwrite(
+size_t os_file_write(
 	const void *ptr,
 	size_t size,
 	size_t nmemb,
@@ -205,7 +211,6 @@ void os_memzero(
 	memset( dest, 0, len );
 }
 
-
 int os_fprintf(
 	os_file_t stream,
 	const char *format,
@@ -244,6 +249,7 @@ int os_snprintf(
 	va_end( args );
 	return result;
 }
+
 int os_vfprintf(
 	os_file_t stream,
 	const char *format,
@@ -298,7 +304,6 @@ os_uint32_t os_system_pid( void )
 {
 	return (os_uint32_t)getpid();
 }
-
 
 os_status_t os_thread_condition_wait(
 	os_thread_condition_t *cond,

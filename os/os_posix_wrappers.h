@@ -21,6 +21,18 @@ OS_API OS_SECTION char os_char_toupper(
 );
 
 /**
+ * @brief check if at end-of-file
+ *
+ * @param[in]      stream              stream to write to
+ *
+ * @retval         IOT_FALSE           end of file bit not set
+ * @retval         IOT_TRUE            end of file bit is set
+ */
+OS_API OS_SECTION iot_bool_t os_file_eof(
+	os_file_t stream
+);
+
+/**
  * @brief Read bytes from a file into a char array
  *
  * @note Stops when encountering max read, EOF, or null terminator
@@ -34,9 +46,28 @@ OS_API OS_SECTION char os_char_toupper(
  *
  * @see os_file_fputs
  */
-OS_API OS_SECTION char *os_file_fgets(
+OS_API OS_SECTION char *os_file_gets(
 	char *str,
 	size_t size,
+	os_file_t stream
+);
+
+/**
+ * @brief Read bytes from a file into an array
+ *
+ * @note Stops when encountering max read, EOF, or null terminator
+ *
+ * @param[in,out]  ptr                 Pointer to array to write to
+ * @param[in]      size                Size of each item to read
+ * @param[in]      nmemb               Number of items to read
+ * @param[in,out]  stream              Pointer to file to read from
+ *
+ * @return         Number of items read
+ */
+OS_API OS_SECTION size_t os_file_read(
+	void *ptr,
+	size_t size,
+	size_t nmemb,
 	os_file_t stream
 );
 
@@ -53,27 +84,8 @@ OS_API OS_SECTION char *os_file_fgets(
  *
  * @see os_file_fgets
  */
-OS_API OS_SECTION size_t os_file_fputs(
+OS_API OS_SECTION size_t os_file_puts(
 	char *str,
-	os_file_t stream
-);
-
-/**
- * @brief Read bytes from a file into an array
- *
- * @note Stops when encountering max read, EOF, or null terminator
- *
- * @param[in,out]  ptr                 Pointer to array to write to
- * @param[in]      size                Size of each item to read
- * @param[in]      nmemb               Number of items to read
- * @param[in,out]  stream              Pointer to file to read from
- *
- * @return         Number of items read
- */
-OS_API OS_SECTION size_t os_file_fread(
-	void *ptr,
-	size_t size,
-	size_t nmemb,
 	os_file_t stream
 );
 
@@ -87,7 +99,7 @@ OS_API OS_SECTION size_t os_file_fread(
  *
  * @return         Number of items written
  */
-OS_API OS_SECTION size_t os_file_fwrite(
+OS_API OS_SECTION size_t os_file_write(
 	const void *ptr,
 	size_t size,
 	size_t nmemb,

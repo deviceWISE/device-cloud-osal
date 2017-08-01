@@ -14,25 +14,27 @@
 /**
  * @brief Frees previously allocated memory specified
  *
- * @param[in]      ptr            pointer of pointer to the allocated memory to free
+ * @param[in]      ptr                 pointer of pointer to the allocated
+ *                                     memory to free
  *
  * @see os_calloc
  * @see os_malloc
  * @see os_realloc
  */
-#define os_free(ptr)                      free( ptr )
+#define os_free(ptr)                   free( ptr )
 
 /**
  * @brief Frees previously allocated memory specified and sets pointer
  * to NULL.
  *
- * @param[in]      ptr            pointer of pointer to the allocated memory to free
+ * @param[in]      ptr                 pointer of pointer to the allocated
+ *                                     memory to free
  *
  * @see os_calloc
  * @see os_malloc
  * @see os_realloc
  */
-#define os_free_null(ptr)                  { if ( *ptr ) free( *ptr ); *ptr = NULL; }
+#define os_free_null(ptr)              { if ( *ptr ) free( *ptr ); *ptr = NULL; }
 
 /**
  * @brief Allocates the specified amount of bytes
@@ -49,7 +51,7 @@
  * @see os_free
  * @see os_realloc
  */
-#define os_malloc(size)                   malloc(size)
+#define os_malloc(size)                malloc(size)
 
 /**
  * @brief Allocates memory for an array of elements
@@ -70,7 +72,7 @@
  * @see iot_os_malloc
  * @see iot_os_realloc
  */
-#define os_calloc(num, size)              calloc(num, size)
+#define os_calloc(num, size)           calloc(num, size)
 
 /**
  * @brief Change the size of an allocated memory block
@@ -94,7 +96,7 @@
  * @see os_free
  * @see os_malloc
  */
-#define os_realloc(ptr, size)             realloc(ptr, size)
+#define os_realloc(ptr, size)          realloc(ptr, size)
 
 /**
  * @brief Copy a block of memory
@@ -105,15 +107,15 @@
  * @param[in]      src                 source block of memory
  * @param[in]      len                 amount of data to copy
  */
-#define os_memcpy(dst, src, len)               memcpy(dst, src, len)
+#define os_memcpy(dst, src, len)       memcpy(dst, src, len)
 
 /**
  * @brief Zeroizes block of memory
  *
- * @param[out]     dst                destination to write to
- * @param[in]      len                amount of data to zeroize
+ * @param[out]     dst                 destination to write to
+ * @param[in]      len                 amount of data to zeroize
  */
-#define os_memzero(dst, len)                   bzero(dst, len)
+#define os_memzero(dst, len)           bzero(dst, len)
 
 /**
  * @brief Moves a block of memory
@@ -122,7 +124,7 @@
  * @param[in]      src                 source block of memory
  * @param[in]      len                 amount of data to move
  */
-#define os_memmove(dst, src, len)              memmove(dst, src, len)
+#define os_memmove(dst, src, len)      memmove(dst, src, len)
 
 /**
  * @brief Sets a block of memory to a specific byte
@@ -131,7 +133,7 @@
  * @param[in]      val                 byte to set
  * @param[in]      len                 amount of data to set
  */
-#define os_memset(dst, val, len)               memset(dst, val, len)
+#define os_memset(dst, val, len)       memset(dst, val, len)
 
 /**
  * @brief Compares two strings
@@ -145,7 +147,7 @@
  * @retval         >0                  the first non-matching character has a
  *                                     higher value in s1 than in s2
  */
-#define os_strcmp(s1, s2)                      strcmp(s1, s2)
+#define os_strcmp(s1, s2)              strcmp(s1, s2)
 
 /**
  * @brief Get the length of a string
@@ -154,7 +156,7 @@
  *
  * @return         Number of characters until a terminating null character
  */
-#define os_strlen(s)                           strlen(s)
+#define os_strlen(s)                   strlen(s)
 
 /**
  * @brief Compares two strings up to a certain number of characters
@@ -170,7 +172,7 @@
  * @retval         >0                  the first non-matching character has a
  *                                     higher value in s1 than in s2
  */
-#define os_strncmp(s1, s2, len)                strncmp(s1, s2, len)
+#define os_strncmp(s1, s2, len)        strncmp(s1, s2, len)
 
 /**
  * @brief Copy characters from string
@@ -181,7 +183,7 @@
  *
  * @retval         dst
  */
-#define os_strncpy(dst, src, num)              strncpy(dst, src, num)
+#define os_strncpy(dst, src, num)      strncpy(dst, src, num)
 
 /**
  * @brief Locate the last occurance of a character in a string
@@ -192,7 +194,7 @@
  * @retval         !NULL               pointer to last occurance of c in s
  * @retval         NULL                c was not found in s
  */
-#define os_strrchr(s, c)                       strrchr(s, c)
+#define os_strrchr(s, c)               strrchr(s, c)
 
 /**
  * @brief Locate the first occurance of a character in a string
@@ -203,7 +205,7 @@
  * @retval         !NULL               pointer to last occurance of c in s
  * @retval         NULL                c was not found in s
  */
-#define os_strchr(s, c)                        strchr(s, c)
+#define os_strchr(s, c)                strchr(s, c)
 
 /**
  * @brief Finds the first occurrence of some specified characters in a string
@@ -215,7 +217,7 @@
  *                                     one of the characters in str2 in str1
  * @retval         NULL                None of the characters in str2 appear
  */
-#define os_strpbrk(str1, str2)                 strpbrk(str1, str2)
+#define os_strpbrk(str1, str2)         strpbrk(str1, str2)
 
 /**
  * @brief Locate a substring
@@ -226,17 +228,17 @@
  * @retval         !NULL               pointer to the substring of str2 in str1
  * @retval         NULL                no substring found
  */
-#define os_strstr(str1, str2)                  strstr(str1, str2)
+#define os_strstr(str1, str2)          strstr(str1, str2)
 
 /**
  * @brief Parse a string to retrieve a double
  *
  * @param[in]      str                 string to parse for double
- * @param[out]     endptr              (optional)pointer to character 
+ * @param[out]     endptr              (optional) pointer to character
  *                                     immediately following double in string
  * @return value of double parsed
  */
-#define os_strtod(str, endptr)                 strtod(str, endptr)
+#define os_strtod(str, endptr)         strtod(str, endptr)
 
 /**
  * @brief Parse a string to retrieve a long
@@ -244,11 +246,11 @@
  * @note This implementation only supports base-ten
  *
  * @param[in]      str                 string to parse for long
- * @param[out]     endptr              (optional)pointer to character
+ * @param[out]     endptr              (optional) pointer to character
  *                                     immediately following long in string
  * @return value of long parsed
  */
-#define os_strtol(str, endptr)                 strtol(str, endptr, 10)
+#define os_strtol(str, endptr)         strtol(str, endptr, 10)
 
 /**
  * @brief Parse a string to retrieve an unsigned long
@@ -256,19 +258,19 @@
  * @note This implementation only supports base-ten
  *
  * @param[in]      str                 string to parse for unsigned long
- * @param[out]     endptr              (optional)pointer to character
+ * @param[out]     endptr              (optional) pointer to character
  *                                     immediately following unsigned long in
  *                                     string
  * @return value of unsigned long parsed
  */
-#define os_strtoul(str, endptr)                strtoul(str, endptr, 10)
+#define os_strtoul(str, endptr)        strtoul(str, endptr, 10)
 
 /**
  * @brief Returns the process id of the current process
  *
  * @return the process id of the current process
  */
-#define os_system_pid()                        (os_uint32_t)getpid()
+#define os_system_pid()                (os_uint32_t)getpid()
 
 /**
  * @brief Returns the operating system code for the last system error
@@ -276,7 +278,7 @@
  *
  * @return The operating system code for the last error encountered
  */
-#define os_system_error_last()                 errno
+#define os_system_error_last()         errno
 
 /**
  * @brief Writes output to an open file stream
@@ -339,6 +341,16 @@
 #define os_vfprintf                    vfprintf
 
 /**
+ * @brief check if at end-of-file
+ *
+ * @param[in]      stream              stream to write to
+ *
+ * @retval         0                   end of file bit not set
+ * @retval         !0                  end of file bit is set
+ */
+#define  os_file_eof(stream)           feof(stream)
+
+/**
  * @brief Read bytes from a file into a char array
  *
  * @note Stops when encountering max read, EOF, or null terminator
@@ -352,7 +364,7 @@
  *
  * @see os_file_fputs
  */
-#define os_file_fgets(str, size, stream)       fgets(str, (int) size, stream)
+#define os_file_gets(str, size, stream)       fgets(str, (int) size, stream)
 
 /**
  * @brief Write bytes from an array into a file stream
@@ -367,7 +379,7 @@
  *
  * @see os_file_fgets
  */
-#define os_file_fputs(str, stream)             (size_t)fputs(str, stream)
+#define os_file_puts(str, stream)     (size_t)fputs(str, stream)
 
 /**
  * @brief Read bytes from a file into an array
@@ -381,7 +393,7 @@
  *
  * @return         Number of items read
  */
-#define os_file_fread(ptr, size, num, stream)  fread(ptr, size, num, stream)
+#define os_file_read(ptr, size, num, stream)  fread(ptr, size, num, stream)
 
 /**
  * @brief Write bytes from an array into a file stream
@@ -393,7 +405,7 @@
  *
  * @return         Number of items written
  */
-#define os_file_fwrite(ptr, size, num, stream) fwrite(ptr, size, num, stream)
+#define os_file_write(ptr, size, num, stream) fwrite(ptr, size, num, stream)
 
 /**
  * @brief Opens a runtime library
@@ -405,7 +417,7 @@
  * @see iot_os_library_close
  * @see iot_os_library_find
  */
-#define os_library_open(path)                  dlopen(path, 0)
+#define os_library_open(path)          dlopen(path, 0)
 
 /**
  * @brief Finds a function within an open runtime library
@@ -419,7 +431,7 @@
  * @see iot_os_library_close
  * @see iot_os_library_open
  */
-#define os_library_find(lib, function)         dlsym(lib, function)
+#define os_library_find(lib, function) dlsym(lib, function)
 
 /**
  * @brief Converts a character to lower case
@@ -428,7 +440,7 @@
  *
  * @return the lower-case value of the character, or @p c if not possible
  */
-#define os_char_tolower(c)                     (char)tolower(c)
+#define os_char_tolower(c)             (char)tolower(c)
 
 /**
  * @brief Converts a character to upper case
@@ -437,7 +449,7 @@
  *
  * @return the upper-case value of the character, or @p c if not possible
  */
-#define os_char_toupper(c)                     (char)toupper(c)
+#define os_char_toupper(c)             (char)toupper(c)
 
 #ifndef NO_THREAD_SUPPORT
 /**

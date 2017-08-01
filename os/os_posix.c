@@ -702,7 +702,7 @@ os_bool_t os_file_exists(
 	return result;
 }
 
-os_status_t os_file_fseek(
+os_status_t os_file_seek(
 	os_file_t stream,
 	long offset,
 	int whence
@@ -718,7 +718,7 @@ os_status_t os_file_fseek(
 	return result;
 }
 
-os_status_t os_file_fsync( const char *file_path )
+os_status_t os_file_sync( const char *file_path )
 {
 	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( file_path )
@@ -855,7 +855,6 @@ os_file_t os_file_open(
 	return result;
 }
 
-#ifndef _WRS_KERNEL
 os_status_t os_file_temp(
 	char *prototype,
 	size_t suffix_len )
@@ -893,8 +892,6 @@ os_status_t os_library_close(
 		result = OS_STATUS_SUCCESS;
 	return result;
 }
-
-#endif /* ifndef _WRS_KERNEL */
 
 int os_atoi( const char *str )
 {
@@ -1083,7 +1080,6 @@ os_status_t os_path_executable(
 	return result;
 }
 
-#ifndef _WRS_KERNEL
 /* process functions */
 os_status_t os_process_cleanup( void )
 {
@@ -1092,7 +1088,6 @@ os_status_t os_process_cleanup( void )
 		result = OS_STATUS_SUCCESS;
 	return result;
 }
-#endif
 
 /* service functions */
 os_status_t os_service_run(
@@ -1755,7 +1750,6 @@ os_status_t os_socket_write(
 	return result;
 }
 
-#ifndef _WRS_KERNEL
 os_status_t os_stream_echo_set(
 	os_file_t stream, os_bool_t enable )
 {
@@ -1777,7 +1771,6 @@ os_status_t os_stream_echo_set(
 	}
 	return result;
 }
-#endif
 
 const char *os_system_error_string(
 	int error_number )
@@ -1788,7 +1781,6 @@ const char *os_system_error_string(
 	return strerror( error_number );
 }
 
-#ifndef _WRS_KERNEL
 os_status_t os_system_info(
 	os_system_info_t *sys_info )
 {
@@ -2058,7 +2050,6 @@ os_status_t os_system_run_wait(
 	}
 	return result;
 }
-#endif /* _WRS_KERNEL */
 
 os_status_t os_system_shutdown(
 	os_bool_t reboot , unsigned int delay)
@@ -2099,14 +2090,10 @@ os_status_t os_terminate_handler(
 {
 	struct sigaction new_action;
 	memset( &new_action, 0, sizeof( new_action ) );
-/*#ifndef _WRS_KERNEL
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdisabled-macro-expansion"
-#endif*/
 	new_action.sa_handler = signal_handler;
-/*#ifndef _WRS_KERNEL
 #pragma clang diagnostic pop
-#endif*/
 	sigemptyset( &new_action.sa_mask );
 	sigaction( SIGINT, &new_action, NULL );
 	sigaction( SIGTERM, &new_action, NULL );
@@ -2115,18 +2102,12 @@ os_status_t os_terminate_handler(
 	return OS_STATUS_SUCCESS;
 }
 
-#ifdef _WRS_KERNEL
 static __thread int rand_init = 0;
-#endif
 /* time functions */
 double os_random(
 	double  min,
 	double  max )
 {
-#ifndef _WRS_KERNEL
-	static int rand_init = 0;
-#endif
-
 	/* take a time seed to get better randomness */
 	if (!rand_init )
 	{
@@ -2160,24 +2141,30 @@ os_status_t os_time(
 	return result;
 }
 
-os_status_t os_time_format(
+size_t os_time_format(
 	char *buf,
-	size_t len )
+	size_t len,
+	const char *format,
+	os_timestamp_t time_stamp,
+	os_bool_t to_local_time )
 {
-	os_status_t result = OS_STATUS_BAD_PARAMETER;
-	if ( buf )
+	size_t result = 0u;
+	if ( buf && format )
 	{
-		time_t raw_time;
-		struct tm *time_info;
+		const time_t raw_time = time_stamp / OS_MILLISECONDS_IN_SECOND;
+		struct tm *t;
 
-		result = OS_STATUS_FAILURE;
-		if ( time( &raw_time ) != -1 &&
-			( time_info = localtime( &raw_time ) ) != NULL )
-		{
-			if ( strftime( buf, len, "%b %d %T", time_info ) > 0 )
-				result = OS_STATUS_SUCCESS;
-		}
+		if ( to_local_time == OS_FALSE )
+			t = gmtime( &raw_time );
+		else
+			t = localtime( &raw_time );
+
+		result = strftime( buf, len, format, t );
 	}
+
+	/* handle error case */
+	if ( result == 0u && buf && len > 0u )
+		*buf = '\0';
 	return result;
 }
 
@@ -2301,7 +2288,6 @@ os_status_t os_thread_condition_timed_wait(
 	return result;
 }
 
-#ifndef _WRS_KERNEL
 os_status_t os_thread_create(
 	os_thread_t *thread,
 	os_thread_main_t main,
@@ -2316,7 +2302,6 @@ os_status_t os_thread_create(
 	}
 	return result;
 }
-#endif
 
 os_status_t os_thread_destroy(
 	os_thread_t *thread )
@@ -2398,7 +2383,6 @@ os_status_t os_thread_mutex_destroy(
 	return result;
 }
 
-#ifndef _WRS_KERNEL
 os_status_t os_thread_rwlock_create(
 	os_thread_rwlock_t *lock )
 {
@@ -2476,10 +2460,8 @@ os_status_t os_thread_rwlock_destroy(
 	}
 	return result;
 }
-#endif /* _WRS_KERNEL */
 #endif /* ifndef NO_THREAD_SUPPORT */
 
-#ifndef _WRS_KERNEL
 /* uuid support */
 os_status_t os_uuid_generate(
 	os_uuid_t *uuid )
@@ -2510,4 +2492,3 @@ os_status_t os_uuid_to_string_lower(
 	}
 	return result;
 }
-#endif /* _WRS_KERNEL */

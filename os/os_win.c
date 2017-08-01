@@ -188,7 +188,7 @@ static void WINAPI os_service_main( DWORD argc, LPTSTR *argv );
  *
  * @retval
  */
-static os_status_t os_time_stamp_to_datetime(
+static os_status_t os_time_stamp_to_date_time(
 	os_date_time_t* date_time, os_timestamp_t time_stamp );
 
 
@@ -812,7 +812,7 @@ os_bool_t os_file_exists(
 	return result;
 }
 
-char *os_file_fgets(
+char *os_file_gets(
 	char *str,
 	size_t size,
 	os_file_t stream )
@@ -857,7 +857,7 @@ char *os_file_fgets(
 	return str;
 }
 
-size_t os_file_fputs(
+size_t os_file_puts(
 	char *str,
 	os_file_t stream )
 {
@@ -868,7 +868,7 @@ size_t os_file_fputs(
 	return (size_t)result;
 }
 
-size_t os_file_fread(
+size_t os_file_read(
 	void *ptr,
 	size_t size,
 	size_t nmemb,
@@ -885,7 +885,7 @@ size_t os_file_fread(
 	return result;
 }
 
-os_status_t os_file_fseek(
+os_status_t os_file_seek(
 	os_file_t stream,
 	long offset,
 	int whence
@@ -903,13 +903,13 @@ os_status_t os_file_fseek(
 	return result;
 }
 
-os_status_t os_file_fsync( const char *UNUSED(file_path) )
+os_status_t os_file_sync( const char *UNUSED(file_path) )
 {
 	/* buffers will be flushed when a stream is closed */
 	return OS_STATUS_SUCCESS;
 }
 
-size_t os_file_fwrite(
+size_t os_file_write(
 	const void *ptr,
 	size_t size,
 	size_t nmemb,
@@ -3328,6 +3328,7 @@ os_status_t os_time(
 		FILETIME ft;
 		ULONGLONG time_calc;
 
+		/* Get time in UTC */
 		GetSystemTime( &st );
 		result = OS_STATUS_FAILURE;
 		if ( SystemTimeToFileTime( &st, &ft ) )
@@ -3349,23 +3350,271 @@ os_status_t os_time(
 
 os_status_t os_time_format(
 	char *buf,
-	size_t len )
+	size_t len,
+	const char *format,
+	os_timestamp_t time_stamp,
+	os_bool_t to_local_time )
 {
 	os_status_t result = OS_STATUS_BAD_PARAMETER;
-	if ( buf )
+	if ( buf && format )
 	{
+		const char *cur;
+		char *win_fmt;
+		size_t win_fmt_len = 0u;
+		FILETIME ft;
 		SYSTEMTIME st;
-		result = OS_STATUS_FAILURE;
-		ZeroMemory( buf, len );
-		GetSystemTime( &st );
-		if ( GetDateFormatA( LOCALE_SYSTEM_DEFAULT,
-			0, &st, "MMM dd ", buf, len ) != 0 )
+		os_date_time_t date_time;
+		const char *time_zone = "UTC";
+		long time_zone_bias = 0;
+		TIME_ZONE_INFORMATION tzi;
+
+		os_time_stamp_to_date_time( &date_time, time_stamp );
+
+		ZeroMemory( &st, sizeof( SYSTEMTIME ) );
+		st.wYear = date_time.year;
+		st.wMonth = date_time.month;
+		st.wDayOfWeek = -1; /* ignored initially */
+		st.wDay = date_time.day;
+		st.wHour = date_time.hour;
+		st.wMinute = date_time.minute;
+		st.wSecond = date_time.second;
+		st.wMilliseconds = date_time.millisecond;
+
+		/* According to the MSDN @c wDayOfWeek is ignored when
+		 * converting @c SYSTEMTIME to @c FILETIME, but filled in when
+		 * converting back */
+		SystemTimeToFileTime( &st, &ft );
+		FileTimeToSystemTime( &ft, &st );
+
+		/* Convert UTC time to local time */
+		if ( to_local_time != OS_FALSE )
 		{
-			if ( GetTimeFormatA( LOCALE_SYSTEM_DEFAULT,
-				0, &st, "HH':'mm':'ss",
-				buf + os_strlen( buf ),
-				len - os_strlen( buf ) ) != 0 )
+			DWORD res;
+			SYSTEMTIME lt;
+			res = GetTimeZoneInformation( &tzi );
+			if ( res == TIME_ZONE_ID_STANDARD ||
+			     res == TIME_ZONE_ID_UNKNOWN ||
+			     res == TIME_ZONE_ID_DAYLIGHT )
+			{
+				time_zone_bias = tzi.Bias;
+				if ( res == TIME_ZONE_ID_STANDARD ||
+				     res == TIME_ZONE_ID_UNKNOWN )
+				{
+					time_zone = tzi.StandardName;
+					time_zone_bias += tzi.StandardBias;
+				}
+				else
+				{
+					time_zone = tzi.DaylightName;
+					time_zone_bias += tzi.DaylightBias;
+				}
+				SystemTimeToTzSpecificLocalTime(
+					&tzi, &st, &lt );
+				CopyMemory( &st, &lt, sizeof( SYSTEMTIME ) );
+			}
+		}
+
+		/* Calculate the number of characters required for time
+		 * format in Windows form */
+		cur = format;
+		while ( *cur )
+		{
+			if ( *cur == '%' )
+			{
+				++cur;
+				switch ( *cur )
+				{
+				case 'r': /* hh-mm-ss tt */
+					win_fmt_len += 11u;
+					break;
+				case 'F': /* yyyy-MM-dd */
+					win_fmt_len += 10u;
+					break;
+				case 'T': /* HH-mm-ss */
+				case 'D': /* MM/dd/yy */
+					win_fmt_len += 8u;
+					break;
+				case 'R': /* HH-mm */
+					win_fmt_len += 5u;
+					break;
+				case 'A': /* dddd */
+				case 'B': /* MMMM */
+				case 'G': /* yyyy */
+				case 'Y': /* yyyy */
+					win_fmt_len += 4u;
+					break;
+				case 'a': /* ddd */
+				case 'b': /* MMM */
+					win_fmt_len += 3u;
+					break;
+				case 'd': /* dd */
+				case 'H': /* HH */
+				case 'I': /* hh */
+				case 'M': /* mm */
+				case 'm': /* MM */
+				case 'n': /* \r\n */
+				case 'S': /* ss */
+				case 'p': /* tt */
+				case 'g': /* yy */
+				case 'y': /* yy */
+					win_fmt_len += 2u;
+					break;
+				case 'e': /* d */
+				case 'l': /* h */
+				case 'k': /* H */
+				case '%': /* '%' */
+				case 't': /* \t */
+				case 'u': /* day of week (1-7) */
+				case 'w': /* day of week (0-6) */
+					++win_fmt_len;
+					break;
+				case 'z': /* time zone number +000 */
+					win_fmt_len += 4u;
+				case 'Z': /* time zone abbrev */
+					win_fmt_len += os_strlen( time_zone );
+				}
+			}
+			else
+				++win_fmt_len;
+			++cur;
+		}
+
+		win_fmt = (char*)HeapAlloc( GetProcessHeap(), 0, win_fmt_len + 1u );
+		if ( win_fmt )
+		{
+			char *win_fmt_cur = win_fmt;
+			cur = format;
+			while ( *cur )
+			{
+				if ( *cur == '%' )
+				{
+					++cur;
+					switch ( *cur )
+					{
+					case 'r': /* hh-mm-ss tt */
+						os_strcmp( win_fmt_cur, "hh-mm-ss tt" );
+						win_fmt_cur += 11;
+						break;
+					case 'F': /* yyyy-MM-dd */
+						os_strcmp( win_fmt_cur, "yyyy-MM-dd" );
+						win_fmt_cur += 10;
+						break;
+					case 'T': /* HH-mm-ss */
+						os_strcmp( win_fmt_cur, "HH-mm-ss" );
+						win_fmt_cur += 8;
+						break;
+					case 'D': /* MM/dd/yy */
+						os_strcmp( win_fmt_cur, "MM/dd/yy" );
+						win_fmt_cur += 8;
+						break;
+					case 'R': /* HH-mm */
+						os_strcmp( win_fmt_cur, "HH-mm" );
+						win_fmt_cur += 5;
+						break;
+					case 'A': /* dddd */
+						os_strcmp( win_fmt_cur, "dddd" );
+						win_fmt_cur += 4;
+						break;
+					case 'B': /* MMMM */
+						os_strcmp( win_fmt_cur, "MMMM" );
+						win_fmt_cur += 4;
+						break;
+					case 'G': /* yyyy */
+					case 'Y': /* yyyy */
+						os_strcmp( win_fmt_cur, "yyyy" );
+						win_fmt_cur += 4;
+						break;
+					case 'a': /* ddd */
+						os_strcmp( win_fmt_cur, "ddd" );
+						win_fmt_cur += 3;
+						break;
+					case 'b': /* MMM */
+						os_strcmp( win_fmt_cur, "MMM" );
+						win_fmt_cur += 3;
+						break;
+					case 'd': /* dd */
+						os_strcmp( win_fmt_cur, "dd" );
+						win_fmt_cur += 2;
+						break;
+					case 'H': /* HH */
+						os_strcmp( win_fmt_cur, "HH" );
+						win_fmt_cur += 2;
+						break;
+					case 'I': /* hh */
+						os_strcmp( win_fmt_cur, "hh" );
+						win_fmt_cur += 2;
+						break;
+					case 'M': /* mm */
+						os_strcmp( win_fmt_cur, "mm" );
+						win_fmt_cur += 2;
+						break;
+					case 'm': /* MM */
+						os_strcmp( win_fmt_cur, "MM" );
+						win_fmt_cur += 2;
+						break;
+					case 'n': /* \r\n */
+						os_strcmp( win_fmt_cur, "\r\n" );
+						win_fmt_cur += 2;
+						break;
+					case 'S': /* ss */
+						os_strcmp( win_fmt_cur, "ss" );
+						win_fmt_cur += 2;
+						break;
+					case 'p': /* tt */
+						os_strcmp( win_fmt_cur, "tt" );
+						win_fmt_cur += 2;
+						break;
+					case 'g': /* yy */
+					case 'y': /* yy */
+						os_strcmp( win_fmt_cur, "yy" );
+						win_fmt_cur += 2;
+						break;
+					case 'e': /* d */
+						*win_fmt_cur = 'd';
+						++win_fmt_cur;
+						break;
+					case 'l': /* h */
+						*win_fmt_cur = 'h';
+						++win_fmt_cur;
+						break;
+					case 'k': /* H */
+						*win_fmt_cur = 'H';
+						++win_fmt_cur;
+						break;
+					case '%': /* '%' */
+						*win_fmt_cur = '%';
+						++win_fmt_cur;
+						break;
+					case 't': /* \t */
+						*win_fmt_cur = '\t';
+						++win_fmt_cur;
+						break;
+					case 'u': /* day of week (1-7) */
+					case 'w': /* day of week (0-6) */
+						break;
+					case 'z': /* time zone number +000 */
+						win_fmt_len += 4u;
+					case 'Z': /* time zone abbrev */
+						win_fmt_len += os_strlen( time_zone );
+					}
+				}
+				else
+				{
+					*win_fmt_cur = *cur;
+					++win_fmt_cur;
+				}
+				++cur;
+			}
+			*win_fmt_cur = '\0';
+			if ( GetDateFormatA( LOCAL_SYSTEM_DEFAULT,
+				0, &st, win_fmt, win_fmt_len ) != 0 &&
+			     GetTimeFormatA( LOCAL_SYSTEM_DEFAULT,
+				0, &st, win_fmt, win_fmt_len ) != 0 )
+			{
+				os_strncpy( buf, win_fmt, len );
 				result = OS_STATUS_SUCCESS;
+			}
+			HeapFree( win_fmt );
 		}
 	}
 	return result;
@@ -3381,7 +3630,7 @@ os_status_t os_time_sleep(
 	return result;
 }
 
-os_status_t os_time_stamp_to_datetime( os_date_time_t* date_time,
+os_status_t os_time_stamp_to_date_time( os_date_time_t* date_time,
 	os_timestamp_t time_stamp )
 {
 	os_status_t result = OS_STATUS_BAD_PARAMETER;
