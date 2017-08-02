@@ -50,7 +50,7 @@ include( DefineCompilerFlags )
 ### CPack Config ###
 set( CPACK_PACKAGE_VERSION ${PACKAGE_VERSION} )
 set( CPACK_PACKAGE_DESCRIPTION_SUMMARY "Operating System Abstraction Library" )
-set( CPACK_PACKAGE_CONTACT "bwiebe" )
+set( CPACK_PACKAGE_CONTACT "ed.marks@windriver.com" )
 
 if ( WIN32 )
 	set( CPACK_GENERATOR "ZIP" )
@@ -79,7 +79,7 @@ add_custom_target(${TARGET}-pre
 			-DOSAL_WRAP=${OSAL_WRAP} -P "${CMAKE_SOURCE_DIR}/header/GenerateHeader.cmake"
 		COMMAND "${CMAKE_COMMAND}" -E echo "Complete"
 		)
-include_directories(${CMAKE_BINARY_DIR})
+include_directories( "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}" )
 
 ### Doxygen Config ###
 find_package( Doxygen )
@@ -236,7 +236,7 @@ endif()
 if ( WIN32 )
 	set( API_LIBS ${API_LIBS} Iphlpapi Rpcrt4 Shlwapi Ws2_32 )
 else()
-	set( API_LIBS ${API_LIBS} uuid )
+	set( API_LIBS ${API_LIBS} )
 endif()
 include_directories( SYSTEM ${API_INCS} )
 
