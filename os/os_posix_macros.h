@@ -393,7 +393,7 @@
  *
  * @return         Number of items read
  */
-#define os_file_read(ptr, size, num, stream)  fread(ptr, size, num, stream)
+#define os_file_read                   fread
 
 /**
  * @brief Write bytes from an array into a file stream
@@ -405,7 +405,7 @@
  *
  * @return         Number of items written
  */
-#define os_file_write(ptr, size, num, stream) fwrite(ptr, size, num, stream)
+#define os_file_write                  fwrite
 
 /**
  * @brief Opens a runtime library
