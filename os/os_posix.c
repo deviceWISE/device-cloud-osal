@@ -614,6 +614,36 @@ os_status_t os_file_close(
 	return result;
 }
 
+os_status_t os_file_fsync(
+	const char *file_path )
+{
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
+	if ( file_path )
+	{
+		int fd;
+		result = OS_STATUS_FAILURE;
+#ifndef _WRS_KERNEL
+		fd = open( file_path, O_RDONLY );
+#else
+		fd = open( file_path, O_RDONLY, 0 );
+#endif
+		if ( fd >= 0 )
+		{
+			if ( fsync( fd ) == 0 )
+				result = OS_STATUS_SUCCESS;
+			close( fd );
+		}
+	}
+#ifndef _WRS_KERNEL
+	else
+	{
+		sync();
+		result = OS_STATUS_SUCCESS;
+	}
+#endif
+	return result;
+}
+
 os_status_t os_file_copy(
 	const char *old_path,
 	const char *new_path )

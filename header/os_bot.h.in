@@ -477,6 +477,20 @@ OS_API OS_SECTION os_bool_t os_file_exists(
 );
 
 /**
+ * @brief Fsync file stream
+ *
+ * @param[in]      file_path           path to file to fsync
+ *
+ * @retval         OS_STATUS_SUCCESS   successfully closed file stream
+ * @retval         OS_STATUS_FAILURE   failed to close file stream
+ *
+ * @see os_file_open
+ */
+OS_API OS_SECTION os_status_t os_file_fsync(
+	const char *file_path
+);
+
+/**
  * @brief Move the current position in an file stream
  *
  * @param[in,out]  stream              stream to pointer of
