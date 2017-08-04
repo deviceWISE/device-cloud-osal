@@ -21,7 +21,7 @@
  * @see os_malloc
  * @see os_realloc
  */
-#define os_free(ptr)                   free( ptr )
+#define os_free                        free
 
 /**
  * @brief Frees previously allocated memory specified and sets pointer
