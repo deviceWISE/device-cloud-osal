@@ -2514,7 +2514,7 @@ os_status_t os_uuid_to_string_lower(
 	if ( uuid && dest )
 	{
 		result = OS_STATUS_NO_MEMORY;
-		if ( len >= 37u )
+		if ( len >= 36u )
 		{
 			uuid_unparse_lower( *uuid, dest );
 			result = OS_STATUS_SUCCESS;

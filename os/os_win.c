@@ -3919,7 +3919,7 @@ os_status_t os_uuid_to_string_lower(
 	{
 		RPC_CSTR rpc_str = NULL;
 		result = OS_STATUS_NO_MEMORY;
-		if ( len >= 37u &&
+		if ( len >= 36u &&
 			UuidToString( uuid, &rpc_str ) == RPC_S_OK && rpc_str )
 		{
 			size_t i;
