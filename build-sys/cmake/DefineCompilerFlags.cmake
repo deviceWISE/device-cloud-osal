@@ -48,6 +48,11 @@ if ( CMAKE_C_COMPILER_ID MATCHES "(Clang|GNU)" )
 		set( CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_GNU_SOURCE" )
 	endif( WITH_GNU_SOURCE )
 
+	check_c_compiler_flag( "-Wno-format-truncation" WITH_NO_FORMAT_TRUNCATION )
+	if ( WITH_NO_FORMAT_TRUNCATION )
+		set( CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-format-truncation" )
+	endif( WITH_NO_FORMAT_TRUNCATION )
+
 	execute_process( COMMAND ${CMAKE_C_COMPILER} -dumpversion OUTPUT_VARIABLE GCC_VERSION )
 	if ( GCC_VERSION VERSION_LESS 4.7 )
 		set( CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-format" )
