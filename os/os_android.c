@@ -1,5 +1,5 @@
 /**
- * @file  os_android.c
+ * @file
  * @brief Android OS adaptation layer
  *
  * @copyright Copyright (C) 2017 Wind River Systems, Inc. All Rights Reserved.
@@ -97,3 +97,4 @@ os_status_t os_service_restart(
 		result = OS_STATUS_FAILURE;
 	return result;
 }
+

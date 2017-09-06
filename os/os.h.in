@@ -1,20 +1,229 @@
-/* if there is no file system */
 /**
- * @def PATH_MAX
- * @brief Maximum path length
+ * @file
+ * @brief declares functions for the operating system abstraction layer
+ *
+ * @copyright @PROJECT_COPYRIGHT@
+ *
+ * @license The right to copy, distribute or otherwise make use of this software
+ * may be licensed only pursuant to the terms of an applicable Wind River
+ * license agreement.  No license to Wind River intellectual property rights is
+ * granted herein.  All rights not licensed by Wind River are reserved by Wind
+ * River.
  */
-#ifndef PATH_MAX
-#	define PATH_MAX 0
-#endif
+#ifndef OS_H
+#define OS_H
 
-#ifndef __ANDROID__
+#ifdef __cplusplus
+extern "C" {
+#endif /* ifdef __cplusplus */
+
+#include <stdint.h>
+
+/**
+ * @brief Possible return code values
+ */
+typedef enum os_status
+{
+	/** @brief Success */
+	OS_STATUS_SUCCESS = 0,
+	/** @brief Action successfully invoked (fire & forget) */
+	OS_STATUS_INVOKED,
+	/** @brief Invalid parameter passed */
+	OS_STATUS_BAD_PARAMETER,
+	/** @brief Bad request received */
+	OS_STATUS_BAD_REQUEST,
+	/** @brief Error executing the requested action */
+	OS_STATUS_EXECUTION_ERROR,
+	/** @brief Already exists */
+	OS_STATUS_EXISTS,
+	/** @brief File open failed */
+	OS_STATUS_FILE_OPEN_FAILED,
+	/** @brief Full storage */
+	OS_STATUS_FULL,
+	/** @brief Input/output error */
+	OS_STATUS_IO_ERROR,
+	/** @brief No memory */
+	OS_STATUS_NO_MEMORY,
+	/** @brief No permission */
+	OS_STATUS_NO_PERMISSION,
+	/** @brief Not executable */
+	OS_STATUS_NOT_EXECUTABLE,
+	/** @brief Not found */
+	OS_STATUS_NOT_FOUND,
+	/** @brief Not Initialized */
+	OS_STATUS_NOT_INITIALIZED,
+	/** @brief Parameter out of range */
+	OS_STATUS_OUT_OF_RANGE,
+	/** @brief Failed to parse a message */
+	OS_STATUS_PARSE_ERROR,
+	/** @brief Timed out */
+	OS_STATUS_TIMED_OUT,
+	/** @brief Try again */
+	OS_STATUS_TRY_AGAIN,
+	/** @brief Not supported in this version of the api */
+	OS_STATUS_NOT_SUPPORTED,
+
+	/**
+	 * @brief General failure
+	 * @note This must be the last state
+	 */
+	OS_STATUS_FAILURE
+} os_status_t;
+
+/** @brief Version the library as a string */
+#define OS_LIB_VERSION                          "@PROJECT_VERSION@"
+/** @brief Major version number of the library */
+#define OS_LIB_VERSION_MAJOR                    @PROJECT_VERSION_MAJOR@
+/** @brief Minor version number of the library */
+#define OS_LIB_VERSION_MINOR                    @PROJECT_VERSION_MINOR@
+/** @brief Patch version number of the library */
+#define OS_LIB_VERSION_PATCH                    @PROJECT_VERSION_PATCH@
+/** @brief Tweak version number of the library */
+#define OS_LIB_VERSION_TWEAK                    @PROJECT_VERSION_TWEAK@
+
+/** @brief False */
+#define OS_FALSE                                (os_bool_t)(0 == 1)
+/** @brief True */
+#define OS_TRUE                                 (os_bool_t)(1 == 1)
+
+/**
+ * @defgroup os_types List of basic operating system types
+ * @{
+ */
+/** @brief boolean (true or false) */
+typedef int                                      os_bool_t;
+/** @brief 32-bit floating-point */
+typedef float                                    os_float32_t;
+/** @brief 64-bit floating-point */
+typedef double                                   os_float64_t;
+/** @brief 8-bit signed integer */
+typedef int8_t                                   os_int8_t;
+/** @brief 16-bit signed integer */
+typedef int16_t                                  os_int16_t;
+/** @brief 32-bit signed integer */
+typedef int32_t                                  os_int32_t;
+/** @brief 64-bit signed integer */
+typedef int64_t                                  os_int64_t;
+/** @brief 8-bit unsigned integer */
+typedef uint8_t                                  os_uint8_t;
+/** @brief 16-bit unsigned integer */
+typedef uint16_t                                 os_uint16_t;
+/** @brief 32-bit unsigned integer */
+typedef uint32_t                                 os_uint32_t;
+/** @brief 64-bit unsigned integer */
+typedef uint64_t                                 os_uint64_t;
+/** @brief time interval in milliseconds */
+typedef uint32_t                                 os_millisecond_t;
+/** @brief time stamp in milliseconds */
+typedef uint64_t                                 os_timestamp_t;
+
+/**
+ * @}
+ */
+
+/** @brief Number of microseconds in millisecond */
+#define OS_MICROSECONDS_IN_MILLISECOND 1000u
+/** @brief Number of milliseconds in a second */
+#define OS_MILLISECONDS_IN_SECOND     1000u
+/** @brief Number of nanoseconds in a millisecond */
+#define OS_NANOSECONDS_IN_MILLISECOND 1000000u
+/** @brief Number of nanoseconds in a second */
+#define OS_NANOSECONDS_IN_SECOND      1000000000uL
+/** @brief Number of seconds in a minute */
+#define OS_SECONDS_IN_MINUTE          60u
+/** @brief Number of minutes in an hour */
+#define OS_MINUTES_IN_HOUR            60u
+/** @brief Number of hours in a day */
+#define OS_HOURS_IN_DAY               24u
+
+/**
+ * @def OS_API
+ * @brief Macro to add compiler specifications for external/internal functions
+ */
+#if defined( ARDUINO )
+#	define OS_API __attribute__((section(".irom0.text")))
+#elif defined( OSAL_STATIC )
+#	define OS_API
+#else /* ifdef OSAL_STATIC */
+#	if defined _WIN32 || defined __CYGWIN__
+#		if osal_shared_EXPORTS
+#			ifdef __GNUC__
+#				define OS_API __attribute__((dllexport))
+#			else
+#				define OS_API __declspec(dllexport)
+#			endif
+#		else /* if osal_shared_EXPORTS */
+#			ifdef __GNUC__
+#				define OS_API __attribute__((dllimport))
+#			else
+#				define OS_API __declspec(dllimport)
+#			endif
+#		endif /* if osal_shared_EXPORTS */
+#	else /* if defined _WIN32 || defined __CYGWIN__ */
+#		if __GNUC__ >= 4
+#			define OS_API __attribute__((visibility("default")))
+#		else
+#			define OS_API
+#		endif
+#	endif /* if defined _WIN32 || defined __CYGWIN__ */
+#endif /* ifdef OSAL_STATIC */
+
+/**
+ * @def __attribute__
+ * @brief GCC specific tag, suppressed for other compilers
+ */
+/**
+ * @def UNUSED
+ * @brief Macro used to define an unused attribute to the compiler
+ */
+#ifdef __GNUC__
+#	define UNUSED(x) PARAM_ ## x __attribute((__unused__))
+#else
+#	define  __attribute__(x) /* gcc specific */
+#	define UNUSED(x) x
+#endif /* ifdef __GNUC__ */
+
+/** @brief Signature of the function to handle operating systems signals */
+typedef void (*os_sighandler_t)( int );
+
+/**
+ * @brief Prototype for the main function of a service
+ *
+ * @param[in]      argc                number of arguments passed in
+ * @param[in]      argv                array of arguments passed in
+ *
+ * @retval EXIT_SUCCESS                service completed successfully
+ * @retval EXIT_FAILURE                service failed to complete
+ */
+typedef int (*os_service_main_t)( int argc, char** argv );
+
+/**
+ * @brief Structure used for storing date and time information
+ */
+typedef struct
+{
+	/** @brief Milliseconds (0-999) */
+	os_uint16_t millisecond;
+	/** @brief Seconds (0-59) */
+	os_uint8_t second;
+	/** @brief Minutes (0-59) */
+	os_uint8_t minute;
+	/** @brief Hours (0-23) */
+	os_uint8_t hour;
+	/** @brief Day (1-31) */
+	os_uint8_t day;
+	/** @brief Month (1-12) */
+	os_uint8_t month;
+	/** @brief Year (1970-2999) */
+	os_uint16_t year;
+} os_date_time_t;
+
 /**
  * @def DIRECTORY_CREATE_MAX_TIMEOUT
  * @brief Amount of time in milliseconds to wait for a directory to be
  *        created
  */
 #define DIRECTORY_CREATE_MAX_TIMEOUT 300u
-#endif /* ifndef android */
 
 /* flags */
 /** @brief Time stamps are relative to uptime */
@@ -23,20 +232,14 @@
 /** @brief maximum length for a field in system info structure */
 #define OS_SYSTEM_INFO_MAX_LEN 64u
 
+/** @brief Type for a list of adapters */
+typedef struct os_adapters os_adapters_t;
+
+/** @brief Type for a directory entry */
+typedef struct os_dir os_dir_t;
+
 /** @brief Type for a socket */
-typedef struct os_socket
-{
-	/** @brief Contains the address host address */
-	struct sockaddr addr;
-	/** @brief Contains the host port */
-	os_uint16_t port;
-	/** @brief File descriptor to the open socket */
-	int fd;
-	/** @brief Socket type */
-	int type;
-	/** @brief Socket protocol */
-	int protocol;
-} os_socket_t;
+typedef struct os_socket os_socket_t;
 
 /** @brief operating system information structure */
 typedef struct os_system_info
@@ -57,6 +260,18 @@ typedef struct os_system_info
 	os_uint8_t system_flags;
 } os_system_info_t;
 
+@OS_FUNCTION_DEF@
+
+/* if there is no file system */
+/**
+ * @def PATH_MAX
+ * @brief Maximum path length
+ */
+#ifndef PATH_MAX
+#	define PATH_MAX 0
+#endif
+
+
 /* adapter information (for obtaining MAC addresses) */
 /**
  * @brief Get general information of the current adapter in the the list
@@ -75,7 +290,7 @@ typedef struct os_system_info
  * @see os_adapters_obtain
  * @see os_adapters_release
  */
-OS_API OS_SECTION os_status_t os_adapters_address(
+OS_API os_status_t os_adapters_address(
 	os_adapters_t *adapters,
 	int *family,
 	int *flags,
@@ -97,7 +312,7 @@ OS_API OS_SECTION os_status_t os_adapters_address(
  * @see os_adapters_obtain
  * @see os_adapters_release
  */
-OS_API OS_SECTION os_status_t os_adapters_index(
+OS_API os_status_t os_adapters_index(
 	os_adapters_t *adapters,
 	unsigned int *index
 );
@@ -107,7 +322,7 @@ OS_API OS_SECTION os_status_t os_adapters_index(
  *
  * @param[in,out]  adapters            adapter list to retrieve information from
  * @param[out]     mac                 buffer to fill with the mac address
- * @param[in]      max_len             size of the buffer
+ * @param[in]      mac_len             size of the buffer
  *
  * @retval OS_STATUS_BAD_PARAMETER     invalid parameter passed to the function
  * @retval OS_STATUS_FAILURE           system error
@@ -117,7 +332,7 @@ OS_API OS_SECTION os_status_t os_adapters_index(
  * @see os_adapters_obtain
  * @see os_adapters_release
  */
-OS_API OS_SECTION os_status_t os_adapters_mac(
+OS_API os_status_t os_adapters_mac(
 	os_adapters_t *adapters,
 	char *mac,
 	size_t mac_len
@@ -135,7 +350,7 @@ OS_API OS_SECTION os_status_t os_adapters_mac(
  * @see os_adapters_obtain
  * @see os_adapters_release
  */
-OS_API OS_SECTION os_status_t os_adapters_next(
+OS_API os_status_t os_adapters_next(
 	os_adapters_t *adapters
 );
 
@@ -152,7 +367,7 @@ OS_API OS_SECTION os_status_t os_adapters_next(
  * @see os_adapters_next
  * @see os_adapters_release
  */
-OS_API OS_SECTION os_status_t os_adapters_obtain(
+OS_API os_status_t os_adapters_obtain(
 	os_adapters_t *adapters
 );
 
@@ -168,7 +383,7 @@ OS_API OS_SECTION os_status_t os_adapters_obtain(
  * @see os_adapters_next
  * @see os_adapters_obtain
  */
-OS_API OS_SECTION os_status_t os_adapters_release(
+OS_API os_status_t os_adapters_release(
 	os_adapters_t *adapters
 );
 
@@ -181,7 +396,7 @@ OS_API OS_SECTION os_status_t os_adapters_release(
  * @retval OS_TRUE                     character is a alphabetical or  numerical
  *                                     character
  */
-OS_API OS_SECTION os_bool_t os_char_isalnum(
+OS_API os_bool_t os_char_isalnum(
 	char c
 );
 
@@ -191,7 +406,7 @@ OS_API OS_SECTION os_bool_t os_char_isalnum(
  * @retval OS_FALSE                   character is not a hexadecimal digit
  * @retval OS_TRUE                    character is hexadecimal digit
  */
-OS_API OS_SECTION os_bool_t os_char_isxdigit(
+OS_API os_bool_t os_char_isxdigit(
 	char c
 );
 
@@ -222,7 +437,7 @@ OS_API OS_SECTION os_bool_t os_char_isxdigit(
  * @retval OS_STATUS_FAILURE           system error
  * @retval OS_STATUS_SUCCESS           on success
  */
-OS_API OS_SECTION os_status_t os_directory_create(
+OS_API os_status_t os_directory_create(
 	const char *path,
 	os_millisecond_t timeout
 );
@@ -236,7 +451,7 @@ OS_API OS_SECTION os_status_t os_directory_create(
  * @retval OS_STATUS_FAILURE           system error
  * @retval OS_STATUS_SUCCESS           on success
  */
-OS_API OS_SECTION os_status_t os_directory_create_nowait(
+OS_API os_status_t os_directory_create_nowait(
 	const char *path
 );
 
@@ -250,7 +465,7 @@ OS_API OS_SECTION os_status_t os_directory_create_nowait(
  * @retval OS_STATUS_FAILURE           system error or the buffer is too small
  * @retval OS_STATUS_SUCCESS           on success
  */
-OS_API OS_SECTION os_status_t os_directory_current(
+OS_API os_status_t os_directory_current(
 	char *buffer,
 	size_t size
 );
@@ -264,7 +479,7 @@ OS_API OS_SECTION os_status_t os_directory_current(
  * @retval OS_STATUS_FAILURE           failed to change current directory
  * @retval OS_STATUS_SUCCESS           directory was successfully changed
  */
-OS_API OS_SECTION os_status_t os_directory_change(
+OS_API os_status_t os_directory_change(
 	const char *path
 );
 
@@ -272,14 +487,12 @@ OS_API OS_SECTION os_status_t os_directory_change(
  * @brief Opens the specified directory for exploration
  *
  * @param[in]      dir_path            path to directory to open
- * @param[out]     out                 pointer to directory stream
  *
- * @retval OS_STATUS_FAILURE           failed to open directory
- * @retval OS_STATUS_SUCCESS           directory was successfully opened
+ * @retval NULL                        failed to open directory
+ * @retval !NULL                       directory was successfully opened
  */
-OS_API OS_SECTION os_status_t os_directory_open(
-	const char *dir_path,
-	os_dir_t* out
+OS_API os_dir_t *os_directory_open(
+	const char *dir_path
 );
 
 /**
@@ -290,7 +503,7 @@ OS_API OS_SECTION os_status_t os_directory_open(
  * @retval OS_STATUS_FAILURE           failed to close directory
  * @retval OS_STATUS_SUCCESS           successfully closed directory
  */
-OS_API OS_SECTION os_status_t os_directory_close(
+OS_API os_status_t os_directory_close(
 	os_dir_t *dir
 );
 
@@ -321,7 +534,7 @@ OS_API OS_SECTION os_status_t os_directory_close(
  * @see os_directory_exists
  * @see os_file_delete
  */
-OS_API OS_SECTION os_status_t os_directory_delete(
+OS_API os_status_t os_directory_delete(
 	const char *path,
 	const char *regex,
 	os_bool_t recursive
@@ -335,7 +548,7 @@ OS_API OS_SECTION os_status_t os_directory_delete(
  * @retval OS_TRUE                     directory exists
  * @retval OS_FALSE                    directory does not exist
  */
-OS_API OS_SECTION os_bool_t os_directory_exists(
+OS_API os_bool_t os_directory_exists(
 	const char *dir_path
 );
 
@@ -348,7 +561,7 @@ OS_API OS_SECTION os_bool_t os_directory_exists(
  * @retval          >=0                free space on partition in bytes
  * @retval          -1                 on failure
  */
-OS_API OS_SECTION os_uint64_t os_directory_free_space(
+OS_API os_uint64_t os_directory_free_space(
 	const char* path
 );
 
@@ -361,7 +574,7 @@ OS_API OS_SECTION os_uint64_t os_directory_free_space(
  * @return the os temp directory path
  *
  */
-OS_API OS_SECTION const char *os_directory_get_temp_dir(
+OS_API const char *os_directory_get_temp_dir(
 	char * dest, size_t size
 );
 
@@ -378,7 +591,7 @@ OS_API OS_SECTION const char *os_directory_get_temp_dir(
  *                                     reached the end of the directory
  * @retval OS_STATUS_SUCCESS           successfully retrieved the next file
  */
-OS_API OS_SECTION os_status_t os_directory_next(
+OS_API os_status_t os_directory_next(
 	os_dir_t *dir,
 	os_bool_t files_only,
 	char *path,
@@ -395,7 +608,7 @@ OS_API OS_SECTION os_status_t os_directory_next(
  *
  *
  */
-OS_API OS_SECTION os_status_t os_directory_rewind(
+OS_API os_status_t os_directory_rewind(
 	os_dir_t *dir
 );
 
@@ -410,7 +623,7 @@ OS_API OS_SECTION os_status_t os_directory_rewind(
  * @retval OS_STATUS_SUCCESS           successfully changed ownership of the
  *                                     file
  */
-OS_API OS_SECTION os_status_t os_file_chown(
+OS_API os_status_t os_file_chown(
 	const char *path,
 	const char *user
 );
@@ -425,7 +638,7 @@ OS_API OS_SECTION os_status_t os_file_chown(
  *
  * @see os_file_open
  */
-OS_API OS_SECTION os_status_t os_file_close(
+OS_API os_status_t os_file_close(
 	os_file_t handle
 );
 
@@ -441,7 +654,7 @@ OS_API OS_SECTION os_status_t os_file_close(
  *
  * @see os_file_move
  */
-OS_API OS_SECTION os_status_t os_file_copy(
+OS_API os_status_t os_file_copy(
 	const char *old_path,
 	const char *new_path
 );
@@ -458,7 +671,7 @@ OS_API OS_SECTION os_status_t os_file_copy(
  * @see os_directory_delete
  * @see os_file_exists
  */
-OS_API OS_SECTION os_status_t os_file_delete(
+OS_API os_status_t os_file_delete(
 	const char *path
 );
 
@@ -472,21 +685,7 @@ OS_API OS_SECTION os_status_t os_file_delete(
  *
  * @see os_file_remove
  */
-OS_API OS_SECTION os_bool_t os_file_exists(
-	const char *file_path
-);
-
-/**
- * @brief Fsync file stream
- *
- * @param[in]      file_path           path to file to fsync
- *
- * @retval         OS_STATUS_SUCCESS   successfully closed file stream
- * @retval         OS_STATUS_FAILURE   failed to close file stream
- *
- * @see os_file_open
- */
-OS_API OS_SECTION os_status_t os_file_fsync(
+OS_API os_bool_t os_file_exists(
 	const char *file_path
 );
 
@@ -501,7 +700,7 @@ OS_API OS_SECTION os_status_t os_file_fsync(
  * @retval OS_STATUS_FAILURE           failed to move file pointer
  * @retval OS_STATUS_SUCCESS           on success
  */
-OS_API OS_SECTION os_status_t os_file_seek(
+OS_API os_status_t os_file_seek(
 	os_file_t stream,
 	long offset,
 	int whence
@@ -517,7 +716,7 @@ OS_API OS_SECTION os_status_t os_file_seek(
  * @retval OS_STATUS_FAILURE           failed to sync file stream
  *
  */
-OS_API OS_SECTION os_status_t os_file_sync(
+OS_API os_status_t os_file_sync(
 	const char *file_path
 );
 
@@ -528,7 +727,7 @@ OS_API OS_SECTION os_status_t os_file_sync(
  *
  * @return         File size in bytes
  */
-OS_API OS_SECTION os_uint64_t os_file_get_size(
+OS_API os_uint64_t os_file_get_size(
 	const char *file_path
 );
 
@@ -539,7 +738,7 @@ OS_API OS_SECTION os_uint64_t os_file_get_size(
  *
  * @return         File size in bytes
  */
-OS_API OS_SECTION os_uint64_t os_file_get_size_handle(
+OS_API os_uint64_t os_file_get_size_handle(
 	os_file_t file_handle
 );
 
@@ -555,7 +754,7 @@ OS_API OS_SECTION os_uint64_t os_file_get_size_handle(
  *
  * @see os_file_copy
  */
-OS_API OS_SECTION os_status_t os_file_move(
+OS_API os_status_t os_file_move(
 	const char *old_path,
 	const char *new_path
 );
@@ -579,7 +778,7 @@ OS_API OS_SECTION os_status_t os_file_move(
  *
  * @see os_file_close
  */
-OS_API OS_SECTION os_file_t os_file_open(
+OS_API os_file_t os_file_open(
 	const char *file_path,
 	int flags
 );
@@ -593,7 +792,7 @@ OS_API OS_SECTION os_file_t os_file_open(
  * @retval OS_STATUS_FAILURE           on failure
  * @retval OS_STATUS_SUCCESS           on success
  */
-OS_API OS_SECTION os_status_t os_file_temp(
+OS_API os_status_t os_file_temp(
 	char *prototype,
 	size_t suffix_len
 );
@@ -603,24 +802,7 @@ OS_API OS_SECTION os_status_t os_file_temp(
  *
  * @return the character that was received
  */
-OS_API OS_SECTION char os_key_wait( void );
-
-#ifndef _WRS_KERNEL
-/**
- * @brief Closes an open runtime library
- *
- * @param[in]      lib                 open library handle to close
- *
- * @retval OS_STATUS_FAILURE           on failure
- * @retval OS_STATUS_SUCCESS           on success
- *
- * @see os_library_find
- * @see os_library_open
- */
-OS_API OS_SECTION os_status_t os_library_close(
-	os_lib_handle lib
-);
-#endif /* ifndef _WRS_KERNEL */
+OS_API char os_key_wait( void );
 
 /**
  * @brief Builds the path to a file for the operating system
@@ -635,7 +817,7 @@ OS_API OS_SECTION os_status_t os_library_close(
  *                                     the path
  * @retval OS_STATUS_SUCCESS           on success
  */
-OS_API OS_SECTION os_status_t os_make_path(
+OS_API os_status_t os_make_path(
 	char *path,
 	size_t len,
 	...
@@ -649,7 +831,7 @@ OS_API OS_SECTION os_status_t os_make_path(
  *
  * @return an integer value of the string converted (0 is the default)
  */
-OS_API OS_SECTION int os_atoi(
+OS_API int os_atoi(
 	const char *str
 );
 
@@ -665,7 +847,7 @@ OS_API OS_SECTION int os_atoi(
  * @retval         >0                  the first non-matching character has a
  *                                     higher value in s1 than in s2
  */
-OS_API OS_SECTION int os_strcasecmp(
+OS_API int os_strcasecmp(
 	const char *s1,
 	const char *s2
 );
@@ -699,7 +881,7 @@ size_t os_strcspn(
  * @retval         >0                  the first non-matching character has a
  *                                     higher value in s1 than in s2
  */
-OS_API OS_SECTION int os_strncasecmp(
+OS_API int os_strncasecmp(
 	const char *s1,
 	const char *s2,
 	size_t len
@@ -715,7 +897,7 @@ OS_API OS_SECTION int os_strncasecmp(
  * @retval         !NULL               pointer to the successfully concatenated string
  * @retval         NULL                indicates an error occurred
  */
-OS_API OS_SECTION char *os_strncat(
+OS_API char *os_strncat(
 	char *s1,
 	const char *s2,
 	size_t count
@@ -731,7 +913,7 @@ OS_API OS_SECTION char *os_strncat(
  * @return The length of the initial portion of str1 containing only characters
  *         that appear in str2
  */
-OS_API OS_SECTION size_t os_strspn(
+OS_API size_t os_strspn(
 	const char *str1,
 	const char *str2
 );
@@ -746,27 +928,9 @@ OS_API OS_SECTION size_t os_strspn(
  * @retval         !NULL               token is found
  * @retval         NULL                no token found
  */
-OS_API OS_SECTION char *os_strtok(
+OS_API char *os_strtok(
 	char *str,
 	const char *delimiters
-);
-
-/* memory functions */
-/**
- * @brief Compares two blocks of memory
- *
- * @param[in]      ptr1                pointer to first block of memory
- * @param[in]      ptr2                pointer to second block of memory
- * @param[in]      num                 amount of bytes to compare
- *
- * @retval         <0                  first non-matching byte is lower in ptr1
- * @retval         0                   all bytes are equal
- * @retval         >0                  first non-matching byte is lower in ptr2
- */
-OS_API OS_SECTION int os_memcmp(
-	const void *ptr1,
-	const void *ptr2,
-	size_t num
 );
 
 /* print functions */
@@ -786,7 +950,7 @@ OS_API OS_SECTION int os_memcmp(
  *
  * @see os_env_get
  */
-OS_API OS_SECTION size_t os_env_expand(
+OS_API size_t os_env_expand(
 	char *src,
 	size_t len
 );
@@ -807,7 +971,7 @@ OS_API OS_SECTION size_t os_env_expand(
  *
  * @see os_env_expand
  */
-OS_API OS_SECTION size_t os_env_get(
+OS_API size_t os_env_get(
 	const char *env,
 	char *dest,
 	size_t len
@@ -827,7 +991,7 @@ OS_API OS_SECTION size_t os_env_get(
  *
  * @see os_snprintf
  */
-OS_API OS_SECTION int os_sprintf(
+OS_API int os_sprintf(
 	char *str,
 	const char *format,
 	...
@@ -841,7 +1005,7 @@ OS_API OS_SECTION int os_sprintf(
  * @retval OS_FALSE                    on failure
  * @retval OS_TRUE                     on success
  */
-OS_API OS_SECTION os_bool_t os_flush(
+OS_API os_bool_t os_flush(
 	os_file_t stream
 );
 
@@ -855,7 +1019,7 @@ OS_API OS_SECTION os_bool_t os_flush(
  * @retval OS_TRUE     path is an absolute path
  * @retval OS_FALSE    path is not an absolute path (or PATH is NULL)
  */
-OS_API OS_SECTION os_bool_t os_path_is_absolute(
+OS_API os_bool_t os_path_is_absolute(
 	const char *path
 );
 
@@ -869,7 +1033,7 @@ OS_API OS_SECTION os_bool_t os_path_is_absolute(
  * @retval OS_STATUS_FAILURE           on failure
  * @retval OS_STATUS_SUCCESS           on success
  */
-OS_API OS_SECTION os_status_t os_path_executable(
+OS_API os_status_t os_path_executable(
 	char *path,
 	size_t size
 );
@@ -881,7 +1045,7 @@ OS_API OS_SECTION os_status_t os_path_executable(
  * @retval OS_STATUS_FAILURE           on failure
  * @retval OS_STATUS_SUCCESS           on success
  */
-OS_API OS_SECTION os_status_t os_process_cleanup( void );
+OS_API os_status_t os_process_cleanup( void );
 
 /* service functions */
 /**
@@ -903,7 +1067,7 @@ OS_API OS_SECTION os_status_t os_process_cleanup( void );
  * @retval OS_STATUS_BAD_PARAMETER     on bad parameters
  * @retval OS_STATUS_FAILURE           on failure to start service
  */
-OS_API OS_SECTION os_status_t os_service_run(
+OS_API os_status_t os_service_run(
 	const char *id,
 	os_service_main_t service_function,
 	int argc,
@@ -938,7 +1102,7 @@ OS_API OS_SECTION os_status_t os_service_run(
  * @note Forward-slashes (/) and Backslashes (\) are not valid within a
  *       service id
  */
-OS_API OS_SECTION os_status_t os_service_install(
+OS_API os_status_t os_service_install(
 	const char *id,
 	const char *executable,
 	const char *args,
@@ -962,7 +1126,7 @@ OS_API OS_SECTION os_status_t os_service_install(
  * @note Forward-slashes (/) and Backslashes (\) are not valid within a
  *       service id
  */
-OS_API OS_SECTION os_status_t os_service_uninstall(
+OS_API os_status_t os_service_uninstall(
 	const char *id,
 	os_millisecond_t max_time_out
 );
@@ -981,7 +1145,7 @@ OS_API OS_SECTION os_status_t os_service_uninstall(
  * @note Forward-slashes (/) and Backslashes (\) are not valid within a
  *       service id.
  */
-OS_API OS_SECTION os_status_t os_service_start(
+OS_API os_status_t os_service_start(
 	const char *id,
 	os_millisecond_t max_time_out
 );
@@ -1001,7 +1165,7 @@ OS_API OS_SECTION os_status_t os_service_start(
  * @note Forward-slashes (/) and Backslashes (\) are not valid within a
  *       service id.
  */
-OS_API OS_SECTION os_status_t os_service_stop(
+OS_API os_status_t os_service_stop(
 	const char *id,
 	const char *exe,
 	os_millisecond_t max_time_out
@@ -1022,7 +1186,7 @@ OS_API OS_SECTION os_status_t os_service_stop(
  * @note Forward-slashes (/) and Backslashes (\) are not valid within a
  *       service id.
  */
-OS_API OS_SECTION os_status_t os_service_restart(
+OS_API os_status_t os_service_restart(
 	const char *id,
 	const char *exe,
 	os_millisecond_t max_time_out
@@ -1045,7 +1209,7 @@ OS_API OS_SECTION os_status_t os_service_restart(
  * @note Forward-slashes (/) and Backslashes (\) are not valid within a
  *       service id.
  */
-OS_API OS_SECTION os_status_t os_service_query(
+OS_API os_status_t os_service_query(
 	const char *id,
 	os_millisecond_t max_time_out
 );
@@ -1064,7 +1228,7 @@ OS_API OS_SECTION os_status_t os_service_query(
  * @retval 0       on success
  * @retval !0      on failure (see getaddrinfo() return codes)
  */
- OS_API OS_SECTION int os_get_host_address(
+ OS_API int os_get_host_address(
 	const char *host,
 	const char *service,
 	char *address,
@@ -1082,14 +1246,15 @@ OS_API OS_SECTION os_status_t os_service_query(
  *
  * @retval OS_STATUS_BAD_PARAMETER     invalid parameter(s) passed to function
  * @retval OS_STATUS_FAILURE           failed to accept connection
+ * @retval OS_STATUS_NO_MEMORY         out of memory
  * @retval OS_STATUS_SUCCESS           successfully bound to socket
  * @retval OS_STATUS_TIMED_OUT         time out exceeded
  *
  * @see os_socket_bind
  */
-OS_API OS_SECTION os_status_t os_socket_accept(
+OS_API os_status_t os_socket_accept(
 	const os_socket_t *socket,
-	os_socket_t *out,
+	os_socket_t **out,
 	os_millisecond_t max_time_out
 );
 
@@ -1107,7 +1272,7 @@ OS_API OS_SECTION os_status_t os_socket_accept(
  * @see os_socket_open
  * @see os_socket_close
  */
-OS_API OS_SECTION os_status_t os_socket_bind(
+OS_API os_status_t os_socket_bind(
 	const os_socket_t *socket,
 	int queue_size
 );
@@ -1128,7 +1293,7 @@ OS_API OS_SECTION os_status_t os_socket_bind(
  * @retval OS_STATUS_SUCCESS           successfully bound to socket
  * @retval OS_STATUS_TIMED_OUT         time out exceeded
  */
-OS_API OS_SECTION os_status_t os_socket_broadcast(
+OS_API os_status_t os_socket_broadcast(
 	const os_socket_t *socket,
 	const void *buf,
 	size_t len,
@@ -1148,7 +1313,7 @@ OS_API OS_SECTION os_status_t os_socket_broadcast(
  *
  * @see os_socket_open
  */
-OS_API OS_SECTION os_status_t os_socket_close(
+OS_API os_status_t os_socket_close(
 	os_socket_t *socket
 );
 
@@ -1161,7 +1326,7 @@ OS_API OS_SECTION os_status_t os_socket_close(
  * @retval OS_STATUS_FAILURE           on failure
  * @retval OS_STATUS_SUCCESS           on success
  */
-OS_API OS_SECTION os_status_t os_socket_connect(
+OS_API os_status_t os_socket_connect(
 	const os_socket_t *socket
 );
 
@@ -1173,7 +1338,7 @@ OS_API OS_SECTION os_status_t os_socket_connect(
  *
  * @see os_socket_terminate
  */
-OS_API OS_SECTION os_status_t os_socket_initialize( void );
+OS_API os_status_t os_socket_initialize( void );
 
 /**
  * @brief Opens an open socket
@@ -1187,13 +1352,14 @@ OS_API OS_SECTION os_status_t os_socket_initialize( void );
  *
  * @retval OS_STATUS_BAD_PARAMETER     invalid parameter passed to function
  * @retval OS_STATUS_FAILURE           on failure
+ * @retval OS_STATUS_NO_MEMORY         out of memory
  * @retval OS_STATUS_SUCCESS           on success
  * @retval OS_STATUS_TIMED_OUT         time out exceeded
  *
  * @see os_socket_close
  */
-OS_API OS_SECTION os_status_t os_socket_open(
-	os_socket_t *out,
+OS_API os_status_t os_socket_open(
+	os_socket_t **out,
 	const char *address,
 	os_uint16_t port,
 	int type,
@@ -1201,7 +1367,20 @@ OS_API OS_SECTION os_status_t os_socket_open(
 	os_millisecond_t max_time_out
 );
 
-OS_API OS_SECTION os_status_t os_socket_option(
+/**
+ * @brief Sets options on a socket
+ *
+ * @param[in]      socket              socket to set option on
+ * @param[in]      level               level of the socket
+ * @param[in]      optname             option name
+ * @param[in]      optval              array of option values
+ * @param[in]      optlen              number of items in the array
+ *
+ * @retval OS_STATUS_BAD_PARAMETER     invalid parameter passed to function
+ * @retval OS_STATUS_FAILURE           on failure
+ * @retval OS_STATUS_SUCCESS           on success
+ */
+OS_API os_status_t os_socket_option(
 	const os_socket_t *socket,
 	int level,
 	int optname,
@@ -1227,7 +1406,7 @@ OS_API OS_SECTION os_status_t os_socket_option(
  *
  * @see os_socket_write
  */
-OS_API OS_SECTION os_status_t os_socket_read(
+OS_API os_status_t os_socket_read(
 	const os_socket_t *socket,
 	void *buf,
 	size_t len,
@@ -1235,7 +1414,24 @@ OS_API OS_SECTION os_status_t os_socket_read(
 	os_millisecond_t max_time_out
 );
 
-OS_API OS_SECTION ssize_t os_socket_receive(
+/**
+ * @brief Receives data on a socket
+ *
+ * @param[in]      socket              socket to receive data on
+ * @param[out]     buf                 destination buffer
+ * @param[in]      len                 size of destination buffer
+ * @param[out]     src_addr            address of source (optional)
+ * @param[in]      src_addr_len        lenth of source address buffer (optional)
+ * @param[out]     port                port data received on (optional)
+ * @param[in]      max_time_out        maximum time to wait (optional)
+ *
+ * @retval OS_STATUS_BAD_PARAMETER     invalid parameter passed to function
+ * @retval OS_STATUS_FAILURE           on failure
+ * @retval OS_STATUS_SUCCESS           on success
+ * @retval OS_STATUS_TIMED_OUT         time out exceeded
+ * @retval OS_STATUS_TRY_AGAIN         socket not connected
+ */
+OS_API ssize_t os_socket_receive(
 	const os_socket_t *socket,
 	void *buf,
 	size_t len,
@@ -1245,7 +1441,23 @@ OS_API OS_SECTION ssize_t os_socket_receive(
 	os_millisecond_t max_time_out
 );
 
-OS_API OS_SECTION ssize_t os_socket_send(
+/**
+ * @brief Sends data on a socket
+ *
+ * @param[in]      socket              socket to send data on
+ * @param[in]      buf                 source buffer
+ * @param[in]      len                 size of source buffer
+ * @param[in]      dest_addr           destination address
+ * @param[in]      port                destination port
+ * @param[in]      max_time_out        maximum time to wait (optional)
+ *
+ * @retval OS_STATUS_BAD_PARAMETER     invalid parameter passed to function
+ * @retval OS_STATUS_FAILURE           on failure
+ * @retval OS_STATUS_SUCCESS           on success
+ * @retval OS_STATUS_TIMED_OUT         time out exceeded
+ * @retval OS_STATUS_TRY_AGAIN         socket not connected
+ */
+OS_API ssize_t os_socket_send(
 	const os_socket_t *socket,
 	const void *buf,
 	size_t len,
@@ -1263,7 +1475,7 @@ OS_API OS_SECTION ssize_t os_socket_send(
  *
  * @see os_socket_initialize
  */
-OS_API OS_SECTION os_status_t os_socket_terminate( void );
+OS_API os_status_t os_socket_terminate( void );
 
 /**
  * @brief Writes data to an open socket
@@ -1281,7 +1493,7 @@ OS_API OS_SECTION os_status_t os_socket_terminate( void );
  *
  * @see os_socket_read
  */
-OS_API OS_SECTION os_status_t os_socket_write(
+OS_API os_status_t os_socket_write(
 	const os_socket_t *socket,
 	const void *buf,
 	size_t len,
@@ -1299,7 +1511,7 @@ OS_API OS_SECTION os_status_t os_socket_write(
  * @retval OS_STATUS_FAILURE           on failure
  * @retval OS_STATUS_SUCCESS           on success
  */
-OS_API OS_SECTION os_status_t os_stream_echo_set(
+OS_API os_status_t os_stream_echo_set(
 	os_file_t stream,
 	os_bool_t enable );
 
@@ -1314,7 +1526,7 @@ OS_API OS_SECTION os_status_t os_stream_echo_set(
  *
  * @return a string representing the last operating system error
  */
-OS_API OS_SECTION const char *os_system_error_string(
+OS_API const char *os_system_error_string(
 	int error_number
 );
 
@@ -1327,7 +1539,7 @@ OS_API OS_SECTION const char *os_system_error_string(
  * @retval OS_STATUS_FAILURE           on failure
  * @retval OS_STATUS_SUCCESS           on success
  */
-OS_API OS_SECTION os_status_t os_system_info(
+OS_API os_status_t os_system_info(
 	os_system_info_t *sys_info
 );
 
@@ -1342,7 +1554,7 @@ OS_API OS_SECTION os_status_t os_system_info(
  * @retval OS_STATUS_INVOKED           command triggered as a background process
  * @retval OS_STATUS_NOT_EXECUTABLE    the path provided can not be executed
  */
-OS_API OS_SECTION os_status_t os_system_run(
+OS_API os_status_t os_system_run(
 	const char *command,
 	int *exit_status,
 	os_file_t pipe_files[2u] );
@@ -1363,7 +1575,7 @@ OS_API OS_SECTION os_status_t os_system_run(
  * @retval OS_STATUS_SUCCESS           on success
  * @retval OS_STATUS_TIMED_OUT         time out exceeded
  */
-OS_API OS_SECTION os_status_t os_system_run_wait(
+OS_API os_status_t os_system_run_wait(
 	const char *command,
 	int *exit_status,
 	char *out_buf[2u],
@@ -1380,7 +1592,7 @@ OS_API OS_SECTION os_status_t os_system_run_wait(
  * @retval OS_STATUS_INVOKED           shutdown triggered
  * @retval OS_STATUS_NOT_EXECUTABLE    shutdown failed to be triggered
  */
-OS_API OS_SECTION os_status_t os_system_shutdown(
+OS_API os_status_t os_system_shutdown(
 	os_bool_t reboot, unsigned int delay
 );
 
@@ -1393,7 +1605,7 @@ OS_API OS_SECTION os_status_t os_system_shutdown(
  * @retval OS_TRUE                     terminal supports vt-100 codes
  * @retval OS_FALSE                    terminal does not support vt-100 codes
  */
-OS_API OS_SECTION os_bool_t os_terminal_vt100_support(
+OS_API os_bool_t os_terminal_vt100_support(
 	os_file_t stream
 );
 
@@ -1407,7 +1619,7 @@ OS_API OS_SECTION os_bool_t os_terminal_vt100_support(
  * @retval OS_STATUS_FAILURE           on failure
  * @retval OS_STATUS_SUCCESS           on success
  */
-OS_API OS_SECTION os_status_t os_terminate_handler(
+OS_API os_status_t os_terminate_handler(
 	os_sighandler_t signal_handler
 );
 
@@ -1420,7 +1632,7 @@ OS_API OS_SECTION os_status_t os_terminate_handler(
  *
  * @return a random number between the minimum and maximum specified
  */
-OS_API OS_SECTION double os_random(
+OS_API double os_random(
 	double min,
 	double max
 );
@@ -1441,7 +1653,7 @@ OS_API OS_SECTION double os_random(
  * @retval OS_STATUS_FAILURE           system call failed
  * @retval OS_STATUS_SUCCESS           on success
  */
-OS_API OS_SECTION os_status_t os_time(
+OS_API os_status_t os_time(
 	os_timestamp_t *time_stamp,
 	os_bool_t *up_time
 );
@@ -1464,7 +1676,7 @@ OS_API OS_SECTION os_status_t os_time(
  * then this function returns a value of 0 and the contents include only the
  * null-terminating character.
  */
-OS_API OS_SECTION size_t os_time_format(
+OS_API size_t os_time_format(
 	char *buf,
 	size_t len,
 	const char *format,
@@ -1481,7 +1693,7 @@ OS_API OS_SECTION size_t os_time_format(
  * @retval OS_STATUS_BAD_REQUEST       starting time is in the future
  * @retval OS_STATUS_SUCCESS           on success
  */
-OS_API OS_SECTION os_status_t os_time_elapsed(
+OS_API os_status_t os_time_elapsed(
 	os_timestamp_t *start_time,
 	os_millisecond_t *elapsed_time );
 
@@ -1497,7 +1709,7 @@ OS_API OS_SECTION os_status_t os_time_elapsed(
  * @retval OS_STATUS_TIMED_OUT         time out exceeded
  * @retval OS_STATUS_SUCCESS           on success
  */
-OS_API OS_SECTION os_status_t os_time_remaining(
+OS_API os_status_t os_time_remaining(
 	os_timestamp_t *start_time,
 	os_millisecond_t max_time_out,
 	os_millisecond_t *remaining );
@@ -1511,268 +1723,10 @@ OS_API OS_SECTION os_status_t os_time_remaining(
  * @retval OS_STATUS_FAILURE           on system failure or system interruption
  * @retval OS_STATUS_SUCCESS           on success
  */
-OS_API OS_SECTION os_status_t os_time_sleep(
+OS_API os_status_t os_time_sleep(
 	os_millisecond_t ms,
 	os_bool_t allow_interrupts
 );
-
-/* threading */
-#ifndef NO_THREAD_SUPPORT
-/**
- * @brief Symbol to correct declare a thread on all platforms
- */
-#define OS_THREAD_DECL OS_THREAD_RETURN OS_THREAD_LINK
-/**
- * @brief Type defining the starting point for a thread
- */
-typedef OS_THREAD_RETURN
-	(OS_THREAD_LINK *os_thread_main_t)( void *arg );
-
-/**
- * @brief Wakes up all threads waiting on a condition variable
- *
- * @param[in,out]  cond                condition variable to wake up
- *
- * @retval OS_STATUS_BAD_PARAMETER     invalid parameter passed to function
- * @retval OS_STATUS_FAILURE           function failed
- * @retval OS_STATUS_SUCCESS           on success
- */
-OS_API OS_SECTION os_status_t os_thread_condition_broadcast(
-	os_thread_condition_t *cond
-);
-
-/**
- * @brief Creates a new condition variable
- *
- * @param[in,out]  cond                newly created condition variable
- *
- * @retval OS_STATUS_BAD_PARAMETER     invalid parameter passed to function
- * @retval OS_STATUS_FAILURE           function failed
- * @retval OS_STATUS_SUCCESS           on success
- */
-OS_API OS_SECTION os_status_t os_thread_condition_create(
-	os_thread_condition_t *cond
-);
-
-/**
- * @brief Destroys a previously created condition variable
- *
- * @param[in,out]  cond                previously created condition variable
- *
- * @retval OS_STATUS_BAD_PARAMETER     invalid parameter passed to function
- * @retval OS_STATUS_FAILURE           function failed
- * @retval OS_STATUS_SUCCESS           on success
- */
-OS_API OS_SECTION os_status_t os_thread_condition_destroy(
-	os_thread_condition_t *cond
-);
-
-/**
- * @brief Signals a thread waiting on a condition variable to wake up
- *
- * @param[in,out]  cond                condition variable to signal
- * @param[in,out]  lock                lock prototecting condition variable
- *
- * @retval OS_STATUS_BAD_PARAMETER     invalid parameter passed to function
- * @retval OS_STATUS_FAILURE           function failed
- * @retval OS_STATUS_SUCCESS           on success
- */
-OS_API OS_SECTION os_status_t os_thread_condition_signal(
-	os_thread_condition_t *cond,
-	os_thread_mutex_t *lock
-);
-
-/**
- * @brief Waits a specified amount of time for a condition variable
- *
- * @param[in,out]  cond                condition variable to wait on
- * @param[in,out]  lock                lock protecting condition variable
- * @param[in]      max_time_out        maximum amount of time to wait
- *
- * @retval OS_STATUS_BAD_PARAMETER     invalid parameter passed to function
- * @retval OS_STATUS_FAILURE           function failed
- * @retval OS_STATUS_SUCCESS           on success
- * @retval OS_STATUS_TIMED_OUT         maximum wait time reached
- */
-OS_API OS_SECTION os_status_t os_thread_condition_timed_wait(
-	os_thread_condition_t *cond,
-	os_thread_mutex_t *lock,
-	os_millisecond_t max_time_out
-);
-
-/**
- * @brief Creates a new thread
- *
- * @param[in,out]  thread              newly created thread object
- * @param[in]      main                main method to call for the thread
- * @param[in]      arg                 user specific data
- *
- * @retval OS_STATUS_BAD_PARAMETER     invalid parameter passed to function
- * @retval OS_STATUS_FAILURE           function failed
- * @retval OS_STATUS_SUCCESS           on success
- */
-OS_API OS_SECTION os_status_t os_thread_create(
-	os_thread_t *thread,
-	os_thread_main_t main,
-	void *arg
-);
-
-/**
- * @brief Destroys a previously created thread
- *
- * @param[in,out]  thread              thread object to destroy
- *
- * @retval OS_STATUS_BAD_PARAMETER     invalid parameter passed to function
- * @retval OS_STATUS_FAILURE           function failed
- * @retval OS_STATUS_SUCCESS           on success
- */
-OS_API OS_SECTION os_status_t os_thread_destroy(
-	os_thread_t *thread
-);
-
-/**
- * @brief Creates a new mutally exclusive lock
- *
- * @param[in,out]  lock                newly created lock
- *
- * @retval OS_STATUS_BAD_PARAMETER     invalid parameter passed to function
- * @retval OS_STATUS_FAILURE           function failed
- * @retval OS_STATUS_SUCCESS           on success
- */
-OS_API OS_SECTION os_status_t os_thread_mutex_create(
-	os_thread_mutex_t *lock
-);
-
-/**
- * @brief Destroys a mutally exclusive lock
- *
- * @param[in,out]  lock                previously created lock
- *
- * @retval OS_STATUS_BAD_PARAMETER     invalid parameter passed to function
- * @retval OS_STATUS_FAILURE           function failed
- * @retval OS_STATUS_SUCCESS           on success
- */
-OS_API OS_SECTION os_status_t os_thread_mutex_destroy(
-	os_thread_mutex_t *lock
-);
-
-/**
- * @brief Obtains a mutally exclusive lock (waits until lock is available)
- *
- * @param[in,out]  lock                previously created lock
- *
- * @retval OS_STATUS_BAD_PARAMETER     invalid parameter passed to function
- * @retval OS_STATUS_FAILURE           function failed
- * @retval OS_STATUS_SUCCESS           on success
- */
-OS_API OS_SECTION os_status_t os_thread_mutex_lock(
-	os_thread_mutex_t *lock
-);
-
-/**
- * @brief Releases a mutally exclusive lock
- *
- * @param[in,out]  lock                previously created lock
- *
- * @retval OS_STATUS_BAD_PARAMETER     invalid parameter passed to function
- * @retval OS_STATUS_FAILURE           function failed
- * @retval OS_STATUS_SUCCESS           on success
- */
-OS_API OS_SECTION os_status_t os_thread_mutex_unlock(
-	os_thread_mutex_t *lock
-);
-
-/**
- * @brief Creates a new read/write lock
- *
- * @param[in,out]  lock                newly created lock
- *
- * @retval OS_STATUS_BAD_PARAMETER     invalid parameter passed to function
- * @retval OS_STATUS_FAILURE           function failed
- * @retval OS_STATUS_SUCCESS           on success
- */
-OS_API OS_SECTION os_status_t os_thread_rwlock_create(
-	os_thread_rwlock_t *lock
-);
-
-/**
- * @brief Destroys a previously created read/write lock
- *
- * @param[in,out]  lock                previously created lock
- *
- * @retval OS_STATUS_BAD_PARAMETER     invalid parameter passed to function
- * @retval OS_STATUS_FAILURE           function failed
- * @retval OS_STATUS_SUCCESS           on success
- */
-OS_API OS_SECTION os_status_t os_thread_rwlock_destroy(
-	os_thread_rwlock_t *lock
-);
-
-/**
- * @brief Obtains a read/write lock for reading
- *
- * @param[in,out]  lock                previously created lock
- *
- * @retval OS_STATUS_BAD_PARAMETER     invalid parameter passed to function
- * @retval OS_STATUS_FAILURE           function failed
- * @retval OS_STATUS_SUCCESS           on success
- */
-OS_API OS_SECTION os_status_t os_thread_rwlock_read_lock(
-	os_thread_rwlock_t *lock
-);
-
-/**
- * @brief Releases read/write lock from reading
- *
- * @param[in,out]  lock                previously created lock
- *
- * @retval OS_STATUS_BAD_PARAMETER     invalid parameter passed to function
- * @retval OS_STATUS_FAILURE           function failed
- * @retval OS_STATUS_SUCCESS           on success
- */
-OS_API OS_SECTION os_status_t os_thread_rwlock_read_unlock(
-	os_thread_rwlock_t *lock
-);
-
-/**
- * @brief Obtains a read/write lock for writing
- *
- * @param[in,out]  lock                previously created lock
- *
- * @retval OS_STATUS_BAD_PARAMETER     invalid parameter passed to function
- * @retval OS_STATUS_FAILURE           function failed
- * @retval OS_STATUS_SUCCESS           on success
- */
-OS_API OS_SECTION os_status_t os_thread_rwlock_write_lock(
-	os_thread_rwlock_t *lock
-);
-
-/**
- * @brief Releases read/write lock from writing
- *
- * @param[in,out]  lock                previously created lock
- *
- * @retval OS_STATUS_BAD_PARAMETER     invalid parameter passed to function
- * @retval OS_STATUS_FAILURE           function failed
- * @retval OS_STATUS_SUCCESS           on success
- */
-OS_API OS_SECTION os_status_t os_thread_rwlock_write_unlock(
-	os_thread_rwlock_t *lock
-);
-
-/**
- * @brief Waits for a thread to complete
- *
- * @param[in,out]  thread              thread object to wait on
- *
- * @retval OS_STATUS_BAD_PARAMETER     invalid parameter passed to function
- * @retval OS_STATUS_FAILURE           function failed
- * @retval OS_STATUS_SUCCESS           on success
- */
-OS_API OS_SECTION os_status_t os_thread_wait(
-	os_thread_t *thread
-);
-#endif /* ifndef NO_THREAD_SUPPORT */
 
 /* uuid support */
 /**
@@ -1784,7 +1738,7 @@ OS_API OS_SECTION os_status_t os_thread_wait(
  * @retval OS_STATUS_FAILURE           function failed
  * @retval OS_STATUS_SUCCESS           on success
  */
-OS_API OS_SECTION os_status_t os_uuid_generate(
+OS_API os_status_t os_uuid_generate(
 	os_uuid_t *uuid
 );
 
@@ -1799,7 +1753,7 @@ OS_API OS_SECTION os_status_t os_uuid_generate(
  * @retval OS_STATUS_NO_MEMORY         buffer length is not large enough
  * @retval OS_STATUS_SUCCESS           on success
  */
-OS_API OS_SECTION os_status_t os_uuid_to_string_lower(
+OS_API os_status_t os_uuid_to_string_lower(
 	os_uuid_t *uuid,
 	char *dest,
 	size_t len
@@ -1810,4 +1764,3 @@ OS_API OS_SECTION os_status_t os_uuid_to_string_lower(
 #endif /* ifdef __cplusplus */
 
 #endif /* ifndef OS_H */
-

@@ -11,7 +11,7 @@
  * River.
  */
 
-#include "os.h"
+#include "os_posix_private.h"
 
 #include <ctype.h>       /* for isalha, isalnum */
 #include <errno.h>       /* for errno */
@@ -48,6 +48,19 @@ typedef u_short in_port_t;
  * @brief Time in milliseconds to wait between retrying an operation
  */
 #define LOOP_WAIT_TIME 100u
+
+/**
+ * @brief Base shell command for executing external processes with
+ */
+#define OS_COMMAND_SH            "/bin/sh", "sh", "-c"
+/**
+ * @brief Operating system reboot command
+ */
+#define OS_REBOOT_CMD       "/sbin/shutdown -r "
+/**
+ * @brief Operating system shutdown command
+ */
+#define OS_SHUTDOWN_CMD     "/sbin/shutdown -h "
 
 os_status_t os_adapters_address(
 	os_adapters_t *adapters,
@@ -220,6 +233,15 @@ os_status_t os_adapters_release(
 	return result;
 }
 
+int os_atoi( const char *str )
+{
+	int result = 0;
+	if ( str )
+		result = atoi( str );
+	return result;
+}
+
+
 /* character testing support */
 os_bool_t os_char_isalnum(
 	char c )
@@ -238,6 +260,20 @@ os_bool_t os_char_isxdigit(
 		result = OS_TRUE;
 	return result;
 }
+
+#if OSAL_WRAP
+char os_char_tolower(
+	char c )
+{
+	return (char)tolower( c );
+}
+
+char os_char_toupper(
+	char c )
+{
+	return (char)toupper( c );
+}
+#endif /* if OSAL_WRAP */
 
 /* file & directory support */
 os_status_t os_directory_create(
@@ -320,7 +356,7 @@ os_status_t os_directory_change(const char *path)
 	if ( path )
 	{
 		result = OS_STATUS_SUCCESS;
-		if ( chdir ( path ) != 0)
+		if ( chdir ( path ) != 0 )
 			result = OS_STATUS_FAILURE;
 	}
 	return result;
@@ -333,6 +369,7 @@ os_status_t os_directory_close(
 	if( dir && dir->dir && closedir( dir->dir ) == 0 )
 	{
 		dir->dir = NULL;
+		free( dir );
 		result = OS_STATUS_SUCCESS;
 	}
 	return result;
@@ -490,8 +527,7 @@ os_bool_t os_directory_exists(
 	return result;
 }
 
-#ifndef _WRS_KERNEL
-os_uint64_t os_directory_free_space( const char* path )
+os_uint64_t os_directory_free_space( const char *path )
 {
 	os_uint64_t free_space = 0u;
 	struct statvfs64 sfs;
@@ -502,14 +538,20 @@ os_uint64_t os_directory_free_space( const char* path )
 	return free_space;
 }
 
-const char *os_directory_get_temp_dir( char * dest, size_t size )
+const char *os_directory_get_temp_dir( char *dest, size_t size )
 {
-	const char *temp_dir = OTA_DUP_PATH;
 	const char *result = NULL;
+	const char *tmp_dir = getenv( "TMPDIR" );
+#if defined( P_tmpdir )
+	if ( !tmp_dir )
+		tmp_dir = P_tmpdir;
+#endif /* if defined( P_tmpdir ) */
+	if ( !tmp_dir )
+		tmp_dir = "/tmp";
 
-	if ( dest && strlen( temp_dir ) < size )
+	if ( dest && strlen( tmp_dir ) < size )
 	{
-		os_strncpy( dest, temp_dir, strlen( temp_dir ) + 1u );
+		os_strncpy( dest, tmp_dir, size );
 		result = dest;
 	}
 	return ( result );
@@ -522,7 +564,7 @@ os_status_t os_directory_next(
 	size_t path_len )
 {
 	os_status_t result = OS_STATUS_FAILURE;
-	if ( dir && dir->dir && path && path_len > 0 )
+	if ( dir && dir->dir && path && path_len > 0u )
 	{
 		struct dirent *d = NULL;
 		while ( ( d = readdir( dir->dir ) ) )
@@ -556,7 +598,6 @@ os_status_t os_directory_next(
 	}
 	return result;
 }
-#endif /* _WRS_KERNEL */
 
 os_status_t os_directory_rewind(
 	os_dir_t *dir )
@@ -570,22 +611,34 @@ os_status_t os_directory_rewind(
 	return result;
 }
 
-os_status_t os_directory_open(
-	const char *dir_path,
-	os_dir_t* out )
+os_dir_t *os_directory_open(
+	const char *dir_path )
 {
-	os_status_t result = OS_STATUS_FAILURE;
+	os_dir_t *out = malloc( sizeof( struct os_dir ) );
 	if ( dir_path && out )
 	{
-		os_strncpy( out->path, dir_path, PATH_MAX );
+		out->path = dir_path;
 		out->dir = opendir( dir_path );
-		if ( out->dir )
-			result = OS_STATUS_SUCCESS;
+		if ( !out->dir )
+		{
+			free( out );
+			out = NULL;
+		}
 	}
-	return result;
+	return out;
 }
 
-#ifndef _WRS_KERNEL
+#if OSAL_WRAP
+os_status_t os_file_close(
+	os_file_t handle )
+{
+	os_status_t result = OS_STATUS_FAILURE;
+	if ( handle && fflush( handle ) == 0 && fclose( handle ) == 0 )
+		result = OS_STATUS_SUCCESS;
+	return result;
+}
+#endif /* if OSAL_WRAP */
+
 os_status_t os_file_chown(
 	const char *path,
 	const char *user )
@@ -602,45 +655,6 @@ os_status_t os_file_chown(
 		else
 			result = OS_STATUS_FAILURE;
 	}
-	return result;
-}
-#endif /* ifndef _WRS_KERNEL */
-os_status_t os_file_close(
-	os_file_t handle )
-{
-	os_status_t result = OS_STATUS_FAILURE;
-	if ( handle && fflush( handle ) == 0 && fclose( handle ) == 0 )
-		result = OS_STATUS_SUCCESS;
-	return result;
-}
-
-os_status_t os_file_fsync(
-	const char *file_path )
-{
-	os_status_t result = OS_STATUS_BAD_PARAMETER;
-	if ( file_path )
-	{
-		int fd;
-		result = OS_STATUS_FAILURE;
-#ifndef _WRS_KERNEL
-		fd = open( file_path, O_RDONLY );
-#else
-		fd = open( file_path, O_RDONLY, 0 );
-#endif
-		if ( fd >= 0 )
-		{
-			if ( fsync( fd ) == 0 )
-				result = OS_STATUS_SUCCESS;
-			close( fd );
-		}
-	}
-#ifndef _WRS_KERNEL
-	else
-	{
-		sync();
-		result = OS_STATUS_SUCCESS;
-	}
-#endif
 	return result;
 }
 
@@ -717,6 +731,14 @@ os_status_t os_file_delete(
 	return result;
 }
 
+#if OSAL_WRAP
+os_bool_t os_file_eof(
+	os_file_t stream )
+{
+	return feof( stream ) == 0 ? OS_FALSE : OS_TRUE;
+}
+#endif /* if OSAL_WRAP */
+
 os_bool_t os_file_exists(
 	const char *file_path )
 {
@@ -731,6 +753,16 @@ os_bool_t os_file_exists(
 	}
 	return result;
 }
+
+#if OSAL_WRAP
+char *os_file_gets(
+	char *str,
+	size_t size,
+	os_file_t stream )
+{
+	return fgets( str, (int)size, stream );
+}
+#endif /* if OSAL_WRAP */
 
 os_status_t os_file_seek(
 	os_file_t stream,
@@ -748,7 +780,8 @@ os_status_t os_file_seek(
 	return result;
 }
 
-os_status_t os_file_sync( const char *file_path )
+os_status_t os_file_sync(
+	const char *file_path )
 {
 	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( file_path )
@@ -885,6 +918,24 @@ os_file_t os_file_open(
 	return result;
 }
 
+#if OSAL_WRAP
+size_t os_file_puts(
+	char *str,
+	os_file_t stream )
+{
+	return (size_t)fputs( str, stream );
+}
+
+size_t os_file_read(
+	void *ptr,
+	size_t size,
+	size_t nmemb,
+	os_file_t stream )
+{
+	return fread( ptr, size, nmemb, stream );
+}
+#endif /* if OSAL_WRAP */
+
 os_status_t os_file_temp(
 	char *prototype,
 	size_t suffix_len )
@@ -898,6 +949,17 @@ os_status_t os_file_temp(
 	}
 	return result;
 }
+
+#if OSAL_WRAP
+size_t os_file_write(
+	const void *ptr,
+	size_t size,
+	size_t nmemb,
+	os_file_t stream )
+{
+	return fwrite( ptr, size, nmemb, stream );
+}
+#endif /* if OSAL_WRAP */
 
 char os_key_wait( void )
 {
@@ -923,29 +985,93 @@ os_status_t os_library_close(
 	return result;
 }
 
-int os_atoi( const char *str )
+#if OSAL_WRAP
+void *os_library_find(
+	os_lib_handle lib,
+	const char *function )
 {
-	int result = 0;
-	if ( str )
-		result = atoi( str );
-	return result;
+	return dlsym( lib, function );
 }
 
+os_lib_handle os_library_open(
+	const char *path )
+{
+	return dlopen( path, RTLD_LAZY );
+}
+#endif /* if OSAL_WRAP */
+
 /* memory functions */
+#if OSAL_WRAP
+void *os_calloc( size_t nmemb, size_t size )
+{
+	return calloc( nmemb, size );
+}
+
+void os_free( void *ptr )
+{
+	free( ptr );
+}
+
+void os_free_null( void **ptr )
+{
+	if ( ptr && *ptr )
+	{
+		free( *ptr );
+		*ptr = NULL;
+	}
+}
+
+void *os_malloc( size_t size )
+{
+	return malloc( size );
+}
+
+void *os_realloc( void *ptr, size_t size )
+{
+	return realloc( ptr, size );
+}
+
 int os_memcmp(
 	const void *ptr1,
 	const void *ptr2,
 	size_t num )
 {
-	int result = 0;
-	if ( ptr1 && ptr2 )
-		result = memcmp( ptr1, ptr2, num );
-	else if ( !ptr1 )
-		result = -1;
-	else
-		result = 1;
-	return result;
+	return memcmp( ptr1, ptr2, num );
 }
+
+void *os_memcpy(
+	void *dest,
+	const void *src,
+	size_t len )
+{
+	memcpy( dest, src, len );
+	return dest;
+}
+
+void *os_memmove(
+	void *dest,
+	const void *src,
+	size_t len )
+{
+	memmove( dest, src, len );
+	return dest;
+}
+
+void os_memset(
+	void *dest,
+	int c,
+	size_t len )
+{
+	memset( dest, c, len );
+}
+
+void os_memzero(
+	void *dest,
+	size_t len )
+{
+	bzero( dest, len );
+}
+#endif /* if OSAL_WRAP */
 
 /* print functions */
 size_t os_env_expand(
@@ -1064,6 +1190,66 @@ size_t os_env_get(
 	return result;
 }
 
+#if OSAL_WRAP
+int os_fprintf(
+	os_file_t stream,
+	const char *format,
+	... )
+{
+	int result;
+	va_list args;
+	va_start( args, format );
+	result = vfprintf( stream, format, args );
+	va_end( args );
+	return result;
+}
+
+int os_printf(
+	const char *format,
+	... )
+{
+	int result;
+	va_list args;
+	va_start( args, format );
+	result = vprintf( format, args );
+	va_end( args );
+	return result;
+}
+
+int os_snprintf(
+	char *str,
+	size_t size,
+	const char *format,
+	... )
+{
+	int result;
+	va_list args;
+	va_start( args, format );
+	result = os_vsnprintf( str, size, format, args );
+	va_end( args );
+	return result;
+}
+
+int os_vfprintf(
+	os_file_t stream,
+	const char *format,
+	va_list args )
+{
+	return vfprintf( stream, format, args );
+}
+#endif /* if defined( OSAL_WRAP ) */
+
+int os_vsnprintf(
+	char *str,
+	size_t size,
+	const char *format,
+	va_list args )
+{
+	int result = vsnprintf( str, size, format, args );
+	if ( (size_t)result >= size )
+		result = -1;
+	return result;
+}
 
 int os_sprintf(
 	char *str,
@@ -1119,216 +1305,6 @@ os_status_t os_process_cleanup( void )
 	return result;
 }
 
-/* service functions */
-os_status_t os_service_run(
-	const char *id,
-	os_service_main_t service_function,
-	int argc,
-	char *argv[],
-	int remove_argc,
-	const char *remove_argv[],
-	os_sighandler_t UNUSED(handler),
-	const char *UNUSED(logdir) )
-{
-	os_status_t result = OS_STATUS_BAD_PARAMETER;
-	if ( id && service_function )
-	{
-		int i;
-		char** good_argv = (char**)malloc( argc * sizeof( char* ) );
-		result = OS_STATUS_FAILURE;
-		/* remove bad arguments */
-		if ( good_argv )
-		{
-			int good_argc = 0u;
-			for ( i = 0; i < argc; ++i )
-			{
-				int is_good_arg = 1; /* true */
-				if ( remove_argc > 0 && remove_argv && argv[i] )
-				{
-					int j;
-					for ( j = 0;
-						j < remove_argc && is_good_arg; ++j )
-					{
-						if ( remove_argv[j] )
-						{
-							size_t arg_len =
-								strlen( remove_argv[j] );
-							is_good_arg = strncmp( argv[i],
-								remove_argv[j], arg_len );
-						}
-					}
-				}
-
-				if ( is_good_arg )
-				{
-					good_argv[good_argc] = argv[i];
-					++good_argc;
-				}
-			}
-
-			if ( ( *service_function )( good_argc, good_argv ) == EXIT_SUCCESS )
-				result = OS_STATUS_SUCCESS;
-
-			free( good_argv );
-		}
-	}
-	return result;
-}
-
-os_status_t os_service_install(
-	const char *UNUSED(id),
-	const char *UNUSED(executable),
-	const char *UNUSED(args),
-	const char *UNUSED(name),
-	const char *UNUSED(description),
-	const char *UNUSED(dependencies),
-	os_millisecond_t UNUSED(timeout)
-)
-{
-	return OS_STATUS_NOT_SUPPORTED;
-}
-
-os_status_t os_service_uninstall(
-	const char *UNUSED(id),
-	os_millisecond_t UNUSED(timeout)
-)
-{
-	return OS_STATUS_NOT_SUPPORTED;
-}
-
-os_status_t os_service_start(
-	const char *id,
-	os_millisecond_t timeout
-)
-{
-	os_status_t result;
-	int exit_status;
-	char *out_buf[2u] = { NULL, NULL };
-	size_t out_len[2u] = { 0u, 0u };
-	char service_cmd[ 256u ];
-	snprintf( service_cmd, 255u, SERVICE_START_CMD, id );
-	service_cmd[ 255u ] = '\0';
-	result = os_system_run_wait( service_cmd, &exit_status,
-		out_buf, out_len, timeout );
-	if ( result == OS_STATUS_SUCCESS && exit_status != 0 )
-		result = OS_STATUS_FAILURE;
-	return result;
-}
-
-os_status_t os_service_stop(
-	const char *id,
-	const char *exe,
-	os_millisecond_t timeout
-)
-{
-	os_status_t result;
-	int exit_status;
-	char *out_buf[2u] = { NULL, NULL };
-	size_t out_len[2u] = { 0u, 0u };
-	char service_cmd[ 256u ];
-
-	if ( !exe )
-		exe = id;
-
-	/* if the service is not installed or not running, skip stop */
-#	ifndef __ANDROID__
-	snprintf( service_cmd, 255u, SERVICE_STATUS_CMD, id );
-#	else
-	snprintf( service_cmd, 255u, SERVICE_STATUS_CMD, exe );
-#	endif
-	service_cmd[ 255u ] = '\0';
-	result = os_system_run_wait( service_cmd, &exit_status,
-		out_buf, out_len, timeout );
-	if ( result == OS_STATUS_SUCCESS && exit_status != 0 )
-		result = OS_STATUS_NOT_FOUND;
-	if ( result != OS_STATUS_NOT_FOUND )
-	{
-		snprintf( service_cmd, 255u, SERVICE_STOP_CMD, id );
-		service_cmd[ 255u ] = '\0';
-		result = os_system_run_wait( service_cmd, &exit_status,
-			out_buf, out_len, timeout );
-		if ( result == OS_STATUS_SUCCESS && exit_status != 0 )
-			result = OS_STATUS_FAILURE;
-	}
-	return result;
-}
-
-os_status_t os_service_query(
-	const char *id,
-	os_millisecond_t timeout
-)
-{
-	size_t i;
-	os_status_t result = OS_STATUS_SUCCESS;
-
-#	ifndef __ANDROID__
-	const char *status_cmds[] = { "show", "is-active", "is-failed" };
-	const char *operation_cmd = "systemctl %s %s";
-#	else /* __ANDROID__ */
-	const char *status_cmds[] = { "ps | grep" };
-	const char *operation_cmd = "%s %s";
-#	endif /* __ANDROID__ */
-	for ( i = 0u; result == OS_STATUS_SUCCESS &&
-		i < sizeof( status_cmds ) / sizeof( const char * ); ++i )
-	{
-		int exit_status = 0;
-		char *out_buf[2u] = { NULL, NULL };
-		size_t out_len[2u] = { 0u, 0u };
-		char service_cmd[ 256u ];
-		snprintf( service_cmd, 255u, operation_cmd,
-			status_cmds[i], id );
-		service_cmd[ 255u ] = '\0';
-		result = os_system_run_wait( service_cmd, &exit_status,
-			out_buf, out_len, timeout );
-#	ifndef __ANDROID__
-		if ( result == OS_STATUS_SUCCESS )
-		{
-			/* is-failed returns 0 if it's failed */
-			if ( ( exit_status != 0 && i != 2u ) ||
-			     ( exit_status == 0 && i == 2u ) )
-				result = OS_STATUS_FAILURE;
-		}
-
-		if ( result == OS_STATUS_FAILURE )
-		{
-			if ( i == 0u )
-				result = OS_STATUS_NOT_FOUND;
-			else if ( i == 1u )
-				result = OS_STATUS_NOT_INITIALIZED;
-		}
-#	else /* __ANDROID__ */
-		if ( result != OS_STATUS_SUCCESS || exit_status != 0 )
-			result = OS_STATUS_NOT_INITIALIZED;
-#	endif /* __ANDROID__ */
-	}
-	return result;
-}
-
-#ifndef __ANDROID__
-os_status_t os_service_restart(
-	const char *id,
-	const char *exe,
-	os_millisecond_t timeout
-)
-{
-	os_status_t result;
-	int exit_status;
-	char service_cmd[ 256u ];
-	
-	char *out_buf[2u] = { NULL, NULL };
-	size_t out_len[2u] = { 0u, 0u };
-	(void)exe,
-	snprintf( service_cmd, 255u, COMMAND_PREFIX "systemctl restart %s", id );
-	service_cmd[ 255u ] = '\0';
-	result = os_system_run_wait( service_cmd, &exit_status,
-		out_buf, out_len, timeout );
-
-	if ( result == OS_STATUS_SUCCESS && exit_status != 0 )
-		result = OS_STATUS_FAILURE;
-	return result;
-}
-#endif /* __ANDROID__ */
-
 /* socket functions */
 int os_get_host_address(
 	const char *host,
@@ -1371,40 +1347,50 @@ int os_get_host_address(
 
 os_status_t os_socket_accept(
 	const os_socket_t *socket,
-	os_socket_t *out,
+	os_socket_t **out,
 	os_millisecond_t max_time_out )
 {
 	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( socket && out )
 	{
-		result = OS_STATUS_FAILURE;
-		if ( socket->fd != OS_SOCKET_INVALID )
+		os_socket_t *s = malloc( sizeof( struct os_socket ) );
+		result = OS_STATUS_NO_MEMORY;
+		if ( s )
 		{
-			int select_result = 1;
-			if ( max_time_out > 0u )
+			result = OS_STATUS_FAILURE;
+			if ( socket->fd != OS_SOCKET_INVALID )
 			{
-				struct timeval ts;
-				fd_set rfds;
+				int select_result = 1;
+				if ( max_time_out > 0u )
+				{
+					struct timeval ts;
+					fd_set rfds;
 
-				ts.tv_sec = max_time_out / OS_MILLISECONDS_IN_SECOND;
-				ts.tv_usec = ( max_time_out % OS_MILLISECONDS_IN_SECOND ) *
-					OS_MICROSECONDS_IN_MILLISECOND;
+					ts.tv_sec = max_time_out / OS_MILLISECONDS_IN_SECOND;
+					ts.tv_usec = ( max_time_out % OS_MILLISECONDS_IN_SECOND ) *
+						OS_MICROSECONDS_IN_MILLISECOND;
 
-				FD_ZERO( &rfds );
-				FD_SET( socket->fd, &rfds );
-				select_result = select( socket->fd + 1,
-					&rfds, NULL, NULL, &ts );
-				if ( select_result == 0 )
-					result = OS_STATUS_TIMED_OUT;
+					FD_ZERO( &rfds );
+					FD_SET( socket->fd, &rfds );
+					select_result = select( socket->fd + 1,
+						&rfds, NULL, NULL, &ts );
+					if ( select_result == 0 )
+						result = OS_STATUS_TIMED_OUT;
+				}
+				if ( select_result > 0 )
+				{
+					socklen_t sock_len = sizeof( struct sockaddr );
+					memcpy( s, socket, sizeof( struct os_socket ) );
+					s->fd = accept( socket->fd, &s->addr, &sock_len );
+					if ( s->fd != OS_SOCKET_INVALID )
+						result = OS_STATUS_SUCCESS;
+				}
 			}
-			if ( select_result > 0 )
-			{
-				socklen_t sock_len = sizeof( struct sockaddr );
-				memcpy( out, socket, sizeof( os_socket_t ) );
-				out->fd = accept( socket->fd, &out->addr, &sock_len );
-				if ( out->fd != OS_SOCKET_INVALID )
-					result = OS_STATUS_SUCCESS;
-			}
+
+			if ( result == OS_STATUS_SUCCESS )
+				*out = s;
+			else
+				free( s );
 		}
 	}
 	return result;
@@ -1464,7 +1450,7 @@ os_status_t os_socket_close(
 		if ( socket->fd != OS_SOCKET_INVALID &&
 			close( socket->fd ) == 0 )
 		{
-			memset( socket, 0, sizeof( os_socket_t ) );
+			free( socket );
 			result = OS_STATUS_SUCCESS;
 		}
 	}
@@ -1492,7 +1478,7 @@ os_status_t os_socket_initialize( void )
 }
 
 os_status_t os_socket_open(
-	os_socket_t *out,
+	os_socket_t **out,
 	const char *address,
 	os_uint16_t port,
 	int type,
@@ -1504,59 +1490,70 @@ os_status_t os_socket_open(
 
 	if ( out && address && port > 0u )
 	{
-		/* cast to void* removes erroneous warning in clang */
-		void *const addr_ptr = &out->addr;
-		struct sockaddr_in  *const addr4 =
-			(struct sockaddr_in *)addr_ptr;
-		struct sockaddr_in6 *const addr6 =
-			(struct sockaddr_in6 *)addr_ptr;
-		result = OS_STATUS_FAILURE;
-		memset( out, 0, sizeof( os_socket_t ) );
-		if ( inet_pton( AF_INET, address,
-			&(addr4->sin_addr) ) == 1 )
+		os_socket_t *s = malloc( sizeof( os_socket_t ) );
+		result = OS_STATUS_NO_MEMORY;
+		*out = NULL;
+		if ( s )
 		{
-			addr4->sin_family = AF_INET;
-			addr4->sin_port = (in_port_t)htons( port );
-			result = OS_STATUS_SUCCESS;
-		}
-		else if ( inet_pton( AF_INET6, address,
-			&(addr6->sin6_addr) ) == 1 )
-		{
-			addr6->sin6_family = AF_INET6;
-			addr6->sin6_port = (in_port_t)htons( port );
-			result = OS_STATUS_SUCCESS;
-		}
-
-		if ( result == OS_STATUS_SUCCESS )
-		{
-			out->type = type;
-			out->protocol = protocol;
-			out->fd = socket( out->addr.sa_family, type,
-				protocol );
-			while ( out->fd == OS_SOCKET_INVALID &&
-				errno == EAGAIN &&
-				( max_time_out == 0u || time_elapsed < max_time_out ) )
+			/* cast to void* removes erroneous warning in clang */
+			void *const addr_ptr = &s->addr;
+			struct sockaddr_in  *const addr4 =
+				(struct sockaddr_in *)addr_ptr;
+			struct sockaddr_in6 *const addr6 =
+				(struct sockaddr_in6 *)addr_ptr;
+			result = OS_STATUS_FAILURE;
+			memset( s, 0, sizeof( os_socket_t ) );
+			if ( inet_pton( AF_INET, address,
+				&(addr4->sin_addr) ) == 1 )
 			{
-				struct timeval ts;
-
-				os_millisecond_t wait_time = 2000u;
-				if ( max_time_out > 0u && max_time_out - time_elapsed <  wait_time )
-					wait_time = max_time_out - time_elapsed;
-				ts.tv_sec = wait_time / OS_MILLISECONDS_IN_SECOND;
-				ts.tv_usec = ( wait_time % OS_MILLISECONDS_IN_SECOND ) *
-					OS_MICROSECONDS_IN_MILLISECOND;
-
-				/* keep trying to obtain a socket until one if available,
-				 * this condition may be hit when running in a service, and
-				 * the client application is started before network services
-				 * are available */
-				select( 0, NULL, NULL, NULL, &ts );
-				out->fd = socket( out->addr.sa_family,
-					type, protocol );
+				addr4->sin_family = AF_INET;
+				addr4->sin_port = (in_port_t)htons( port );
+				result = OS_STATUS_SUCCESS;
+			}
+			else if ( inet_pton( AF_INET6, address,
+				&(addr6->sin6_addr) ) == 1 )
+			{
+				addr6->sin6_family = AF_INET6;
+				addr6->sin6_port = (in_port_t)htons( port );
+				result = OS_STATUS_SUCCESS;
 			}
 
-			if ( out->fd == OS_SOCKET_INVALID )
-				result = OS_STATUS_TIMED_OUT;
+			if ( result == OS_STATUS_SUCCESS )
+			{
+				s->type = type;
+				s->protocol = protocol;
+				s->fd = socket( s->addr.sa_family, type,
+					protocol );
+				while ( s->fd == OS_SOCKET_INVALID &&
+					errno == EAGAIN &&
+					( max_time_out == 0u || time_elapsed < max_time_out ) )
+				{
+					struct timeval ts;
+
+					os_millisecond_t wait_time = 2000u;
+					if ( max_time_out > 0u && max_time_out - time_elapsed <  wait_time )
+						wait_time = max_time_out - time_elapsed;
+					ts.tv_sec = wait_time / OS_MILLISECONDS_IN_SECOND;
+					ts.tv_usec = ( wait_time % OS_MILLISECONDS_IN_SECOND ) *
+						OS_MICROSECONDS_IN_MILLISECOND;
+
+					/* keep trying to obtain a socket until one if available,
+					 * this condition may be hit when running in a service, and
+					 * the client application is started before network services
+					 * are available */
+					select( 0, NULL, NULL, NULL, &ts );
+					s->fd = socket( s->addr.sa_family,
+						type, protocol );
+				}
+
+				if ( s->fd == OS_SOCKET_INVALID )
+					result = OS_STATUS_TIMED_OUT;
+			}
+
+			if ( result == OS_STATUS_SUCCESS )
+				*out = s;
+			else
+				free( s );
 		}
 	}
 	return result;
@@ -1802,6 +1799,96 @@ os_status_t os_stream_echo_set(
 	return result;
 }
 
+#if OSAL_WRAP
+char *os_strchr(
+	const char *s,
+	char c )
+{
+	return strchr( s, (int)c );
+}
+
+int os_strcmp(
+	const char *s1,
+	const char *s2
+)
+{
+	return strcmp( s1, s2 );
+}
+
+size_t os_strlen(
+	const char *s )
+{
+	return strlen( s );
+}
+
+int os_strncmp(
+	const char *s1,
+	const char *s2,
+	size_t len
+)
+{
+	return strncmp( s1, s2, len );
+}
+
+char *os_strncpy(
+	char *destination,
+	const char *source,
+	size_t num )
+{
+	return strncpy( destination, source, num );
+}
+
+char *os_strpbrk(
+	const char *str1,
+	const char *str2 )
+{
+	return strpbrk( str1, str2 );
+}
+
+char *os_strrchr(
+	const char *s,
+	char c )
+{
+	return strrchr( s, (int)c );
+}
+
+char *os_strstr(
+	const char *str1,
+	const char *str2 )
+{
+	return strstr( str1, str2 );
+}
+
+double os_strtod(
+	const char *str,
+	char **endptr )
+{
+	return strtod( str, endptr );
+}
+
+long os_strtol(
+	const char *str,
+	char **endptr )
+{
+	return strtol( str, endptr, 10 );
+}
+
+unsigned long os_strtoul(
+	const char *str,
+	char **endptr )
+{
+	return strtoul( str, endptr, 10 );
+}
+#endif /* if defined( OSAL_WRAP ) */
+
+#if OSAL_WRAP
+/* operating system specific */
+int os_system_error_last( void )
+{
+	return errno;
+}
+#endif /* if OSAL_WRAP */
+
 const char *os_system_error_string(
 	int error_number )
 {
@@ -1920,6 +2007,13 @@ os_status_t os_system_info(
 	return result;
 }
 
+#if OSAL_WRAP
+os_uint32_t os_system_pid( void )
+{
+	return (os_uint32_t)getpid();
+}
+#endif /* if OSAL_WRAP */
+
 os_status_t os_system_run(
 	const char *command,
 	int *exit_status,
@@ -1956,7 +2050,7 @@ os_status_t os_system_run(
 			for ( i = 0u; i < 2u; ++i )
 				dup2( command_output_fd[i], output_fd[i] );
 
-			execl( OS_COMMAND_SH , command, (char *)NULL );
+			execl( OS_COMMAND_SH, command, (char *)NULL );
 
 			/* Process failed to be replaced, return failure */
 			exit( errno );
@@ -2088,13 +2182,12 @@ os_status_t os_system_shutdown(
 	os_file_t out_files[2] = { NULL, NULL };
 
 	if ( reboot == OS_FALSE )
-		os_snprintf( cmd, PATH_MAX, "%s %d", SERVICE_SHUTDOWN_CMD, delay );
+		os_snprintf( cmd, PATH_MAX, "%s %d", OS_SHUTDOWN_CMD, delay );
 	else
-		os_snprintf( cmd, PATH_MAX, "%s %d", SERVICE_REBOOT_CMD, delay );
+		os_snprintf( cmd, PATH_MAX, "%s %d", OS_REBOOT_CMD, delay );
 
 	return os_system_run( cmd, NULL, out_files );
 }
-
 
 os_bool_t os_terminal_vt100_support(
 	os_file_t stream
@@ -2225,7 +2318,7 @@ os_status_t os_time_sleep(
 }
 
 /* threads & lock support */
-#ifndef NO_THREAD_SUPPORT
+#if OSAL_THREAD_SUPPORT
 os_status_t os_thread_condition_broadcast(
 	os_thread_condition_t *cond )
 {
@@ -2317,6 +2410,15 @@ os_status_t os_thread_condition_timed_wait(
 	}
 	return result;
 }
+
+#if OSAL_WRAP
+os_status_t os_thread_condition_wait(
+	os_thread_condition_t *cond,
+	os_thread_mutex_t *lock )
+{
+	return os_thread_condition_timed_wait( cond, lock, 0u );
+}
+#endif /* if OSAL_WRAP */
 
 os_status_t os_thread_create(
 	os_thread_t *thread,
@@ -2490,7 +2592,7 @@ os_status_t os_thread_rwlock_destroy(
 	}
 	return result;
 }
-#endif /* ifndef NO_THREAD_SUPPORT */
+#endif /* if OSAL_THREAD_SUPPORT */
 
 /* uuid support */
 os_status_t os_uuid_generate(
@@ -2499,7 +2601,9 @@ os_status_t os_uuid_generate(
 	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( uuid )
 	{
-		uuid_generate( *uuid );
+		uuid_t out;
+		uuid_generate( out );
+		memcpy( uuid, &out, sizeof( os_uuid_t ) );
 		result = OS_STATUS_SUCCESS;
 	}
 	return result;
@@ -2516,9 +2620,12 @@ os_status_t os_uuid_to_string_lower(
 		result = OS_STATUS_NO_MEMORY;
 		if ( len >= 36u )
 		{
-			uuid_unparse_lower( *uuid, dest );
+			uuid_t in;
+			memcpy( &in, uuid, sizeof( uuid_t ) );
+			uuid_unparse_lower( in, dest );
 			result = OS_STATUS_SUCCESS;
 		}
 	}
 	return result;
 }
+

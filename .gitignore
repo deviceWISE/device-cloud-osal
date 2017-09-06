@@ -10,8 +10,12 @@ Doxyfile
 footer.html
 Makefile
 os.h
+out/
 *.a
 *.gch
 *.o
+*.sln
 *.so
 *.so.*
+*.swp
+*.vcxproj*

@@ -1,30 +1,9 @@
-/**
- * @file
- * @brief header file declaring types for Windows systems
- *
- * @copyright Copyright (C) 2016-2017 Wind River Systems, Inc. All Rights Reserved.
- *
- * @license The right to copy, distribute or otherwise make use of this software
- * may be licensed only pursuant to the terms of an applicable Wind River
- * license agreement.  No license to Wind River intellectual property rights is
- * granted herein.  All rights not licensed by Wind River are reserved by Wind
- * River.
- */
-#ifndef OS_WIN32_H
-#define OS_WIN32_H
-
-#ifndef OS_H
-#error "This file must be included only by os_.h"
-#endif /* ifndef OS_H */
-
 /** @brief Don't support advanced Windows kernel calls */
 #define WIN32_LEAN_AND_MEAN
 #pragma warning( push, 1 )
-#include <Windows.h>
-#include <Winsock2.h>
-#include <wincrypt.h>
+#	include <Windows.h>
 
-#include <rpc.h>        /* for uuid functions */
+#	include <rpc.h>        /* for uuid functions */
 	/** @brief Universally unique id type */
 	typedef struct _GUID os_uuid_t;
 #pragma warning( pop )
@@ -52,48 +31,63 @@
 #define ssize_t SSIZE_T
 #endif
 /** @brief Socket port type */
-typedef u_short in_port_t;
+typedef USHORT in_port_t;
 
+/**
+ * @brief Directory seperator character
+ */
+#define OS_DIR_SEP                     '\\'
 /**
  * @brief Character used to split environment variables
  */
-#define OS_ENV_SPLIT               ';'
-
+#define OS_ENV_SPLIT                   ';'
 /**
  * @brief Character sequence for a line break
  */
-#define OS_FILE_LINE_BREAK         "\r\n"
+#define OS_FILE_LINE_BREAK             "\r\n"
 /**
  * @brief Seek from start of file
  * @see os_file_fseek
  */
-#define OS_FILE_SEEK_START         FILE_BEGIN
+#define OS_FILE_SEEK_START             FILE_BEGIN
 /**
  * @brief Seek from current position in file
  * @see os_file_fseek
  */
-#define OS_FILE_SEEK_CURRENT       FILE_CURRENT
+#define OS_FILE_SEEK_CURRENT           FILE_CURRENT
 /**
  * @brief Seek from end of file
  * @see os_file_fseek
  */
-#define OS_FILE_SEEK_END           FILE_END
+#define OS_FILE_SEEK_END               FILE_END
 /**
  * @brief Null device, used to discard data
  */
-#define OS_NULL_DEVICE             "NUL"
+#define OS_NULL_DEVICE                 "NUL"
 /**
  * @brief Invalid socket symbol
  */
-#define OS_SOCKET_INVALID INVALID_SOCKET
+#define OS_SOCKET_INVALID              INVALID_SOCKET
+
+#if OSAL_THREAD_SUPPORT
 /**
  * @brief Symbol to use when thread linking
  */
-#define OS_THREAD_LINK   __stdcall
+#define OS_THREAD_LINK                 __stdcall
 /**
  * @brief Return type for a thread main function
  */
-#define OS_THREAD_RETURN DWORD
+#define OS_THREAD_RETURN               DWORD
+/**
+ * @brief Symbol to correct declare a thread on all platforms
+ */
+#define OS_THREAD_DECL OS_THREAD_RETURN OS_THREAD_LINK
+/**
+ * @brief Type defining the starting point for a thread
+ */
+typedef OS_THREAD_RETURN
+	(OS_THREAD_LINK *os_thread_main_t)( void *arg );
+#endif /* if OSAL_THREAD_SUPPORT */
 
 /**
  * @brief Handle to an open file
@@ -102,89 +96,143 @@ typedef HANDLE os_file_t;
 /**
  * @brief Defines type for invalid file handle
  */
-#define OS_FILE_INVALID  INVALID_HANDLE_VALUE
+#define OS_FILE_INVALID                INVALID_HANDLE_VALUE
 /**
  * @brief Defines the symbol for standard error
  */
-#define OS_STDERR        GetStdHandle( STD_ERROR_HANDLE )
+#define OS_STDERR                      GetStdHandle( STD_ERROR_HANDLE )
 /**
  * @brief Defines the symbol for standard in
  */
-#define OS_STDIN         GetStdHandle( STD_INPUT_HANDLE )
+#define OS_STDIN                       GetStdHandle( STD_INPUT_HANDLE )
 /**
  * @brief Defines the symbol for standard out
  */
-#define OS_STDOUT        GetStdHandle( STD_OUTPUT_HANDLE )
+#define OS_STDOUT                      GetStdHandle( STD_OUTPUT_HANDLE )
 
-#pragma warning( push, 1 )
-#include <iphlpapi.h>
-#include <strsafe.h>
-#include <ws2tcpip.h>
-#pragma warning( pop )
-	/**
-	 * @def PATH_MAX
-	 * @brief Maximum path length
-	 */
-#	ifndef PATH_MAX
-#		define PATH_MAX 4096
-#	endif /* ifndef PATH_MAX */
+/**
+ * @def PATH_MAX
+ * @brief Maximum path length
+ */
+#ifndef PATH_MAX
+#	define PATH_MAX 4096
+#endif /* ifndef PATH_MAX */
 
-	/**
-	 * @brief Structure holding internal adapter list
-	 */
-	typedef struct os_adapters
-	{
-		/** @brief Current adapter */
-		IP_ADAPTER_ADDRESSES *adapter_current;
-		/** @brief First adapter */
-		IP_ADAPTER_ADDRESSES *adapter_first;
-		/** @brief Current unicast address */
-		IP_ADAPTER_UNICAST_ADDRESS *current;
-	} os_adapters_t;
+/**
+ * @brief Handle to an open dynamically-linked library
+ */
+typedef HMODULE os_lib_handle;
 
-	/**
-	 * @brief Directory seperator character
-	 */
-#	define OS_DIR_SEP '\\'
-	/**
-	 * @brief Structure holding directory list information
-	 */
-	typedef struct os_dir
-	{
-		/** @brief Handle to the open directory */
-		HANDLE dir;
-		/** @brief Last error result */
-		os_status_t last_result;
-		/** @brief Currently found file within the directory */
-		WIN32_FIND_DATA wfd;
-		/** @brief Path to the directory */
-		char path[PATH_MAX];
-	} os_dir_t;
-
-	/**
-	 * @brief Handle to an open dynamically-linked library
-	 */
-	typedef HMODULE os_lib_handle;
-
-	/**
-	 * @brief Handle to a thread
-	 */
-	typedef HANDLE os_thread_t;
-	/**
-	 * @brief Thread condition lock
-	 */
-	typedef CONDITION_VARIABLE os_thread_condition_t;
-	/**
-	 * @brief Thread mutually exclusive (mutex) lock
-	 */
-	typedef CRITICAL_SECTION os_thread_mutex_t;
-	/**
-	 * @brief Thread read/write lock
-	 */
-	typedef SRWLOCK os_thread_rwlock_t;
+/**
+ * @brief Handle to a thread
+ */
+typedef HANDLE os_thread_t;
+/**
+ * @brief Thread condition lock
+ */
+typedef CONDITION_VARIABLE os_thread_condition_t;
+/**
+ * @brief Thread mutually exclusive (mutex) lock
+ */
+typedef CRITICAL_SECTION os_thread_mutex_t;
+/**
+ * @brief Thread read/write lock
+ */
+typedef SRWLOCK os_thread_rwlock_t;
 
 
 /* memory functions */
+/**
+ * @brief Allocates memory for an array of elements
+ *
+ * The memory returned is NOT initialized. Any allocated memory should be
+ * deallocated with the corrosponding @p os_free command
+ *
+ * @note Specifying either 0 elements or elements with a size of 0 may return a
+ *       valid memory pointer (that can be later freed) or NULL
+ *
+ * @param[in]      num                 number of elements to allocate memory for
+ * @param[in]      size                size of each element in bytes
+ *
+ * @retval NULL    the specified amount of memory is not continously available
+ * @retval !NULL   a pointer to the allocated memory
+ *
+ * @see os_free
+ * @see os_free_null
+ * @see os_malloc
+ * @see os_realloc
+ */
+#if !OSAL_WRAP
+#define os_calloc( num, size )         HeapAlloc( GetProcessHeap(), 0, num * size )
+#else
+OS_API void *os_calloc(
+	size_t nmemb,
+	size_t size
+);
+#endif
+
+/**
+ * @brief Frees previously allocated memory
+ *
+ * @param[in]      ptr                 pointer to the allocated memory to free
+ *
+ * @warning @c ptr is not checked for NULL prior to deallocation
+ *
+ * @see os_calloc
+ * @see os_free_null
+ * @see os_malloc
+ * @see os_realloc
+ */
+#if !OSAL_WRAP
+#define os_free( ptr )                 HeapFree( GetProcessHeap(), 0, ptr );
+#else
+OS_API void os_free(
+	void *ptr
+);
+#endif
+
+/**
+ * @brief Frees previously allocated memory specified
+ *
+ * @param[in]      ptr                 pointer of pointer to the allocated
+ *                                     memory to free
+ *
+ * @see os_calloc
+ * @see os_free
+ * @see os_malloc
+ * @see os_realloc
+ */
+#if !OSAL_WRAP
+#define os_free_null(ptr)              { if ( *ptr ) HeapFree( GetProcessHeap(), 0, *ptr ); *ptr = NULL; }
+#else
+OS_API void os_free_null(
+	void **ptr
+);
+#endif
+
+/**
+ * @brief Allocates the specified amount of bytes
+ *
+ * The memory returned is NOT initialized. Any allocated memory should be
+ * deallocated with the corrosponding @p os_free command
+ *
+ * @param[in]      size                amount of memory to allocate
+ *
+ * @retval NULL    the specified amount of memory is not continously available
+ * @retval !NULL   a pointer to the allocated memory
+ *
+ * @see os_calloc
+ * @see os_free
+ * @see os_realloc
+ */
+#if !OSAL_WRAP
+#define os_malloc(size)                HeapAlloc( GetProcessHeap(), 0, size );
+#else
+OS_API void *os_malloc(
+	size_t size
+);
+#endif
+
 /**
  * @brief Change the size of an allocated memory block
  *
@@ -207,42 +255,10 @@ typedef HANDLE os_file_t;
  * @see os_free
  * @see os_malloc
  */
-OS_API OS_SECTION void *os_realloc(
+OS_API void *os_realloc(
 	void *ptr,
 	size_t size
-) __attribute__((malloc));
-
-/**
- * @brief Frees previously allocated memory specified
- *
- * @param[in]      ptr            pointer of pointer to the allocated memory to free
- *
- * @see os_calloc
- * @see os_malloc
- * @see os_realloc
- */
-OS_API OS_SECTION void os_free(
-	void **ptr
 );
-
-/**
- * @brief Allocates the specified amount of bytes
- *
- * The memory returned is NOT initialized. Any allocated memory should be
- * deallocated with the corrosponding @p os_free command
- *
- * @param[in]      size                amount of memory to allocate
- *
- * @retval NULL    the specified amount of memory is not continously available
- * @retval !NULL   a pointer to the allocated memory
- *
- * @see os_calloc
- * @see os_free
- * @see os_realloc
- */
-OS_API OS_SECTION void *os_malloc(
-	size_t size
-) __attribute__((malloc));
 
 /**
  * @brief Compares two strings
@@ -256,7 +272,7 @@ OS_API OS_SECTION void *os_malloc(
  * @retval         >0                  the first non-matching character has a
  *                                     higher value in s1 than in s2
  */
-OS_API OS_SECTION int os_strcmp(
+OS_API int os_strcmp(
 	const char *s1,
 	const char *s2
 );
@@ -268,7 +284,7 @@ OS_API OS_SECTION int os_strcmp(
  *
  * @return         Number of characters until a terminating null character
  */
-OS_API OS_SECTION size_t os_strlen(
+OS_API size_t os_strlen(
 	const char *s
 );
 
@@ -286,7 +302,7 @@ OS_API OS_SECTION size_t os_strlen(
  * @retval         >0                  the first non-matching character has a
  *                                     higher value in s1 than in s2
  */
-OS_API OS_SECTION int os_strncmp(
+OS_API int os_strncmp(
 	const char *s1,
 	const char *s2,
 	size_t len
@@ -301,7 +317,7 @@ OS_API OS_SECTION int os_strncmp(
  *
  * @retval         destination
  */
-OS_API OS_SECTION char *os_strncpy(
+OS_API char *os_strncpy(
 	char *destination,
 	const char *source,
 	size_t num
@@ -316,7 +332,7 @@ OS_API OS_SECTION char *os_strncpy(
  * @retval         !NULL               pointer to last occurance of c in s
  * @retval         NULL                c was not found in s
  */
-OS_API OS_SECTION char *os_strrchr(
+OS_API char *os_strrchr(
 	const char *s,
 	char c
 );
@@ -326,7 +342,7 @@ OS_API OS_SECTION char *os_strrchr(
  *
  * @return the process id of the current process
  */
-OS_API OS_SECTION os_uint32_t os_system_pid( void );
+OS_API os_uint32_t os_system_pid( void );
 
 /**
  * @brief Writes output to an open file stream
@@ -341,7 +357,7 @@ OS_API OS_SECTION os_uint32_t os_system_pid( void );
  * @see os_sprintf
  * @see os_vfprintf
  */
-OS_API OS_SECTION int os_fprintf(
+OS_API int os_fprintf(
 	os_file_t stream,
 	const char *format,
 	...
@@ -357,7 +373,7 @@ OS_API OS_SECTION int os_fprintf(
  * @see os_fprintf
  * @see os_sprintf
  */
-OS_API OS_SECTION int os_printf(
+OS_API int os_printf(
 	const char *format,
 	...
 ) __attribute__((format(printf,1,2)));
@@ -375,7 +391,7 @@ OS_API OS_SECTION int os_printf(
  * @see os_sprintf
  * @see os_vsnprintf
  */
-OS_API OS_SECTION int os_snprintf(
+OS_API int os_snprintf(
 	char *str,
 	size_t size,
 	const char *format,
@@ -395,7 +411,7 @@ OS_API OS_SECTION int os_snprintf(
  * @see os_sprintf
  * @see os_vsnprintf
  */
-OS_API OS_SECTION int os_vfprintf(
+OS_API int os_vfprintf(
 	os_file_t stream,
 	const char *format,
 	va_list args
@@ -414,7 +430,7 @@ OS_API OS_SECTION int os_vfprintf(
  * @see os_snprintf
  * @see os_vfprintf
  */
-OS_API OS_SECTION int os_vsnprintf(
+OS_API int os_vsnprintf(
 	char *str,
 	size_t size,
 	const char *format,
@@ -435,7 +451,7 @@ OS_API OS_SECTION int os_vsnprintf(
  *
  * @see os_file_fputs
  */
-OS_API OS_SECTION char *os_file_gets(
+OS_API char *os_file_gets(
 	char *str,
 	size_t size,
 	os_file_t stream
@@ -453,7 +469,7 @@ OS_API OS_SECTION char *os_file_gets(
  *
  * @return         Number of items read
  */
-OS_API OS_SECTION size_t os_file_read(
+OS_API size_t os_file_read(
 	void *ptr,
 	size_t size,
 	size_t nmemb,
@@ -473,7 +489,7 @@ OS_API OS_SECTION size_t os_file_read(
  *
  * @see os_file_fgets
  */
-OS_API OS_SECTION size_t os_file_puts(
+OS_API size_t os_file_puts(
 	char *str,
 	os_file_t stream
 );
@@ -488,7 +504,7 @@ OS_API OS_SECTION size_t os_file_puts(
  *
  * @return         Number of items written
  */
-OS_API OS_SECTION size_t os_file_write(
+OS_API size_t os_file_write(
 	const void *ptr,
 	size_t size,
 	size_t nmemb,
@@ -502,7 +518,7 @@ OS_API OS_SECTION size_t os_file_write(
  *
  * @return the lower-case value of the character, or @p c if not possible
  */
-OS_API OS_SECTION char os_char_tolower(
+OS_API char os_char_tolower(
 	char c
 );
 
@@ -513,9 +529,27 @@ OS_API OS_SECTION char os_char_tolower(
  *
  * @return the upper-case value of the character, or @p c if not possible
  */
-OS_API OS_SECTION char os_char_toupper(
+OS_API char os_char_toupper(
 	char c
 );
+
+/**
+ * @brief Locate a substring
+ *
+ * @param[in]      str1                string to be searched
+ * @param[in]      str2                string to search for
+ *
+ * @retval         !NULL               pointer to the substring of str2 in str1
+ * @retval         NULL                no substring found
+ */
+#if !OSAL_WRAP
+#define os_strstr(str1, str2)                  StrStr(str1, str2)
+#else
+OS_API char *os_strstr(
+	const char *str1,
+	const char *str2
+);
+#endif
 
 /**
  * @brief Parse a string to retrieve a double
@@ -525,7 +559,7 @@ OS_API OS_SECTION char os_char_toupper(
  *                                     immediately following double in string
  * @return value of double parsed
  */
-OS_API OS_SECTION double os_strtod(
+OS_API double os_strtod(
 	const char *str,
 	char **endptr
 );
@@ -540,7 +574,7 @@ OS_API OS_SECTION double os_strtod(
  *                                     immediately following long in string
  * @return value of long parsed
  */
-OS_API OS_SECTION long os_strtol(
+OS_API long os_strtol(
 	const char *str,
 	char **endptr
 );
@@ -554,7 +588,7 @@ OS_API OS_SECTION long os_strtol(
  *                                     string
  * @return value of unsigned long parsed
  */
-OS_API OS_SECTION unsigned long os_strtoul(
+OS_API unsigned long os_strtoul(
 	const char *str,
 	char **endptr
 );
@@ -569,10 +603,393 @@ OS_API OS_SECTION unsigned long os_strtoul(
  *                                     one of the characters in str2 in str1
  * @retval         NULL                None of the characters in str2 appear
  */
-OS_API OS_SECTION char *os_strpbrk(
+OS_API char *os_strpbrk(
 	const char *str1,
 	const char *str2
 );
 
-#endif /* ifndef OS_WIN32_H */
+/**
+ * @brief Finds a function within an open runtime library
+ *
+ * @param[in]      lib                 open library handle
+ * @param[in]      function            function to find
+ *
+ * @retval NULL    no matching function found (or an error occurred)
+ * @retval !NULL   a pointer to the matching function
+ *
+ * @see os_library_close
+ * @see os_library_open
+ */
+#if !OSAL_WRAP
+#define os_library_find(lib, function)         GetProcAddress(lib, function)
+#else
+OS_API void *os_library_find(
+	os_lib_handle lib,
+	const char *function
+);
+#endif
 
+/**
+ * @brief Opens a runtime library
+ *
+ * @param[in]      path                library to open
+ *
+ * @return         os_lib_handle of the opened library
+ *
+ * @see os_library_close
+ * @see os_library_find
+ */
+#if !OSAL_WRAP
+#define os_library_open(path)                  LoadLibrary(path)
+#else
+OS_API os_lib_handle os_library_open(
+	const char *path
+);
+#endif
+
+/**
+ * @brief Copy a block of memory
+ *
+ * @warning The destination and source memory block must not overlap
+ *
+ * @param[out]     dst                 destination to write to
+ * @param[in]      src                 source block of memory
+ * @param[in]      len                 amount of data to copy
+ */
+#if !OSAL_WRAP
+#define os_memcpy(dst, src, len)               dst; CopyMemory(dst, src, len)
+#else
+OS_API void *os_memcpy(
+	void *dest,
+	const void *src,
+	size_t len
+);
+#endif
+
+/**
+ * @brief Moves a block of memory
+ *
+ * @param[out]     dst                 destination to write to
+ * @param[in]      src                 source block of memory
+ * @param[in]      len                 amount of data to move
+ */
+#if !OSAL_WRAP
+#define os_memmove(dst, src, len)              dst; MoveMemory(dst, src, len)
+#else
+OS_API void *os_memmove(
+	void *dest,
+	const void *src,
+	size_t len
+);
+#endif
+
+/**
+ * @brief Sets a block of memory to a specific byte
+ *
+ * @param[out]     dst                 destination to write to
+ * @param[in]      val                 byte to set
+ * @param[in]      len                 amount of data to set
+ */
+#if !OSAL_WRAP
+#define os_memset( dst, val, len )             FillMemory( ptr, len, val )
+#else
+OS_API void os_memset(
+	void *dest,
+	int c,
+	size_t len
+);
+#endif
+
+/**
+ * @brief Zeroizes block of memory
+ *
+ * @param[out]     dst                destination to write to
+ * @param[in]      len                amount of data to zeroize
+ */
+#if !OSAL_WRAP
+#define os_memzero(dst, len)                  ZeroMemory(dst, len)
+#else
+OS_API void os_memzero(
+	void *dest,
+	size_t len
+);
+#endif
+
+/**
+ * @brief Returns the operating system code for the last system error
+ *        encountered
+ *
+ * @return The operating system code for the last error encountered
+ */
+#if !OSAL_WRAP
+#define os_system_error_last()                 (int)GetLastError()
+#else
+OS_API int os_system_error_last( void );
+#endif
+
+#if OSAL_THREAD_SUPPORT
+/* thread support */
+/**
+ * @brief Wakes up all threads waiting on a condition variable
+ *
+ * @param[in,out]  cond                condition variable to wake up
+ *
+ * @retval OS_STATUS_BAD_PARAMETER     invalid parameter passed to function
+ * @retval OS_STATUS_FAILURE           function failed
+ * @retval OS_STATUS_SUCCESS           on success
+ */
+OS_API os_status_t os_thread_condition_broadcast(
+	os_thread_condition_t *cond
+);
+
+/**
+ * @brief Creates a new condition variable
+ *
+ * @param[in,out]  cond                newly created condition variable
+ *
+ * @retval OS_STATUS_BAD_PARAMETER     invalid parameter passed to function
+ * @retval OS_STATUS_FAILURE           function failed
+ * @retval OS_STATUS_SUCCESS           on success
+ */
+OS_API os_status_t os_thread_condition_create(
+	os_thread_condition_t *cond
+);
+
+/**
+ * @brief Destroys a previously created condition variable
+ *
+ * @param[in,out]  cond                previously created condition variable
+ *
+ * @retval OS_STATUS_BAD_PARAMETER     invalid parameter passed to function
+ * @retval OS_STATUS_FAILURE           function failed
+ * @retval OS_STATUS_SUCCESS           on success
+ */
+OS_API os_status_t os_thread_condition_destroy(
+	os_thread_condition_t *cond
+);
+
+/**
+ * @brief Signals a thread waiting on a condition variable to wake up
+ *
+ * @param[in,out]  cond                condition variable to signal
+ * @param[in,out]  lock                lock prototecting condition variable
+ *
+ * @retval OS_STATUS_BAD_PARAMETER     invalid parameter passed to function
+ * @retval OS_STATUS_FAILURE           function failed
+ * @retval OS_STATUS_SUCCESS           on success
+ */
+OS_API os_status_t os_thread_condition_signal(
+	os_thread_condition_t *cond,
+	os_thread_mutex_t *lock
+);
+
+/**
+ * @brief Waits a specified amount of time for a condition variable
+ *
+ * @param[in,out]  cond                condition variable to wait on
+ * @param[in,out]  lock                lock protecting condition variable
+ * @param[in]      max_time_out        maximum amount of time to wait
+ *
+ * @retval OS_STATUS_BAD_PARAMETER     invalid parameter passed to function
+ * @retval OS_STATUS_FAILURE           function failed
+ * @retval OS_STATUS_SUCCESS           on success
+ * @retval OS_STATUS_TIMED_OUT         maximum wait time reached
+ */
+OS_API os_status_t os_thread_condition_timed_wait(
+	os_thread_condition_t *cond,
+	os_thread_mutex_t *lock,
+	os_millisecond_t max_time_out
+);
+
+/**
+ * @brief Creates a new thread
+ *
+ * @param[in,out]  thread              newly created thread object
+ * @param[in]      main                main method to call for the thread
+ * @param[in]      arg                 user specific data
+ *
+ * @retval OS_STATUS_BAD_PARAMETER     invalid parameter passed to function
+ * @retval OS_STATUS_FAILURE           function failed
+ * @retval OS_STATUS_SUCCESS           on success
+ */
+OS_API os_status_t os_thread_create(
+	os_thread_t *thread,
+	os_thread_main_t main,
+	void *arg
+);
+
+/**
+ * @brief Destroys a previously created thread
+ *
+ * @param[in,out]  thread              thread object to destroy
+ *
+ * @retval OS_STATUS_BAD_PARAMETER     invalid parameter passed to function
+ * @retval OS_STATUS_FAILURE           function failed
+ * @retval OS_STATUS_SUCCESS           on success
+ */
+OS_API os_status_t os_thread_destroy(
+	os_thread_t *thread
+);
+
+/**
+ * @brief Creates a new mutally exclusive lock
+ *
+ * @param[in,out]  lock                newly created lock
+ *
+ * @retval OS_STATUS_BAD_PARAMETER     invalid parameter passed to function
+ * @retval OS_STATUS_FAILURE           function failed
+ * @retval OS_STATUS_SUCCESS           on success
+ */
+OS_API os_status_t os_thread_mutex_create(
+	os_thread_mutex_t *lock
+);
+
+/**
+ * @brief Destroys a mutally exclusive lock
+ *
+ * @param[in,out]  lock                previously created lock
+ *
+ * @retval OS_STATUS_BAD_PARAMETER     invalid parameter passed to function
+ * @retval OS_STATUS_FAILURE           function failed
+ * @retval OS_STATUS_SUCCESS           on success
+ */
+OS_API os_status_t os_thread_mutex_destroy(
+	os_thread_mutex_t *lock
+);
+
+/**
+ * @brief Obtains a mutally exclusive lock (waits until lock is available)
+ *
+ * @param[in,out]  lock                previously created lock
+ *
+ * @retval OS_STATUS_BAD_PARAMETER     invalid parameter passed to function
+ * @retval OS_STATUS_FAILURE           function failed
+ * @retval OS_STATUS_SUCCESS           on success
+ */
+OS_API os_status_t os_thread_mutex_lock(
+	os_thread_mutex_t *lock
+);
+
+/**
+ * @brief Releases a mutally exclusive lock
+ *
+ * @param[in,out]  lock                previously created lock
+ *
+ * @retval OS_STATUS_BAD_PARAMETER     invalid parameter passed to function
+ * @retval OS_STATUS_FAILURE           function failed
+ * @retval OS_STATUS_SUCCESS           on success
+ */
+OS_API os_status_t os_thread_mutex_unlock(
+	os_thread_mutex_t *lock
+);
+
+/**
+ * @brief Creates a new read/write lock
+ *
+ * @param[in,out]  lock                newly created lock
+ *
+ * @retval OS_STATUS_BAD_PARAMETER     invalid parameter passed to function
+ * @retval OS_STATUS_FAILURE           function failed
+ * @retval OS_STATUS_SUCCESS           on success
+ */
+OS_API os_status_t os_thread_rwlock_create(
+	os_thread_rwlock_t *lock
+);
+
+/**
+ * @brief Destroys a previously created read/write lock
+ *
+ * @param[in,out]  lock                previously created lock
+ *
+ * @retval OS_STATUS_BAD_PARAMETER     invalid parameter passed to function
+ * @retval OS_STATUS_FAILURE           function failed
+ * @retval OS_STATUS_SUCCESS           on success
+ */
+OS_API os_status_t os_thread_rwlock_destroy(
+	os_thread_rwlock_t *lock
+);
+
+/**
+ * @brief Obtains a read/write lock for reading
+ *
+ * @param[in,out]  lock                previously created lock
+ *
+ * @retval OS_STATUS_BAD_PARAMETER     invalid parameter passed to function
+ * @retval OS_STATUS_FAILURE           function failed
+ * @retval OS_STATUS_SUCCESS           on success
+ */
+OS_API os_status_t os_thread_rwlock_read_lock(
+	os_thread_rwlock_t *lock
+);
+
+/**
+ * @brief Releases read/write lock from reading
+ *
+ * @param[in,out]  lock                previously created lock
+ *
+ * @retval OS_STATUS_BAD_PARAMETER     invalid parameter passed to function
+ * @retval OS_STATUS_FAILURE           function failed
+ * @retval OS_STATUS_SUCCESS           on success
+ */
+OS_API os_status_t os_thread_rwlock_read_unlock(
+	os_thread_rwlock_t *lock
+);
+
+/**
+ * @brief Obtains a read/write lock for writing
+ *
+ * @param[in,out]  lock                previously created lock
+ *
+ * @retval OS_STATUS_BAD_PARAMETER     invalid parameter passed to function
+ * @retval OS_STATUS_FAILURE           function failed
+ * @retval OS_STATUS_SUCCESS           on success
+ */
+OS_API os_status_t os_thread_rwlock_write_lock(
+	os_thread_rwlock_t *lock
+);
+
+/**
+ * @brief Releases read/write lock from writing
+ *
+ * @param[in,out]  lock                previously created lock
+ *
+ * @retval OS_STATUS_BAD_PARAMETER     invalid parameter passed to function
+ * @retval OS_STATUS_FAILURE           function failed
+ * @retval OS_STATUS_SUCCESS           on success
+ */
+OS_API os_status_t os_thread_rwlock_write_unlock(
+	os_thread_rwlock_t *lock
+);
+
+/**
+ * @brief Waits for a thread to complete
+ *
+ * @param[in,out]  thread              thread object to wait on
+ *
+ * @retval OS_STATUS_BAD_PARAMETER     invalid parameter passed to function
+ * @retval OS_STATUS_FAILURE           function failed
+ * @retval OS_STATUS_SUCCESS           on success
+ */
+OS_API os_status_t os_thread_wait(
+	os_thread_t *thread
+);
+
+/**
+ * @brief Wait indefinitely on a condition variable
+ *
+ * @param[in,out]  cond                condition variable to wait on
+ * @param[in,out]  lock                mutex protecting condition variable
+ *
+ * @retval IOT_STATUS_BAD_PARAMETER    invalid parameter passed to function
+ * @retval IOT_STATUS_FAILURE          function failed
+ * @retval IOT_STATUS_SUCCESS          on success
+ */
+#if !OSAL_WRAP
+#define os_thread_condition_wait(cond, lock)   os_thread_condition_timed_wait( cond, lock, 0 )
+#else
+OS_API os_status_t os_thread_condition_wait(
+	os_thread_condition_t *cond,
+	os_thread_mutex_t *lock
+);
+#endif
+#endif /* if OSAL_THREAD_SUPPORT */

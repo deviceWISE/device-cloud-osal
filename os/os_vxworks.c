@@ -106,7 +106,7 @@ os_status_t os_stream_echo_set(
 	return 0;
 }
 
-/* NOTE: All API library clients share the pthread_attr structure. */ 
+/* NOTE: All API library clients share the pthread_attr structure. */
 static pthread_attr_t pthread_attr;
 static pthread_attr_t *pPthread_attr = NULL;
 
@@ -141,8 +141,8 @@ os_status_t os_thread_rwlock_create(
 	os_thread_rwlock_t *lock )
 {
 	SEM_ID semId;
-	os_status_t result = OS_STATUS_BAD_PARAMETER;      
-    
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
+
 	if ( lock )
 	{
 		result = OS_STATUS_FAILURE;
@@ -153,7 +153,7 @@ os_status_t os_thread_rwlock_create(
 			result = OS_STATUS_SUCCESS;
 		}
 	}
-    
+
 	return result;
 }
 
@@ -191,14 +191,14 @@ os_status_t os_thread_rwlock_write_lock(
 	os_thread_rwlock_t *lock )
 {
 	os_status_t result = OS_STATUS_BAD_PARAMETER;
-    
+
 	if ( lock )
 	{
 		result = OS_STATUS_FAILURE;
 		if ( OK == semWTake( *lock, WAIT_FOREVER ) )
 			result = OS_STATUS_SUCCESS;
 	}
-    
+
 	return result;
 }
 
@@ -206,14 +206,14 @@ os_status_t os_thread_rwlock_write_unlock(
 	os_thread_rwlock_t *lock )
 {
 	os_status_t result = OS_STATUS_BAD_PARAMETER;
-    
+
 	if ( lock )
 	{
 		result = OS_STATUS_FAILURE;
 		if (  OK == semGive( *lock ) )
 			result = OS_STATUS_SUCCESS;
 	}
-    
+
 	return result;
 }
 
@@ -272,7 +272,7 @@ os_status_t os_uuid_generate(
 		if ( uuid_s_ok == status )
 			result = OS_STATUS_SUCCESS;
 	}
-    
+
 	return result;
 }
 
@@ -283,7 +283,7 @@ os_status_t os_uuid_to_string_lower(
 {
 	uint32_t status;
 	os_status_t result = OS_STATUS_BAD_PARAMETER;
-    
+
 	if ( uuid && dest && ( len >= 37 ) )
         {
 		uuid_to_string( uuid, dest, &status );
@@ -295,7 +295,7 @@ os_status_t os_uuid_to_string_lower(
 
 os_uint32_t os_system_pid( void )
 {
-	/* 
+	/*
 	* VxWorks TASK_ID is a 64-bit pointer on a 64-bit host... We need to get the
 	* ID and convert it to a non-pointer and then cast to the return type to
 	* avoid a compiler warning.

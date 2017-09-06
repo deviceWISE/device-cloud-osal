@@ -11,7 +11,7 @@
  * River.
  */
 
-#include "os.h"
+#include "os_win_private.h"
 #pragma warning( push, 1 )
 #include <float.h>  /* for DBL_MAX */
 #include <signal.h> /* for SIGINT & SIGTERM */
@@ -32,7 +32,7 @@
 #define SECONDS_IN_MINUTE 60u
 
 /**
- * @brief Array used by os_time_stamp_to_datetime
+ * @brief Array used by os_time_stamp_to_date_time
  */
 static const unsigned short DAYS[4][12] =
 {
@@ -579,7 +579,7 @@ os_status_t os_directory_delete(
 									buf,
 									regex,
 									recursive );
-								os_free( (void **)&buf );
+								os_free_null( (void **)&buf );
 							}
 						}
 					} while ( result == OS_STATUS_SUCCESS &&
@@ -619,7 +619,7 @@ os_status_t os_directory_delete(
 								RemoveDirectory( buf );
 							else if ( !DeleteFile( buf ) )
 								result = OS_STATUS_FAILURE;
-							os_free( (void **)&buf );
+							os_free_null( (void **)&buf );
 						}
 					}
 				} while ( result == OS_STATUS_SUCCESS &&
@@ -661,11 +661,19 @@ os_status_t os_directory_rewind(
 	os_status_t result = OS_STATUS_FAILURE;
 	if( dir && dir->dir )
 	{
-		char path[PATH_MAX];
-		os_strncpy( path, dir->path, PATH_MAX );
-		os_directory_close( dir );
-		os_directory_open( path, dir );
-		result = OS_STATUS_SUCCESS;
+		HANDLE new_dir;
+		WIN32_FIND_DATA wfd;
+		char new_dir_path[ PATH_MAX + 1u ];
+		StringCchCopy( new_dir_path, PATH_MAX, dir->path );
+		StringCchCat( new_dir_path, PATH_MAX, "\\*" );
+		new_dir = FindFirstFile( new_dir_path, &wfd );
+		if ( new_dir != INVALID_HANDLE_VALUE )
+		{
+			FindClose( dir->dir );
+			dir->dir = new_dir;
+			CopyMemory( &dir->wfd, &wfd, sizeof( WIN32_FIND_DATA ) );
+			result = dir->last_result = OS_STATUS_SUCCESS;
+		}
 	}
 	return result;
 }
@@ -700,23 +708,27 @@ os_status_t os_directory_next(
 	return result;
 }
 
-os_status_t os_directory_open(
-	const char *dir_path,
-	os_dir_t* out )
+os_dir_t *os_directory_open(
+	const char *dir_path )
 {
-	os_status_t result = OS_STATUS_FAILURE;
+	os_dir_t *out = (os_dir_t*)os_malloc( sizeof( struct os_dir ) );
 	if ( dir_path && out )
 	{
-		char new_dir_path[ PATH_MAX + 1u];
+		char new_dir_path[ PATH_MAX + 1u ];
 		ZeroMemory( out, sizeof( os_dir_t ) );
-		StringCchCopy( out->path, PATH_MAX, dir_path );
+		out->path = dir_path;
 		StringCchCopy( new_dir_path, PATH_MAX, dir_path );
 		StringCchCat( new_dir_path, PATH_MAX, "\\*" );
 		out->dir = FindFirstFile( new_dir_path, &out->wfd );
-		if ( out->dir != INVALID_HANDLE_VALUE )
-			out->last_result = result = OS_STATUS_SUCCESS;
+		if ( out->dir == INVALID_HANDLE_VALUE )
+		{
+			os_free( out );
+			out = NULL;
+		}
+		else
+			out->last_result = OS_STATUS_SUCCESS;
 	}
-	return result;
+	return out;
 }
 
 os_uint64_t os_directory_free_space(
@@ -850,7 +862,7 @@ char *os_file_gets(
 						NULL, 1 );
 			}
 		}
-		os_free( (void **)&read );
+		os_free_null( (void **)&read );
 	}
 	if ( number_of_bytes_read == 0u )
 		str =  NULL;
@@ -1070,6 +1082,21 @@ os_status_t os_library_close(
 	return result;
 }
 
+#if OSAL_WRAP
+void *os_library_find(
+	os_lib_handle lib,
+	const char *function )
+{
+	return GetProcAddress( lib, function );
+}
+
+os_lib_handle os_library_open(
+	const char *path )
+{
+	return LoadLibrary( path );
+}
+#endif /* if OSAL_WRAP */
+
 int os_atoi( const char *str )
 {
 	int result = 0;
@@ -1200,6 +1227,15 @@ char *os_strrchr(
 	return result;
 }
 
+#if OSAL_WRAP
+char *os_strstr(
+	const char *str1,
+	const char *str2 )
+{
+	return StrStr( str1, str2 );
+}
+#endif /* if OSAL_WRAP */
+
 double os_strtod(
 	const char *str,
 	char **endptr )
@@ -1327,6 +1363,42 @@ int os_memcmp(
 		result = 1;
 	return result;
 }
+
+#if OSAL_WRAP
+void *os_memcpy(
+	void *dest,
+	const void *src,
+	size_t len )
+{
+	CopyMemory( dest, src, len );
+	return dest;
+}
+
+void *os_memmove(
+	void *dest,
+	const void *src,
+	size_t len )
+{
+	MoveMemory( dest, src, len );
+	return dest;
+}
+
+void os_memset(
+	void *dest,
+	int c,
+	size_t len )
+{
+	FillMemory( dest, len, c );
+}
+
+void os_memzero(
+	void *dest,
+	size_t len )
+{
+	ZeroMemory( dest, len );
+}
+#endif /* if OSAL_WRAP */
+
 
 /* print functions */
 int os_printf(
@@ -1483,7 +1555,7 @@ int os_vfprintf(
 			else
 				result = -1;
 		}
-		os_free( (void **)&buffer );
+		os_free_null( (void **)&buffer );
 	}
 	return result;
 }
@@ -1511,7 +1583,18 @@ os_bool_t os_flush( os_file_t stream )
 }
 
 /* memory functions */
-void os_free( void **ptr )
+#if OSAL_WRAP
+void *os_calloc( size_t nmemb, size_t size )
+{
+	return HeapAlloc( GetProcessHeap(), 0, nmemb * size );
+}
+
+void os_free( void *ptr )
+{
+	HeapFree( GetProcessHeap(), 0, ptr );
+}
+
+void os_free_null( void **ptr )
 {
 	if ( ptr && *ptr )
 	{
@@ -1524,6 +1607,7 @@ void *os_malloc( size_t size )
 {
 	return HeapAlloc( GetProcessHeap(), 0, size );
 }
+#endif /* OSAL_WRAP */
 
 void *os_realloc( void *ptr, size_t size )
 {
@@ -1627,6 +1711,7 @@ os_status_t os_service_run(
 	os_sighandler_t handler,
 	const char *logdir )
 {
+#define OS_NAME_MAX_LEN 255u
 	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( logdir )
 	{
@@ -1647,7 +1732,7 @@ os_status_t os_service_run(
 		if ( time_stamp > 0u && up_time == OS_FALSE )
 		{
 
-			result = os_time_stamp_to_datetime(
+			result = os_time_stamp_to_date_time(
 				&date_time, time_stamp );
 			if ( result == OS_STATUS_SUCCESS )
 			{
@@ -1764,9 +1849,9 @@ os_status_t os_service_run(
 					else
 					{
 						while ( SERVICE_MAIN_ARGC > 0 )
-							os_free( (void **)&SERVICE_MAIN_ARGV[SERVICE_MAIN_ARGC - 1] );
-						os_free( (void **)&SERVICE_MAIN_ARGV );
-						os_free( (void **)&SERVICE_KEY );
+							os_free_null( (void **)&SERVICE_MAIN_ARGV[SERVICE_MAIN_ARGC - 1] );
+						os_free_null( (void **)&SERVICE_MAIN_ARGV );
+						os_free_null( (void **)&SERVICE_KEY );
 					}
 				}
 			}
@@ -1873,14 +1958,14 @@ void WINAPI os_service_main( DWORD argc, LPTSTR *argv )
 		{
 			int i;
 			for ( i = 0; i < SERVICE_MAIN_ARGC; ++i )
-				os_free( (void **)&SERVICE_MAIN_ARGV[i] );
-			os_free( (void **)&SERVICE_MAIN_ARGV );
+				os_free_null( (void **)&SERVICE_MAIN_ARGV[i] );
+			os_free_null( (void **)&SERVICE_MAIN_ARGV );
 		}
 
 		if ( LOG_HANDLE)
 			os_file_close( LOG_HANDLE );
 
-		os_free( (void **)&SERVICE_KEY );
+		os_free_null( (void **)&SERVICE_KEY );
 		SERVICE_MAIN = NULL;
 	}
 }
@@ -2009,7 +2094,7 @@ os_status_t os_service_install(
 							if ( !ChangeServiceConfig2( sc_service,
 								SERVICE_CONFIG_DESCRIPTION, &sd ) )
 								result = OS_STATUS_FAILURE;
-							os_free( (void**)&desc_heap );
+							os_free_null( (void**)&desc_heap );
 						}
 						else
 							result = OS_STATUS_NO_MEMORY;
@@ -2069,7 +2154,7 @@ os_status_t os_service_install(
 								&sfaf ) )
 							result = OS_STATUS_FAILURE;
 
-						os_free( (void**)&sfa.lpsaActions );
+						os_free_null( (void**)&sfa.lpsaActions );
 					}
 
 					/* on failure, delete the service */
@@ -2410,41 +2495,51 @@ int os_get_host_address(
 
 os_status_t os_socket_accept(
 	const os_socket_t *socket,
-	os_socket_t *out,
+	os_socket_t **out,
 	os_millisecond_t max_time_out )
 {
 	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( socket && out )
 	{
-		result = OS_STATUS_FAILURE;
-		if ( socket->fd != OS_SOCKET_INVALID )
+		os_socket_t *s = malloc( sizeof( struct os_socket ) );
+		result = OS_STATUS_NO_MEMORY;
+		if ( s )
 		{
-			int select_result = 1;
-			if ( max_time_out > 0u )
+			result = OS_STATUS_FAILURE;
+			if ( socket->fd != OS_SOCKET_INVALID )
 			{
-				struct timeval ts;
-				fd_set rfds;
+				int select_result = 1;
+				if ( max_time_out > 0u )
+				{
+					struct timeval ts;
+					fd_set rfds;
 
-				ts.tv_sec = max_time_out / OS_MILLISECONDS_IN_SECOND;
-				ts.tv_usec = ( max_time_out % OS_MILLISECONDS_IN_SECOND ) *
-					OS_MICROSECONDS_IN_MILLISECOND;
+					ts.tv_sec = max_time_out / OS_MILLISECONDS_IN_SECOND;
+					ts.tv_usec = ( max_time_out % OS_MILLISECONDS_IN_SECOND ) *
+						OS_MICROSECONDS_IN_MILLISECOND;
 
-				FD_ZERO( &rfds );
-				FD_SET( socket->fd, &rfds );
-				select_result = select( socket->fd + 1,
-					&rfds, NULL, NULL, &ts );
-				if ( select_result == 0 )
-					result = OS_STATUS_TIMED_OUT;
+					FD_ZERO( &rfds );
+					FD_SET( socket->fd, &rfds );
+					select_result = select( socket->fd + 1,
+						&rfds, NULL, NULL, &ts );
+					if ( select_result == 0 )
+						result = OS_STATUS_TIMED_OUT;
+				}
+				if ( select_result > 0 )
+				{
+					socklen_t sock_len = sizeof( struct sockaddr );
+					os_memcpy( s, socket, sizeof( struct os_socket ) );
+					s->fd = accept( socket->fd,
+						&s->addr, &sock_len );
+					if ( s->fd != OS_SOCKET_INVALID )
+						result = OS_STATUS_SUCCESS;
+				}
 			}
-			if ( select_result > 0 )
-			{
-				socklen_t sock_len = sizeof( struct sockaddr );
-				os_memcpy( out, socket, sizeof( os_socket_t ) );
-				out->fd = accept( socket->fd,
-					&out->addr, &sock_len );
-				if ( out->fd != OS_SOCKET_INVALID )
-					result = OS_STATUS_SUCCESS;
-			}
+
+			if ( result == OS_STATUS_SUCCESS )
+				*out = s;
+			else
+				free( s );
 		}
 	}
 	return result;
@@ -2508,7 +2603,7 @@ os_status_t os_socket_close(
 				shutdown( socket->fd, SD_BOTH );
 			if ( closesocket( socket->fd ) == 0 )
 			{
-				ZeroMemory( socket, sizeof( os_socket_t ) );
+				os_free( socket );
 				result = OS_STATUS_SUCCESS;
 			}
 		}
@@ -2549,7 +2644,7 @@ os_status_t os_socket_initialize( void )
 }
 
 os_status_t os_socket_open(
-	os_socket_t *out,
+	os_socket_t **out,
 	const char *address,
 	os_uint16_t port,
 	int type,
@@ -2561,57 +2656,68 @@ os_status_t os_socket_open(
 
 	if ( out && address && port > 0u )
 	{
-		void *const addr_ptr = &out->addr;
-		struct sockaddr_in  *const addr4 =
-			(struct sockaddr_in *)addr_ptr;
-		struct sockaddr_in6 *const addr6 =
-			(struct sockaddr_in6 *)addr_ptr;
-		result = OS_STATUS_FAILURE;
-		memset( out, 0, sizeof( os_socket_t ) );
-		if ( inet_pton( AF_INET, address,
-			&(addr4->sin_addr) ) == 1 )
+		os_socket_t *s = os_malloc( sizeof( os_socket_t ) );
+		result = OS_STATUS_NO_MEMORY;
+		*out = NULL;
+		if ( s )
 		{
-			addr4->sin_family = AF_INET;
-			addr4->sin_port = (in_port_t)htons( port );
-			result = OS_STATUS_SUCCESS;
-		}
-		else if ( inet_pton( AF_INET6, address,
-			&(addr6->sin6_addr) ) == 1 )
-		{
-			addr6->sin6_family = AF_INET6;
-			addr6->sin6_port = (in_port_t)htons( port );
-			result = OS_STATUS_SUCCESS;
-		}
-
-		if ( result == OS_STATUS_SUCCESS )
-		{
-			out->type = type;
-			out->protocol = protocol;
-			out->fd = socket( out->addr.sa_family, type,
-				protocol );
-			while ( out->fd == OS_SOCKET_INVALID &&
-				( max_time_out == 0u || time_elapsed < max_time_out ) )
+			void *const addr_ptr = &s->addr;
+			struct sockaddr_in  *const addr4 =
+				(struct sockaddr_in *)addr_ptr;
+			struct sockaddr_in6 *const addr6 =
+				(struct sockaddr_in6 *)addr_ptr;
+			result = OS_STATUS_FAILURE;
+			memset( s, 0, sizeof( os_socket_t ) );
+			if ( inet_pton( AF_INET, address,
+				&(addr4->sin_addr) ) == 1 )
 			{
-				struct timeval ts;
-
-				os_millisecond_t wait_time = 2000u;
-				if ( max_time_out > 0u && max_time_out - time_elapsed <  wait_time )
-					wait_time = max_time_out - time_elapsed;
-				ts.tv_sec = wait_time / OS_MILLISECONDS_IN_SECOND;
-				ts.tv_usec = ( wait_time % OS_MILLISECONDS_IN_SECOND ) *
-					OS_MICROSECONDS_IN_MILLISECOND;
-
-				/* keep trying to obtain a socket until one if available,
-				 * this condition may be hit when running in a service, and
-				 * the client application is started before network services
-				 * are available */
-				select( 0, NULL, NULL, NULL, &ts );
-				out->fd = socket( out->addr.sa_family,
-					type, protocol );
+				addr4->sin_family = AF_INET;
+				addr4->sin_port = (in_port_t)htons( port );
+				result = OS_STATUS_SUCCESS;
+			}
+			else if ( inet_pton( AF_INET6, address,
+				&(addr6->sin6_addr) ) == 1 )
+			{
+				addr6->sin6_family = AF_INET6;
+				addr6->sin6_port = (in_port_t)htons( port );
+				result = OS_STATUS_SUCCESS;
 			}
 
-			if ( out->fd == OS_SOCKET_INVALID )
-				result = OS_STATUS_TIMED_OUT;
+			if ( result == OS_STATUS_SUCCESS )
+			{
+				s->type = type;
+				s->protocol = protocol;
+				s->fd = socket( s->addr.sa_family, type,
+					protocol );
+				while ( s->fd == OS_SOCKET_INVALID &&
+					( max_time_out == 0u || time_elapsed < max_time_out ) )
+				{
+					struct timeval ts;
+
+					os_millisecond_t wait_time = 2000u;
+					if ( max_time_out > 0u && max_time_out - time_elapsed <  wait_time )
+						wait_time = max_time_out - time_elapsed;
+					ts.tv_sec = wait_time / OS_MILLISECONDS_IN_SECOND;
+					ts.tv_usec = ( wait_time % OS_MILLISECONDS_IN_SECOND ) *
+						OS_MICROSECONDS_IN_MILLISECOND;
+
+					/* keep trying to obtain a socket until one if available,
+					 * this condition may be hit when running in a service, and
+					 * the client application is started before network services
+					 * are available */
+					select( 0, NULL, NULL, NULL, &ts );
+					s->fd = socket( s->addr.sa_family,
+						type, protocol );
+				}
+
+				if ( s->fd == OS_SOCKET_INVALID )
+					result = OS_STATUS_TIMED_OUT;
+			}
+
+			if ( result == OS_STATUS_SUCCESS )
+				*out = s;
+			else
+				os_free( s );
 		}
 	}
 	return result;
@@ -2877,6 +2983,12 @@ os_status_t os_stream_echo_set(
 }
 
 /* operating system specific */
+#if OSAL_WRAP
+int os_system_error_last( void )
+{
+	return (int)GetLastError();
+}
+#endif /* if OSAL_WRAP */
 
 const char *os_system_error_string(
 	int error_number )
@@ -3348,6 +3460,7 @@ os_status_t os_time(
 	return result;
 }
 
+#if 0
 os_status_t os_time_format(
 	char *buf,
 	size_t len,
@@ -3614,11 +3727,12 @@ os_status_t os_time_format(
 				os_strncpy( buf, win_fmt, len );
 				result = OS_STATUS_SUCCESS;
 			}
-			HeapFree( win_fmt );
+			HeapFree( GetProcessHeap(), 0, win_fmt );
 		}
 	}
 	return result;
 }
+#endif
 
 os_status_t os_time_sleep(
 	os_millisecond_t ms,
@@ -3672,7 +3786,7 @@ os_status_t os_time_stamp_to_date_time( os_date_time_t* date_time,
 }
 
 /* threads & lock support */
-#ifndef NO_THREAD_SUPPORT
+#if OSAL_THREAD_SUPPORT
 os_status_t os_thread_condition_broadcast(
 	os_thread_condition_t *cond )
 {
@@ -3738,6 +3852,15 @@ os_status_t os_thread_condition_timed_wait(
 	}
 	return result;
 }
+
+#if OSAL_WRAP
+os_status_t os_thread_condition_wait(
+	os_thread_condition_t *cond,
+	os_thread_mutex_t *lock )
+{
+	return os_thread_condition_timed_wait( cond, lock, 0 );
+}
+#endif /* if OSAL_WRAP */
 
 os_status_t os_thread_create(
 	os_thread_t *thread,
@@ -3894,7 +4017,7 @@ os_status_t os_thread_rwlock_destroy(
 	return OS_STATUS_SUCCESS;
 }
 
-#endif /* ifndef NO_THREAD_SUPPORT */
+#endif /* if OSAL_THREAD_SUPPORT */
 
 /* uuid support */
 os_status_t os_uuid_generate(
@@ -3961,3 +4084,4 @@ char *os_string_toupper(
 	}
 	return out;
 }
+

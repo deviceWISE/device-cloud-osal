@@ -16,7 +16,7 @@
 
 LOCAL_PATH:= $(call my-dir)
 
-$( info ($(shell (cd ${LOCAL_PATH}; cat ./header/os_top.h.in os/os_android.h os/os_posix.h os/os_posix_macros.h ./header/os_bot.h.in > os.h ))))
+$( info ($(shell (cd ${LOCAL_PATH}; ./build-sys/generate_header.sh -DOSAL_WRAP=1 -DOSAL_THREAD_SUPPORT=1 > os.h ))))
 
 osal_c_includes := \
     external/e2fsprogs/lib
