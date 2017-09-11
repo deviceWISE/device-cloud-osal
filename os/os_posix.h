@@ -215,7 +215,7 @@ OS_API char *os_file_gets(
  * @return         Number of items read
  */
 #if !OSAL_WRAP
-#define os_file_read
+#define os_file_read                   fread
 #else
 OS_API size_t os_file_read(
 	void *ptr,
@@ -258,7 +258,7 @@ OS_API size_t os_file_puts(
  * @return         Number of items written
  */
 #if !OSAL_WRAP
-#define os_file_write
+#define os_file_write                  fwrite
 #else
 OS_API size_t os_file_write(
 	const void *ptr,
