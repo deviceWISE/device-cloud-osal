@@ -1,7 +1,7 @@
 #if !OSAL_WRAP
 #include <ctype.h> /* for: tolower, toupper */
 #include <dlfcn.h> /* for: dlclose, dlopen dlsym */
-#include <error.h> /* for: errno */
+#include <errno.h> /* for: errno */
 #include <stdlib.h> /* for: calloc, free, malloc, realloc, strtod, strtol, strtoul */
 #include <string.h> /* for: strchr, strcmp, strlen, strncmp, strncpy, strpbrk, strrchr, strstr, memcpy, memmove, memset */
 #include <strings.h> /* for: bzero */
