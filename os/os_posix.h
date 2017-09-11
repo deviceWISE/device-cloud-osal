@@ -823,7 +823,6 @@ OS_API int os_system_error_last( void );
 OS_API os_uint32_t os_system_pid( void );
 #endif
 
-#ifndef _WRS_KERNEL
 /**
  * @brief Closes an open runtime library
  *
@@ -876,7 +875,6 @@ OS_API os_lib_handle os_library_open(
 	const char *path
 );
 #endif
-#endif/* ifndef _WRS_KERNEL */
 
 #if OSAL_THREAD_SUPPORT
 /* thread support */

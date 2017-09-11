@@ -628,7 +628,6 @@ os_dir_t *os_directory_open(
 	return out;
 }
 
-#if OSAL_WRAP
 os_status_t os_file_close(
 	os_file_t handle )
 {
@@ -637,7 +636,6 @@ os_status_t os_file_close(
 		result = OS_STATUS_SUCCESS;
 	return result;
 }
-#endif /* if OSAL_WRAP */
 
 os_status_t os_file_chown(
 	const char *path,
