@@ -1,0 +1,35 @@
+sudo: required
+language: c
+compiler:
+  - clang
+  - gcc
+os:
+  - linux
+  - osx
+env:
+  matrix:
+    - OSAL_THREAD_SUPPORT=OFF OSAL_WRAP=OFF BUILD_TYPE=Debug
+    - OSAL_THREAD_SUPPORT=OFF OSAL_WRAP=ON  BUILD_TYPE=Debug
+    - OSAL_THREAD_SUPPORT=ON  OSAL_WRAP=OFF BUILD_TYPE=Debug
+    - OSAL_THREAD_SUPPORT=ON  OSAL_WRAP=ON  BUILD_TYPE=Debug
+    - OSAL_THREAD_SUPPORT=ON  OSAL_WRAP=ON  BUILD_TYPE=Release
+install:
+  - wget https://cmocka.org/files/1.1/cmocka-1.1.1.tar.xz
+  - tar -xvf cmocka-1.1.1.tar.xz
+  - cd cmocka-1.1.1
+  - mkdir build
+  - cd build
+  - cmake -DCMAKE_BUILD_TYPE:STRING=Debug ..
+  - make
+  - sudo make install
+  - cd ../..
+  - rm -rf cmocka-1.1.1
+before_script:
+  - mkdir build
+  - cd build
+  - cmake --version
+  - cmake -DCMAKE_BUILD_TYPE:STRING=$BUILD_TYPE -DOSAL_THREAD_SUPPORT:BOOL=$OSAL_THREAD_SUPPORT -DOSAL_WRAP:BOOL=$OSAL_WRAP ..
+
+script:
+  - make
+# - make check

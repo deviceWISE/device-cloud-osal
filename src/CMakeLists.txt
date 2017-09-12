@@ -76,7 +76,7 @@ include_directories( SYSTEM "${CMAKE_CURRENT_SOURCE_DIR}" )
 ##############
 add_subdirectory( "uuid" )
 if ( NOT WIN32 )
-	set( UUID_OBJECTS "$<TARGET_OBJECTS:uuid>" )
+	set( UUID_OBJECTS $<TARGET_OBJECTS:uuid> )
 endif()
 
 # Static Library

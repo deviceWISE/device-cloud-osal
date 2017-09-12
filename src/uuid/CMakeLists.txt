@@ -70,32 +70,14 @@ if( HAVE_SC_HOST_NAME_MAX )
 endif( HAVE_SC_HOST_NAME_MAX )
 add_definitions( "-D_DEFAULT_SOURCE=1" )
 
-# Remove some compiler warning (for clang)
-check_c_compiler_flag( "-Wno-conversion" WITH_NO_CONVERSION )
-if ( WITH_NO_CONVERSION )
-	add_definitions( "-Wno-conversion" )
-endif( WITH_NO_CONVERSION )
-
-check_c_compiler_flag( "-Wno-reserved-id-macro" WITH_NO_RESERVED_ID_MACRO )
-if ( WITH_NO_RESERVED_ID_MACRO )
-	add_definitions( "-Wno-reserved-id-macro" )
-endif( WITH_NO_RESERVED_ID_MACRO )
-
-check_c_compiler_flag( "-Wno-shorten-64-to-32" WITH_NO_SHORTEN_64_TO_32 )
-if ( WITH_NO_SHORTEN_64_TO_32 )
-	add_definitions( "-Wno-shorten-64-to-32" )
-endif( WITH_NO_SHORTEN_64_TO_32 )
-
-check_c_compiler_flag( "-Wno-sign-conversion" WITH_NO_SIGN_CONVERSION )
-if ( WITH_NO_SIGN_CONVERSION )
-	add_definitions( "-Wno-sign-conversion" )
-endif( WITH_NO_SIGN_CONVERSION )
-
-check_c_compiler_flag( "-Wno-unused-macros" WITH_NO_UNUSED_MACROS )
-if ( WITH_NO_UNUSED_MACROS )
-	add_definitions( "-Wno-unused-macros" )
-endif( WITH_NO_UNUSED_MACROS )
-
+# Remove some compiler warnings for clang
+set_compiler_flag_if_supported(
+	"-Wno-conversion"
+	"-Wno-reserved-id-macro"
+	"-Wno-shorten-64-to-32"
+	"-Wno-sign-conversion"
+	"-Wno-undef"
+	"-Wno-unused-macros" )
 
 set( UUID_C_SRCS
 	"clear.c"

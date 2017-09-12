@@ -9,6 +9,21 @@
 
 include( CMakeParseArguments )
 
+### SET_COMPILER_FLAG
+# checks to see if a particular compiler supports the given flag and
+# added the definition to the compile if it is supported
+# Arguments:
+# - flag           name of first compiler flag to test
+# - ...            additional compiler flags to test
+macro( SET_COMPILER_FLAG_IF_SUPPORTED FLAG )
+	foreach( _flag ${FLAG} ${ARGN} )
+		check_c_compiler_flag( "${_flag}" _flag_exists )
+		if ( _flag_exists )
+			add_definitions( "${_flag}" )
+		endif( _flag_exists )
+	endforeach( _flag )
+endmacro( SET_COMPILER_FLAG_IF_SUPPORTED )
+
 ### GET_SHORT_NAME
 # Build a short name from a longer name
 # Examples:
@@ -16,8 +31,8 @@ include( CMakeParseArguments )
 # - Helix Device Cloud->hdc;
 # - Operating System Abstraction Layer->osal
 # Arguments:
-#  - _var          output variable
-#  - _name ...     long name
+# - _var          output variable
+# - _name ...     long name
 function( GET_SHORT_NAME _var _name )
 	set( _name ${_name} ${ARGN} )
 	string( TOLOWER "${_name}" NAME_SPLIT )

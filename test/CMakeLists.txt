@@ -10,20 +10,11 @@
 find_package( Cmocka )
 include_directories( SYSTEM ${CMOCKA_INCLUDES} )
 
-macro( SET_COMPILER_FLAG FLAG )
-	foreach( _flag ${FLAG} ${ARGN} )
-		check_c_compiler_flag( "${_flag}" _flag_exists )
-		if ( _flag_exists )
-			add_definitions( "${_flag}" )
-		endif( _flag_exists )
-	endforeach( _flag )
-endmacro( SET_COMPILER_FLAG )
-
 # Add directory for find cmake configuration files for mocking libraries
 set( CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/mock" )
 
 # Remove compiler flags
-set_compiler_flag( "-Wno-bad-function-cast" "-Wno-unused-parameter" )
+set_compiler_flag_if_supported( "-Wno-bad-function-cast" "-Wno-unused-parameter" )
 
 # setup include directories
 string( REPLACE "/test" "/src" CURRENT_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}" )
