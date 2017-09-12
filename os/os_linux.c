@@ -36,7 +36,7 @@ os_status_t os_service_run(
 	if ( id && service_function )
 	{
 		int i;
-		char** good_argv = (char**)malloc( argc * sizeof( char* ) );
+		char** good_argv = (char**)malloc( (unsigned long)argc * sizeof( char* ) );
 		result = OS_STATUS_FAILURE;
 		/* remove bad arguments */
 		if ( good_argv )

@@ -1232,7 +1232,7 @@ OS_API os_status_t os_service_query(
 	const char *host,
 	const char *service,
 	char *address,
-	int address_len,
+	size_t address_len,
 	int family
 );
 

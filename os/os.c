@@ -205,7 +205,9 @@ int os_strcasecmp(
 		while( ( *s1 ) && ( *s2 ) &&
 			( os_char_toupper( *s1 ) ==
 			os_char_toupper( *s2 ) ) )
-			s1++, s2++;
+		{
+			s1++; s2++;
+		}
 		result = *( const char* )s1 - *( const char* )s2;
 	}
 	else
@@ -231,7 +233,9 @@ int os_strncasecmp(
 			( os_char_toupper( *s1 ) ==
 			os_char_toupper( *s2 ) ) &&
 			( i < len ) )
-			s1++, s2++, i++;
+		{
+			s1++; s2++; i++;
+		}
 		result = *( const char* )s1 - *( const char* )s2;
 	}
 	else

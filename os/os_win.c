@@ -2460,7 +2460,7 @@ int os_get_host_address(
 	const char *host,
 	const char *service,
 	char *address,
-	int address_len,
+	size_t address_len,
 	int family
 	)
 {

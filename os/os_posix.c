@@ -261,7 +261,7 @@ os_bool_t os_char_isxdigit(
 	return result;
 }
 
-#if OSAL_WRAP
+#if defined(OSAL_WRAP) && OSAL_WRAP
 char os_char_tolower(
 	char c )
 {
@@ -273,7 +273,7 @@ char os_char_toupper(
 {
 	return (char)toupper( c );
 }
-#endif /* if OSAL_WRAP */
+#endif /* if defined(OSAL_WRAP) && OSAL_WRAP */
 
 /* file & directory support */
 os_status_t os_directory_create(
@@ -282,7 +282,7 @@ os_status_t os_directory_create(
 {
 	os_status_t result;
 	os_timestamp_t start_time;
-	os_millisecond_t time_elapsed;
+	os_millisecond_t time_elapsed = 0u;
 
 	os_time( &start_time, NULL );
 	do {
@@ -696,7 +696,7 @@ os_status_t os_file_copy(
 					ssize_t nwritten;
 					do {
 						nwritten = write( fd_to,
-							out_ptr, nread );
+							out_ptr, (size_t)nread );
 						if ( nwritten >= 0 )
 						{
 							nread -= nwritten;
@@ -729,13 +729,13 @@ os_status_t os_file_delete(
 	return result;
 }
 
-#if OSAL_WRAP
+#if defined(OSAL_WRAP) && OSAL_WRAP
 os_bool_t os_file_eof(
 	os_file_t stream )
 {
 	return feof( stream ) == 0 ? OS_FALSE : OS_TRUE;
 }
-#endif /* if OSAL_WRAP */
+#endif /* if defined(OSAL_WRAP) && OSAL_WRAP */
 
 os_bool_t os_file_exists(
 	const char *file_path )
@@ -752,7 +752,7 @@ os_bool_t os_file_exists(
 	return result;
 }
 
-#if OSAL_WRAP
+#if defined(OSAL_WRAP) && OSAL_WRAP
 char *os_file_gets(
 	char *str,
 	size_t size,
@@ -760,7 +760,7 @@ char *os_file_gets(
 {
 	return fgets( str, (int)size, stream );
 }
-#endif /* if OSAL_WRAP */
+#endif /* if defined(OSAL_WRAP) && OSAL_WRAP */
 
 os_status_t os_file_seek(
 	os_file_t stream,
@@ -916,7 +916,7 @@ os_file_t os_file_open(
 	return result;
 }
 
-#if OSAL_WRAP
+#if defined(OSAL_WRAP) && OSAL_WRAP
 size_t os_file_puts(
 	char *str,
 	os_file_t stream )
@@ -932,7 +932,7 @@ size_t os_file_read(
 {
 	return fread( ptr, size, nmemb, stream );
 }
-#endif /* if OSAL_WRAP */
+#endif /* if defined(OSAL_WRAP) && OSAL_WRAP */
 
 os_status_t os_file_temp(
 	char *prototype,
@@ -948,7 +948,7 @@ os_status_t os_file_temp(
 	return result;
 }
 
-#if OSAL_WRAP
+#if defined(OSAL_WRAP) && OSAL_WRAP
 size_t os_file_write(
 	const void *ptr,
 	size_t size,
@@ -957,7 +957,7 @@ size_t os_file_write(
 {
 	return fwrite( ptr, size, nmemb, stream );
 }
-#endif /* if OSAL_WRAP */
+#endif /* if defined(OSAL_WRAP) && OSAL_WRAP */
 
 char os_key_wait( void )
 {
@@ -965,8 +965,8 @@ char os_key_wait( void )
 	struct termios new, old;
 	tcgetattr( 0, &old ); /* grab old terminal i/o settings */
 	new = old; /* make new settings same as old settings */
-	new.c_lflag &= ~ICANON; /* disable buffered i/o */
-	new.c_lflag &= ~ECHO; /* disable echo mode */
+	new.c_lflag &= (unsigned int)~ICANON; /* disable buffered i/o */
+	new.c_lflag &= (unsigned int)~ECHO; /* disable echo mode */
 	tcsetattr( 0, TCSANOW, &new );
 	result = (char)getchar();
 	tcsetattr( 0, TCSANOW, &old );
@@ -983,7 +983,7 @@ os_status_t os_library_close(
 	return result;
 }
 
-#if OSAL_WRAP
+#if defined(OSAL_WRAP) && OSAL_WRAP
 void *os_library_find(
 	os_lib_handle lib,
 	const char *function )
@@ -996,10 +996,10 @@ os_lib_handle os_library_open(
 {
 	return dlopen( path, RTLD_LAZY );
 }
-#endif /* if OSAL_WRAP */
+#endif /* if defined(OSAL_WRAP) && OSAL_WRAP */
 
 /* memory functions */
-#if OSAL_WRAP
+#if defined(OSAL_WRAP) && OSAL_WRAP
 void *os_calloc( size_t nmemb, size_t size )
 {
 	return calloc( nmemb, size );
@@ -1069,7 +1069,7 @@ void os_memzero(
 {
 	bzero( dest, len );
 }
-#endif /* if OSAL_WRAP */
+#endif /* if defined(OSAL_WRAP) && OSAL_WRAP */
 
 /* print functions */
 size_t os_env_expand(
@@ -1188,7 +1188,7 @@ size_t os_env_get(
 	return result;
 }
 
-#if OSAL_WRAP
+#if defined(OSAL_WRAP) && OSAL_WRAP
 int os_fprintf(
 	os_file_t stream,
 	const char *format,
@@ -1308,7 +1308,7 @@ int os_get_host_address(
 	const char *host,
 	const char *service,
 	char *address,
-	int address_len,
+	size_t address_len,
 	int family
 	)
 {
@@ -1329,13 +1329,25 @@ int os_get_host_address(
 	{
 		if ( address_list->ai_family == AF_INET )
 		{
-			struct sockaddr_in *address_struct = (struct sockaddr_in *) address_list->ai_addr;
-			inet_ntop( AF_INET, &(address_struct->sin_addr), address, address_len );
+			/* cast to void*, to suppress the clang warning:
+			 *   cast from 'struct sockaddr *' to
+			 *   'struct sockaddr_in *' increases required alignment
+			 *   from 2 to 4
+			 */
+			struct sockaddr_in *address_struct =
+				(struct sockaddr_in *)((void *)address_list->ai_addr);
+			inet_ntop( AF_INET, &(address_struct->sin_addr), address, (socklen_t)address_len );
 		}
 		else if ( address_list->ai_family == AF_INET6 )
 		{
-			struct sockaddr_in6 *address_struct = (struct sockaddr_in6 *) address_list->ai_addr;
-			inet_ntop( AF_INET6, &(address_struct->sin6_addr), address, address_len );
+			/* cast to void*, to suppress the clang warning:
+			 *   cast from 'struct sockaddr *' to
+			 *   'struct sockaddr_in *' increases required alignment
+			 *   from 2 to 4
+			 */
+			struct sockaddr_in6 *address_struct =
+				(struct sockaddr_in6 *)((void *)address_list->ai_addr);
+			inet_ntop( AF_INET6, &(address_struct->sin6_addr), address, (socklen_t)address_len );
 		}
 	}
 	if ( address_list )
@@ -1788,7 +1800,7 @@ os_status_t os_stream_echo_set(
 			if ( enable )
 				termios.c_lflag |= ECHO;
 			else
-				termios.c_lflag &= ~ECHO;
+				termios.c_lflag &= (unsigned int)~ECHO;
 
 			if ( tcsetattr( fileno( stream ), TCSAFLUSH, &termios ) == 0 )
 				result = OS_STATUS_SUCCESS;
@@ -1797,7 +1809,7 @@ os_status_t os_stream_echo_set(
 	return result;
 }
 
-#if OSAL_WRAP
+#if defined(OSAL_WRAP) && OSAL_WRAP
 char *os_strchr(
 	const char *s,
 	char c )
@@ -1879,13 +1891,13 @@ unsigned long os_strtoul(
 }
 #endif /* if defined( OSAL_WRAP ) */
 
-#if OSAL_WRAP
+#if defined(OSAL_WRAP) && OSAL_WRAP
 /* operating system specific */
 int os_system_error_last( void )
 {
 	return errno;
 }
-#endif /* if OSAL_WRAP */
+#endif /* if defined(OSAL_WRAP) && OSAL_WRAP */
 
 const char *os_system_error_string(
 	int error_number )
@@ -2005,12 +2017,12 @@ os_status_t os_system_info(
 	return result;
 }
 
-#if OSAL_WRAP
+#if defined(OSAL_WRAP) && OSAL_WRAP
 os_uint32_t os_system_pid( void )
 {
 	return (os_uint32_t)getpid();
 }
-#endif /* if OSAL_WRAP */
+#endif /* if defined(OSAL_WRAP) && OSAL_WRAP */
 
 os_status_t os_system_run(
 	const char *command,
@@ -2409,14 +2421,14 @@ os_status_t os_thread_condition_timed_wait(
 	return result;
 }
 
-#if OSAL_WRAP
+#if defined(OSAL_WRAP) && OSAL_WRAP
 os_status_t os_thread_condition_wait(
 	os_thread_condition_t *cond,
 	os_thread_mutex_t *lock )
 {
 	return os_thread_condition_timed_wait( cond, lock, 0u );
 }
-#endif /* if OSAL_WRAP */
+#endif /* if defined(OSAL_WRAP) && OSAL_WRAP */
 
 os_status_t os_thread_create(
 	os_thread_t *thread,
