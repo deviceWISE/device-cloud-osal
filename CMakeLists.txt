@@ -6,7 +6,7 @@
 # agreement.  No license to Wind River intellectual property rights is granted
 # herein.  All rights not licensed by Wind River are reserved by Wind River.
 #
-cmake_minimum_required( VERSION 2.8.5 )
+cmake_minimum_required( VERSION 2.8.8 )
 project( "osal" )
 
 ### Definitions ###

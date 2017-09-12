@@ -2273,10 +2273,7 @@ os_status_t os_terminate_handler(
 {
 	struct sigaction new_action;
 	memset( &new_action, 0, sizeof( new_action ) );
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdisabled-macro-expansion"
 	new_action.sa_handler = signal_handler;
-#pragma clang diagnostic pop
 	sigemptyset( &new_action.sa_mask );
 	sigaction( SIGINT, &new_action, NULL );
 	sigaction( SIGTERM, &new_action, NULL );
@@ -2688,4 +2685,6 @@ os_status_t os_uuid_to_string_lower(
 	}
 	return result;
 }
+
+#pragma clang diagnostic pop
 
