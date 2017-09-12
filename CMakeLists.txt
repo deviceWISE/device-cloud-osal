@@ -37,7 +37,7 @@ set( CMAKE_INCLUDE_OUTPUT_DIRECTORY    "${CMAKE_BINARY_DIR}/out" )
 option( OSAL_THREAD_SUPPORT "enable multi-thread support" ON )
 option( OSAL_WRAP "provide wrappers for simple functions, this is useful for mocking and unit testing" OFF )
 
-add_subdirectory( "os" )
+add_subdirectory( "src" )
 
 ### Doxygen ###
 find_package( Doxygen )

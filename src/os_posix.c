@@ -2328,7 +2328,7 @@ os_status_t os_time_sleep(
 }
 
 /* threads & lock support */
-#if OSAL_THREAD_SUPPORT
+#if defined(OSAL_THREAD_SUPPORT) && OSAL_THREAD_SUPPORT
 os_status_t os_thread_condition_broadcast(
 	os_thread_condition_t *cond )
 {
@@ -2602,7 +2602,7 @@ os_status_t os_thread_rwlock_destroy(
 	}
 	return result;
 }
-#endif /* if OSAL_THREAD_SUPPORT */
+#endif /* if defined(OSAL_THREAD_SUPPORT) && OSAL_THREAD_SUPPORT */
 
 /* uuid support */
 os_status_t os_uuid_generate(
