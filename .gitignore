@@ -8,6 +8,7 @@ CPackSourceConfig.cmake
 cmake_install.cmake
 Doxyfile
 footer.html
+install_manifest.txt
 Makefile
 os.h
 out/

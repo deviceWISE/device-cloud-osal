@@ -65,6 +65,7 @@ set_source_files_properties( "${OUT_FILE}" PROPERTIES GENERATED TRUE )
 
 # Set location to find generated "os.h" file in source files
 include_directories( "${CMAKE_INCLUDE_OUTPUT_DIRECTORY}" )
+include_directories( "${CMAKE_CURRENT_SOURCE_DIR}" )
 
 # UUID Support
 ##############
