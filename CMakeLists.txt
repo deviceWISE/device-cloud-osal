@@ -82,4 +82,5 @@ else()
 endif()
 
 include( CPack )
+include( TestSupport )
 

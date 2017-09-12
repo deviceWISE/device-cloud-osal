@@ -1,0 +1,78 @@
+#!/usr/bin/env python
+'''
+Wind River llvm-cov Wrapper Script
+
+This script wraps llvm-cov to work properly backwards with gcov called by
+lcov
+
+Copyright (C) 2015 Wind River Systems, Inc. All Rights Reserved.
+
+The right to copy, distribute or otherwise make use of this software may
+be licensed only pursuant to the terms of an applicable Wind River license
+agreement.  No license to Wind River intellectual property rights is granted
+herein.  All rights not licensed by Wind River are reserved by Wind River.
+'''
+
+import os
+import subprocess
+import sys
+
+# Compatible gcov version llvm-cov is compatible with
+GCOV_COMPATIBLE_VERSION = "4.2.1"
+# Path to the llvm-cov executable
+LLVM_COV_PATH = "@LLVM_COV_COMMAND@"
+# Flags to pass to llvm-cov executable
+LLVM_COV_ARGS = [ "gcov", "-f" ]
+
+
+# Simulates the "which" command of unix
+def which( program ):
+	def is_exe( fpath ):
+		return os.path.isfile( fpath ) and os.access( fpath, os.X_OK )
+	fpath, fname = os.path.split( program )
+
+	if fpath:
+		if is_exe( program ):
+			return program
+	else:
+		for path in os.environ[ "PATH" ].split( os.pathsep ):
+			path = path.strip( '"' )
+			exe_file = os.path.join( path, program )
+			if is_exe(exe_file):
+				return exe_file
+	return None
+
+# Starting function of the script
+# argv - arguments to run
+def main( argv=None ):
+	global GCOV_COMPATIBLE_VERSION, LLVM_COV_PATH, LLVM_COV_ARGS
+
+	# if no arguments passed to function take arguments passed to script
+	if argv is None:
+		argv = sys.argv
+
+	# Try and find a valid compiler if one not given above
+	if not os.path.isfile( LLVM_COV_PATH ):
+		LLVM_COV_PATH = which( "llvm-cov" )
+
+	try:
+		if len( argv ) > 1 and argv[1] == '-v':
+			file_name = os.path.basename( argv[0] )
+			file_name = os.path.splitext(file_name)[0]
+			print "%s %s" % ( file_name, GCOV_COMPATIBLE_VERSION )
+			return 0
+		else:
+			cmd = [ LLVM_COV_PATH ]
+			cmd.extend( LLVM_COV_ARGS )
+			if len( argv ) > 1:
+				cmd.extend( argv[1::] )
+			return subprocess.call( cmd )
+
+	except Exception as e:
+		print >>sys.stderr, e
+		return 2
+
+# Call the main method when running as a script
+if __name__ == "__main__":
+	sys.exit( main() )
+

@@ -16,7 +16,6 @@
 # herein.  All rights not licensed by Wind River are reserved by Wind River.
 #
 
-find_package( PkgConfig )
 include( FindPackageHandleStandardArgs )
 
 find_path( CMOCKA_INCLUDE_DIR

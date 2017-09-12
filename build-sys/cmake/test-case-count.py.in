@@ -1,0 +1,148 @@
+#!/usr/bin/env python
+'''
+Wind River test case counter script
+
+This script counts the number of test cases within a unit test executable
+
+Copyright (C) 2015-2017 Wind River Systems, Inc. All Rights Reserved.
+
+The right to copy, distribute or otherwise make use of this software may
+be licensed only pursuant to the terms of an applicable Wind River license
+agreement.  No license to Wind River intellectual property rights is granted
+herein.  All rights not licensed by Wind River are reserved by Wind River.
+'''
+
+import argparse
+import os
+import re
+import subprocess
+import sys
+
+# Path to the ctest executable
+CTEST_PATH = "@CMAKE_CTEST_COMMAND@"
+
+# Tests if a path exists and is executable.  Adding the extensions provided in
+# the environment variable "PATHEXT"
+# Parameters:
+#   fpath - file path
+# Returns:
+#   The file path with extension if a file is found and executable. None otherwise
+def is_exe( fpath ):
+	for ext in os.getenv( "PATHEXT", "" ).split( os.pathsep ):
+		fpath_ext = fpath + ext
+		if os.path.isfile( fpath_ext ) and os.access( fpath_ext, os.X_OK ):
+			return fpath_ext
+	return None
+
+# Obtains the list of tests to execute
+# Parameters:
+#   directory - working directory to seach (None to only try current directory)
+#   test_names - current list of tests
+def obtain_tests( directory, test_names ):
+	result = []
+
+	# If no tests are given, then determine a list of tests by parsing the
+	# output of "ctest -N"
+	if len( test_names ) == 0:
+		cmd = [ CTEST_PATH, "-N" ]
+		proc = subprocess.Popen( cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE )
+		output, err = proc.communicate()
+		rc = proc.returncode
+		if rc == 0:
+			te_regex = re.compile( "Test\s+#\d+: (?P<executable>\S+)" )
+			for line in output.split( '\n' ):
+				te = te_regex.search( line )
+				if te:
+					test_names.append( te.group( "executable" ) )
+
+	# Determine the location of the test executable
+	for test_name in test_names:
+		test_path = None
+		if directory is not None:
+			test_path = is_exe( os.path.join( directory, test_name ) )
+		if test_path is None:
+			test_path = which( test_name )
+		if test_path is not None:
+			result.append( test_path )
+		else:
+			sys.stderr.write( "failed to find test executable \"%s\"\n" % test_name )
+	return result
+
+# Runs the tests specified and parse to obtain the test case count
+#   test_paths - paths of tests to run
+def run_tests( test_paths ):
+	if len( test_paths ) > 0:
+		total_test_count = 0
+		for test_path in test_paths:
+			# Run the test
+			cmd = [ test_path ]
+			proc = subprocess.Popen( cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE )
+			output, err = proc.communicate()
+			rc = proc.returncode
+
+			# Count the number of test cases
+			tt_regex = re.compile( ".* (?P<total_tests>\d+) test\(s\) run." )
+			test_count = 0
+			for line in output.split( '\n' ):
+				if "Test case" in line:
+					test_count = test_count + 1
+				elif test_count == 0:
+					tt = tt_regex.match( line )
+					if tt:
+						test_count = test_count + int( tt.group( "total_tests" ) )
+			total_test_count = total_test_count + test_count
+
+		# Print the result
+		print( "Number of test cases: %s" % total_test_count )
+		return 0
+	else:
+		sys.stderr.write( "No tests found\n" )
+		return 1
+
+# Simulates the "which" command of unix
+# Parameters:
+#   program - program to search for
+def which( program ):
+	fpath, fname = os.path.split( program )
+	if fpath:
+		return is_exe( program )
+	else:
+		for path in os.environ[ "PATH" ].split( os.pathsep ):
+			path = path.strip( '"' )
+			exe_file = os.path.join( path, program )
+			if is_exe( exe_file ) is not None:
+				return is_exe( exe_file )
+	return None
+
+# Starting function of the script
+# Parameters:
+#   argv - arguments to run
+def main( argv=None ):
+	global CTEST_PATH
+
+	if argv is None:
+		argv = sys.argv
+
+	# Try and find a valid ctest if one not given above
+	if not os.path.isfile( CTEST_PATH ):
+		CTEST_PATH = which( "ctest" )
+
+	# Setup script arguments
+	parser = argparse.ArgumentParser( description='Counts the number of test cases within a unit test' )
+	parser.add_argument( '-d', '--dir', metavar='dir', type=str, help='directory containing tests' )
+	parser.add_argument( 'tests', metavar='file', type=str, nargs='*', help='path to test executable' )
+	args = parser.parse_args()
+
+	# Main script execution
+	try:
+		tests = obtain_tests( args.dir, args.tests )
+		return run_tests( tests )
+	except Exception as e:
+		sys.stderr.write( "%s\n" % e )
+		return 2
+	return 0
+
+# Call the main method when running as a script
+if __name__ == "__main__":
+	sys.exit( main() )
+
