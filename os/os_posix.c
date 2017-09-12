@@ -1841,11 +1841,11 @@ int os_strncmp(
 }
 
 char *os_strncpy(
-	char *destination,
-	const char *source,
+	char *dest,
+	const char *src,
 	size_t num )
 {
-	return strncpy( destination, source, num );
+	return strncpy( dest, src, num );
 }
 
 char *os_strpbrk(

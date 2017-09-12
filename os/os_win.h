@@ -311,15 +311,15 @@ OS_API int os_strncmp(
 /**
  * @brief Copy characters from string
  *
- * @param[out]     destination         string to copy characters to
- * @param[in]      source              string to copy character from
+ * @param[out]     dest                string to copy characters to
+ * @param[in]      src                 string to copy character from
  * @param[in]      num                 maximum number of characters to copy
  *
- * @retval         destination
+ * @return a pointer to the destination string
  */
 OS_API char *os_strncpy(
-	char *destination,
-	const char *source,
+	char *dest,
+	const char *src,
 	size_t num
 );
 
@@ -652,12 +652,12 @@ OS_API os_lib_handle os_library_open(
  *
  * @warning The destination and source memory block must not overlap
  *
- * @param[out]     dst                 destination to write to
+ * @param[out]     dest                destination to write to
  * @param[in]      src                 source block of memory
  * @param[in]      len                 amount of data to copy
  */
 #if !OSAL_WRAP
-#define os_memcpy(dst, src, len)               dst; CopyMemory(dst, src, len)
+#define os_memcpy(dest, src, len)      dest; CopyMemory(dest, src, len)
 #else
 OS_API void *os_memcpy(
 	void *dest,
@@ -669,12 +669,12 @@ OS_API void *os_memcpy(
 /**
  * @brief Moves a block of memory
  *
- * @param[out]     dst                 destination to write to
+ * @param[out]     dest                destination to write to
  * @param[in]      src                 source block of memory
  * @param[in]      len                 amount of data to move
  */
 #if !OSAL_WRAP
-#define os_memmove(dst, src, len)              dst; MoveMemory(dst, src, len)
+#define os_memmove(dest, src, len)     dest; MoveMemory(dest, src, len)
 #else
 OS_API void *os_memmove(
 	void *dest,
@@ -686,12 +686,12 @@ OS_API void *os_memmove(
 /**
  * @brief Sets a block of memory to a specific byte
  *
- * @param[out]     dst                 destination to write to
+ * @param[out]     dest                destination to write to
  * @param[in]      val                 byte to set
  * @param[in]      len                 amount of data to set
  */
 #if !OSAL_WRAP
-#define os_memset( dst, val, len )             FillMemory( ptr, len, val )
+#define os_memset( dest, val, len )    FillMemory(dest, len, val)
 #else
 OS_API void os_memset(
 	void *dest,
@@ -703,11 +703,11 @@ OS_API void os_memset(
 /**
  * @brief Zeroizes block of memory
  *
- * @param[out]     dst                destination to write to
+ * @param[out]     dest               destination to write to
  * @param[in]      len                amount of data to zeroize
  */
 #if !OSAL_WRAP
-#define os_memzero(dst, len)                  ZeroMemory(dst, len)
+#define os_memzero(dest, len)         ZeroMemory(dest, len)
 #else
 OS_API void os_memzero(
 	void *dest,

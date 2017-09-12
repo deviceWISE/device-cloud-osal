@@ -1180,16 +1180,16 @@ int os_strncmp(
 }
 
 char *os_strncpy(
-	char *destination,
-	const char *source,
+	char *dest,
+	const char *src,
 	size_t num )
 {
-	size_t i = 0;
-	for ( ; i < num && *source != '\0'; ++i, ++destination, ++source )
-		*destination = *source;
+	size_t i = 0u;
+	for ( ; i < num && *src != '\0'; ++i, ++dest, ++src )
+		*dest = *src;
 	if ( i < num )
-		*destination = '\0';
-	return destination;
+		*dest = '\0';
+	return dest;
 }
 
 char *os_strpbrk(

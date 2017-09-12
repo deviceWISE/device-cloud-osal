@@ -349,18 +349,18 @@ OS_API int os_strncmp(
 /**
  * @brief Copy characters from string
  *
- * @param[out]     destination         string to copy characters to
- * @param[in]      source              string to copy character from
+ * @param[out]     dest                string to copy characters to
+ * @param[in]      src                 string to copy character from
  * @param[in]      num                 maximum number of characters to copy
  *
- * @retval         destination
+ * @return a pointer to the destination string
  */
 #if !OSAL_WRAP
-#define os_strncpy(dst, src, num)      strncpy(dst, src, num)
+#define os_strncpy(dest, src, num)      strncpy(dest, src, num)
 #else
 OS_API char *os_strncpy(
-	char *destination,
-	const char *source,
+	char *dest,
+	const char *src,
 	size_t num
 );
 #endif
@@ -507,7 +507,7 @@ OS_API int os_memcmp(
  * @param[in]      len                 amount of data to copy
  */
 #if !OSAL_WRAP
-#define os_memcpy(dst, src, len)       memcpy(dst, src, len)
+#define os_memcpy(dest, src, len)      memcpy(dest, src, len)
 #else
 OS_API void *os_memcpy(
 	void *dest,
@@ -524,7 +524,7 @@ OS_API void *os_memcpy(
  * @param[in]      len                 amount of data to move
  */
 #if !OSAL_WRAP
-#define os_memmove(dst, src, len)      memmove(dst, src, len)
+#define os_memmove(dest, src, len)     memmove(dest, src, len)
 #else
 OS_API void *os_memmove(
 	void *dest,
@@ -541,7 +541,7 @@ OS_API void *os_memmove(
  * @param[in]      len                 amount of data to set
  */
 #if !OSAL_WRAP
-#define os_memset(dst, val, len)       memset(dst, val, len)
+#define os_memset(dest, c, len)        memset(dest, c, len)
 #else
 OS_API void os_memset(
 	void *dest,
@@ -557,7 +557,7 @@ OS_API void os_memset(
  * @param[in]      len                 amount of data to zeroize
  */
 #if !OSAL_WRAP
-#define os_memzero(dst, len)           bzero(dst, len)
+#define os_memzero(dest, len)          bzero(dest, len)
 #else
 OS_API void os_memzero(
 	void *dest,
@@ -698,7 +698,7 @@ OS_API int os_vsnprintf(
  * @see os_realloc
  */
 #if !OSAL_WRAP
-#define os_calloc(num, size)           calloc(num, size)
+#define os_calloc(nmemb, size)           calloc(nmemb, size)
 #else
 OS_API void *os_calloc(
 	size_t nmemb,
