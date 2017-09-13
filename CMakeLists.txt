@@ -33,6 +33,11 @@ set( CMAKE_LIBRARY_OUTPUT_DIRECTORY    "${CMAKE_BINARY_DIR}/out" )
 set( CMAKE_RUNTIME_OUTPUT_DIRECTORY    "${CMAKE_BINARY_DIR}/out" )
 set( CMAKE_INCLUDE_OUTPUT_DIRECTORY    "${CMAKE_BINARY_DIR}/out" )
 
+### Operating System Specific Options ###
+if( APPLE )
+	set( CMAKE_MACOSX_RPATH ON )
+endif( APPLE )
+
 ### Build Library ###
 option( OSAL_THREAD_SUPPORT "enable multi-thread support" ON )
 option( OSAL_WRAP "provide wrappers for simple functions, this is useful for mocking and unit testing" OFF )

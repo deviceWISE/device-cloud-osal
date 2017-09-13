@@ -16,6 +16,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdisabled-macro-expansion"
+
 #define COMMAND_PREFIX           "sudo "
 #define SERVICE_START_CMD        "systemctl start %s"
 #define SERVICE_STATUS_CMD       "systemctl status %s"
@@ -227,4 +230,6 @@ os_status_t os_service_restart(
 		result = OS_STATUS_FAILURE;
 	return result;
 }
+
+#pragma clang diagnostic pop
 

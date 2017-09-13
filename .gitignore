@@ -3,9 +3,11 @@ CMakeCache.txt
 CMakeDoxyfile.in
 CMakeDoxygenDefaults.cmake
 CMakeFiles/
+CMakeScripts/
 CPackConfig.cmake
 CPackSourceConfig.cmake
 cmake_install.cmake
+DerivedData/
 Doxyfile
 footer.html
 install_manifest.txt
@@ -20,3 +22,5 @@ out/
 *.so.*
 *.swp
 *.vcxproj*
+*.xcodeproj/
+.DS_Store
