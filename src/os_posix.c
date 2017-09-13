@@ -25,6 +25,13 @@
 #include <sys/time.h>    /* for gettimeofday */
 #include <sys/types.h>   /* for uid_t and gid_t */
 #include <sys/wait.h>    /* for waitpid */
+#ifdef __APPLE__
+#include <mach/clock.h>  /* for clock_get_time */
+#include <mach/mach.h>   /* for mach_port_deallocate, mach_task_self */
+#include <net/if.h>      /* for if_nametoindex */
+#include <net/if_dl.h>   /* for struct sockaddr_dl */
+#endif /* ifdef __APPLE__ */
+
 #ifndef _WRS_KERNEL
 #include <dlfcn.h>       /* for dlclose, dlopen, dlsym */
 #include <pwd.h>         /* for getpwnam */
@@ -41,6 +48,10 @@
 #	endif
 #endif
 
+/* compiler flags to remove */
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdisabled-macro-expansion"
+
 #ifdef _WRS_KERNEL
 typedef u_short in_port_t;
 #endif
@@ -52,15 +63,27 @@ typedef u_short in_port_t;
 /**
  * @brief Base shell command for executing external processes with
  */
-#define OS_COMMAND_SH            "/bin/sh", "sh", "-c"
+#define OS_COMMAND_SH                  "/bin/sh", "sh", "-c"
 /**
  * @brief Operating system reboot command
  */
-#define OS_REBOOT_CMD       "/sbin/shutdown -r "
+#define OS_REBOOT_CMD                  "/sbin/shutdown -r "
 /**
  * @brief Operating system shutdown command
  */
-#define OS_SHUTDOWN_CMD     "/sbin/shutdown -h "
+#define OS_SHUTDOWN_CMD                "/sbin/shutdown -h "
+
+#if defined(OSAL_THREAD_SUPPORT) && OSAL_THREAD_SUPPORT
+/**
+ * @brief Returns the systems "best guess" at the actual time
+ *
+ * @param[out]     ts                  time stamp output
+ *
+ * @retval         -1                  on failure
+ * @retval         0                   on success
+ */
+static int os_clock_realtime( struct timespec *ts );
+#endif /* if defined(OSAL_THREAD_SUPPORT) && OSAL_THREAD_SUPPORT */
 
 os_status_t os_adapters_address(
 	os_adapters_t *adapters,
@@ -104,6 +127,7 @@ os_status_t os_adapters_index(
 	os_status_t result = OS_STATUS_FAILURE;
 	if ( adapters && adapters->current && index )
 	{
+#if defined( SIOCGIFINDEX )
 		const int socket_fd =
 			socket( AF_INET, SOCK_DGRAM, 0 );
 		if ( socket_fd != OS_SOCKET_INVALID )
@@ -119,6 +143,14 @@ os_status_t os_adapters_index(
 			}
 			close( socket_fd );
 		}
+#else
+		unsigned int idx = if_nametoindex( adapters->current->ifa_name );
+		if ( idx > 0 )
+		{
+			*index = idx;
+			result = OS_STATUS_SUCCESS;
+		}
+#endif
 	}
 	return result;
 }
@@ -154,11 +186,11 @@ os_status_t os_adapters_mac(
 		{
 			if ( ( adapters->current->ifa_addr->sa_family == AF_LINK ) &&
 				adapters->current->ifa_addr &&
-				((struct sockaddr_dl *)
+				((struct sockaddr_dl *)(void*)
 					(adapters->current->ifa_addr))->sdl_alen > 0 )
 			{
 				struct sockaddr_dl *const sdl =
-					(struct sockaddr_dl *)adapters->current->ifa_addr;
+					(struct sockaddr_dl *)(void*)adapters->current->ifa_addr;
 				unsigned char *id = (unsigned char *)LLADDR( sdl );
 				const size_t id_len = sdl->sdl_alen;
 #endif /*  defined(__linux__) || defined (_WRS_KERNEL) */
@@ -274,6 +306,24 @@ char os_char_toupper(
 	return (char)toupper( c );
 }
 #endif /* if defined(OSAL_WRAP) && OSAL_WRAP */
+
+#if defined(OSAL_THREAD_SUPPORT) && OSAL_THREAD_SUPPORT
+int os_clock_realtime( struct timespec *ts )
+{
+#ifdef CLOCK_REALTIME
+	return clock_gettime( CLOCK_REALTIME, ts );
+#else
+	clock_serv_t cclock;
+	mach_timespec_t mts;
+	host_get_clock_service( mach_host_self(), CALENDAR_CLOCK, &cclock );
+	clock_get_time( cclock, &mts );
+	mach_port_deallocate( mach_task_self(), cclock );
+	ts->tv_sec = mts.tv_sec;
+	ts->tv_nsec = mts.tv_nsec;
+	return 0;
+#endif
+}
+#endif /* defined(OSAL_THREAD_SUPPORT) && OSAL_THREAD_SUPPORT */
 
 /* file & directory support */
 os_status_t os_directory_create(
@@ -530,9 +580,9 @@ os_bool_t os_directory_exists(
 os_uint64_t os_directory_free_space( const char *path )
 {
 	os_uint64_t free_space = 0u;
-	struct statvfs64 sfs;
+	struct statvfs sfs;
 
-	if ( statvfs64 ( path, &sfs ) != -1 )
+	if ( statvfs( path, &sfs ) != -1 )
 		free_space = (os_uint64_t)sfs.f_bsize *
 			(os_uint64_t)sfs.f_bavail;
 	return free_space;
@@ -2399,7 +2449,7 @@ os_status_t os_thread_condition_timed_wait(
 		{
 			int error_number;
 			struct timespec abs_time_out;
-			clock_gettime( CLOCK_REALTIME, &abs_time_out );
+			os_clock_realtime( &abs_time_out );
 			abs_time_out.tv_nsec +=
 				( max_time_out % OS_MILLISECONDS_IN_SECOND ) *
 				OS_NANOSECONDS_IN_MILLISECOND;
