@@ -23,7 +23,7 @@ if ( CMOCKA_FOUND AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/test" )
 
 		# Setup wrapper scripts to help obtain unit test count numbers
 		set( COUNT_SCRIPT "test-case-count.py" )
-		seT( COUNT_SCRIPT_DIR "${CMAKE_CURRENT_LIST_DIR}" )
+		set( COUNT_SCRIPT_DIR "${CMAKE_CURRENT_LIST_DIR}" )
 		if( NOT EXISTS "${COUNT_SCRIPT_DIR}/${COUNT_SCRIPT}.in" AND EXISTS "${CMAKE_CURRENT_LIST_DIR}/../scripts/${COUNT_SCRIPT}.in" )
 			set( COUNT_SCRIPT_DIR "${CMAKE_CURRENT_LIST_DIR}/../scripts" )
 		endif( NOT EXISTS "${COUNT_SCRIPT_DIR}/${COUNT_SCRIPT}.in" AND EXISTS "${CMAKE_CURRENT_LIST_DIR}/../scripts/${COUNT_SCRIPT}.in" )
@@ -47,8 +47,125 @@ if ( CMOCKA_FOUND AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/test" )
 		# include code coverage support
 		include( CodeCoverage )
 	endif ( NOT CMAKE_CROSSCOMPILING )
+	set( INT_TESTS "" CACHE INTERNAL "list of integration tests" )
+	include_directories( SYSTEM ${CMOCKA_INCLUDES} )
 	add_subdirectory( "test" )
+
+	# add integration tests
+	if ( INT_TESTS )
+		add_custom_target( "integration-tests" )
+
+		# On Windows, copy the CMocka .dll to working directory
+		if ( MSVC )
+			get_filename_component( CMOCKA_LIB_DIR
+				"${CMOCKA_LIBRARY}" DIRECTORY )
+			find_file( CMOCKA_DLL "cmocka.dll"
+				HINTS "${CMOCKA_LIB_DIR}"
+				      "{CMOCKA_LIB_DIR}/../bin"
+				NO_DEFAULT_PATH
+			)
+			if ( CMOCKA_DLL )
+				add_custom_command( TARGET "integration-tests"
+					COMMAND ${CMAKE_COMMAND} -E copy_if_different
+						"${CMOCKA_DLL}"
+						"${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/cmocka.dll"
+				)
+			endif( CMOCKA_DLL )
+		endif( MSVC )
+
+		# Add each test file
+		foreach( INT_TEST ${INT_TESTS} )
+			add_custom_command( TARGET "integration-tests"
+				COMMAND ${INT_TEST} ${INT_TEST_${INT_TEST}_ARGS}
+				DEPENDS "${INT_TEST}"
+			)
+		endforeach( INT_TEST )
+	endif( INT_TESTS )
 endif()
+
+# Adds a new integration test
+# Parameters:
+# 	TEST_NAME - name of the test
+# 	DEFS ... - list of definitions
+# 	INCS ... - list of include directories
+# 	LIBS ... - list of libraries for linking
+# 	SRCS ... - list of source files
+function( ADD_INTEGRATION_TEST TEST_NAME )
+	# Loop to accept multiple test run variables (TEST1...TEST9)
+	set( TEST_GENERATED_FILES )
+	set( TEST_MAX 10 )
+	set( TEST_MIN 1 )
+	set( TEST_ARGS )
+	while( ${TEST_MIN} LESS ${TEST_MAX} )
+		set( TEST_ARGS ${TEST_ARGS} "TEST${TEST_MIN}" )
+		math( EXPR TEST_MIN "${TEST_MIN} + 1" )
+	endwhile( ${TEST_MIN} LESS ${TEST_MAX} )
+
+	# Parse arguments passed to the function
+	cmake_parse_arguments( INT_TEST "" "" "DEFS;INCS;LIBS;SRCS;${TEST_ARGS}" ${ARGN} )
+	set( INT_TEST_SRCS ${INT_TEST_SRCS} ${INT_TEST_UNPARSED_ARGUMENTS} )
+
+	# Add integration tests
+	add_executable( "${TEST_NAME}" EXCLUDE_FROM_ALL ${INT_TEST_SRCS} )
+	set( INT_TESTS ${INT_TESTS} "${TEST_NAME}" CACHE INTERNAL "list of integration tests" )
+
+	# Add include directories
+	if ( INT_TEST_INCS )
+		target_include_directories( "${TEST_NAME}" SYSTEM
+			PUBLIC ${INT_TEST_INCS} )
+	endif( INT_TEST_INCS )
+
+	# Add test library
+	add_dependencies( tests "${TEST_NAME}" )
+	target_link_libraries( "${TEST_NAME}" test-support ${INT_TEST_LIBS} )
+
+	# Add defintions, if required
+	if ( INT_TEST_DEFS )
+		string( REGEX REPLACE "^-D" "" INT_TEST_DEFS ${INT_TEST_DEFS} )
+		get_target_property( COMPILE_DEFS "${TEST_NAME}"
+			COMPILE_DEFINITIONS )
+		set( COMPILE_DEFS ${COMPILE_DEFS} "${INT_TEST_DEFS}" )
+		set_target_properties( "${TEST_NAME}"
+			PROPERTIES COMPILE_DEFINITIONS "${COMPILE_DEFS}" )
+	endif ( INT_TEST_DEFS )
+endfunction( ADD_INTEGRATION_TEST )
+
+# Adds multiple integration tests
+# Parameters:
+# 	group - grouping name
+# 	... - name of variables holding test information, in the form:
+# 		TEST_${NAME}_ARGS - arguments to pass to each test
+# 		TEST_${NAME}_DEFS - definitions to pass to each test
+# 		TEST_${NAME}_INCS - system include directories to compile with
+# 		TEST_${NAME}_LIBS - libraries to link the test executable with
+# 		TEST_${NAME}_SRCS - test source files
+# 		TEST_${NAME}_TEST1..9 - run a test multiple times, passing
+# 		                        different arguments each time
+macro( ADD_INTEGRATION_TESTS GROUP )
+	foreach( TEST ${ARGN} )
+		string( TOUPPER "${TEST}" TEST_UPPER )
+		set( TEST_NAME "integration-${TEST}" )
+		if ( NOT "x${GROUP}" STREQUAL "x" )
+			set( TEST_NAME "integration-${GROUP}-${TEST}" )
+		endif ( NOT "x${GROUP}" STREQUAL "x" )
+		set( TEST_MAX 10 )
+		set( TEST_MIN 1 )
+		set( TEST_ARGS )
+		while( ${TEST_MIN} LESS ${TEST_MAX} )
+			if ( TEST_${TEST_UPPER}_TEST${TEST_MIN} )
+				set ( TEST_ARGS ${TEST_ARGS} "TEST${TEST_MIN}" "${TEST_${TEST_UPPER}_TEST${TEST_MIN}}" )
+			endif ( TEST_${TEST_UPPER}_TEST${TEST_MIN} )
+			math( EXPR TEST_MIN "${TEST_MIN} + 1" )
+		endwhile( ${TEST_MIN} LESS ${TEST_MAX} )
+		add_integration_test( ${TEST_NAME}
+			DEFS ${TEST_${TEST_UPPER}_DEFS}
+			INCS ${TEST_${TEST_UPPER}_INCS}
+			LIBS ${TEST_${TEST_UPPER}_LIBS}
+			SRCS ${TEST_${TEST_UPPER}_SRCS}
+			${TEST_ARGS}
+		)
+	endforeach( TEST )
+endmacro( ADD_INTEGRATION_TESTS )
 
 # Create a new library for testing functionality
 # Parameters:
@@ -114,7 +231,7 @@ function( ADD_UNIT_TEST TEST_NAME )
 
 	# Build the test application
 	string( REPLACE "/test/" "/src/" SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}" )
-	string( REPLACE "/src/src" "/src" SOURCE_DIR "${SOURCE_DIR}" )
+	string( REPLACE "/src/unit/src" "/src" SOURCE_DIR "${SOURCE_DIR}" )
 	foreach( TEST_SRC ${UNIT_TEST_UNIT} )
 		if( NOT TEST_SRC MATCHES "[$]<.*>" )
 			set( TEST_SRC "${SOURCE_DIR}/${TEST_SRC}" )
@@ -133,8 +250,9 @@ function( ADD_UNIT_TEST TEST_NAME )
 	endforeach( TEST_SRC )
 
 	include_directories( "${SOURCE_DIR}" )
-	include_directories( SYSTEM ${CMOCKA_INCLUDES} )
 	add_executable( "${TEST_NAME}" EXCLUDE_FROM_ALL ${UNIT_TEST_SRCS} )
+
+	# Add include directories
 	if ( UNIT_TEST_INCS )
 		target_include_directories( "${TEST_NAME}" SYSTEM
 			PUBLIC ${UNIT_TEST_INCS} )
@@ -217,18 +335,23 @@ endfunction( ADD_UNIT_TEST )
 
 # Adds multiple unit tests
 # Parameters:
+# 	group - grouping name
 # 	... - name of variables holding unit test information, in the form:
-# 		TEST_${NAME}_ARGS - arguments to pass to each test
 # 		TEST_${NAME}_DEFS - definitions to pass to each test
 # 		TEST_${NAME}_INCS - system include directories to compile with
 # 		TEST_${NAME}_LIBS - libraries to link the test executable with
 # 		TEST_${NAME}_UNIT - source files in the unit under test
 # 		TEST_${NAME}_SRCS - test source files
 # 		TEST_${NAME}_MOCK - functions that are mocked within the test
-macro( ADD_TESTS TARGET )
+# 		TEST_${NAME}_TEST1..9 - run a test multiple times, passing
+# 		                        different arguments each time
+macro( ADD_UNIT_TESTS GROUP )
 	foreach( TEST ${ARGN} )
 		string( TOUPPER "${TEST}" TEST_UPPER )
-		set( TEST_NAME "test-${TARGET}-${TEST}" )
+		set( TEST_NAME "unit-${TEST}" )
+		if ( NOT "x${GROUP}" STREQUAL "x" )
+			set( TEST_NAME "unit-${GROUP}-${TEST}" )
+		endif ( NOT "x${GROUP}" STREQUAL "x" )
 		set( TEST_MAX 10 )
 		set( TEST_MIN 1 )
 		set( TEST_ARGS )
@@ -248,5 +371,5 @@ macro( ADD_TESTS TARGET )
 			${TEST_ARGS}
 		)
 	endforeach( TEST )
-endmacro( ADD_TESTS )
+endmacro( ADD_UNIT_TESTS )
 

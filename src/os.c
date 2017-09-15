@@ -65,7 +65,7 @@ char *os_itoa( int value, char *str, size_t str_len, int base )
 }
 
 os_status_t os_time_elapsed(
-	os_timestamp_t *start_time,
+	const os_timestamp_t *start_time,
 	os_millisecond_t *elapsed_time )
 {
 	os_status_t result = OS_STATUS_BAD_PARAMETER;
@@ -89,7 +89,7 @@ os_status_t os_time_elapsed(
 }
 
 os_status_t os_time_remaining(
-	os_timestamp_t *start_time,
+	const os_timestamp_t *start_time,
 	os_millisecond_t time_out,
 	os_millisecond_t *remaining )
 {

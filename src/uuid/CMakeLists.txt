@@ -103,5 +103,6 @@ set( UUID_C_HDRS
 )
 
 add_library( "uuid" OBJECT ${UUID_C_HDRS} ${UUID_C_SRCS} )
+add_library( "uuid-unit-test" STATIC ${UUID_C_HDRS} ${UUID_C_SRCS} )
 
 endif() # NOT WIN32

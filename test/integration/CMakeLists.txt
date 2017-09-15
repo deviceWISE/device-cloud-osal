@@ -7,16 +7,18 @@
 # herein.  All rights not licensed by Wind River are reserved by Wind River.
 #
 
-if( MSVC )
-	add_definitions( "/D_CRT_SECURE_NO_WARNINGS" )
-endif( MSVC )
+set( TESTS
+	"time"
+)
 
-# Generate test support functions
-set_compiler_flag_if_supported( "-Wno-bad-function-cast" "-Wno-unused-parameter" )
-include_directories( "test-support" )
-add_subdirectory( "test-support" )
-# Add unit tests
-add_subdirectory( "unit" )
-# Add integration tests
-add_subdirectory( "integration" )
+# Use static library version
+add_definitions( "-DOSAL_STATIC=1" )
+set( OS_LIB ${TARGET}${TARGET_STATIC_SUFFIX} )
 
+include_directories( "${CMAKE_BINARY_DIR}/out" )
+
+# time test
+set( TEST_TIME_SRCS "time_test.c" )
+set( TEST_TIME_LIBS ${OS_LIB} )
+
+add_integration_tests( "" ${TESTS} )
