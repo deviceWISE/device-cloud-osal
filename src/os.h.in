@@ -146,19 +146,19 @@ typedef uint64_t                                 os_timestamp_t;
 #	define OS_API
 #else /* ifdef OSAL_STATIC */
 #	if defined _WIN32 || defined __CYGWIN__
-#		if osal_shared_EXPORTS
+#		if defined(OSAL_EXPORT) && OSAL_EXPORT
 #			ifdef __GNUC__
 #				define OS_API __attribute__((dllexport))
 #			else
 #				define OS_API __declspec(dllexport)
 #			endif
-#		else /* if osal_shared_EXPORTS */
+#		else /* if defined(OSAL_EXPORT) && OSAL_EXPORT */
 #			ifdef __GNUC__
 #				define OS_API __attribute__((dllimport))
 #			else
 #				define OS_API __declspec(dllimport)
 #			endif
-#		endif /* if osal_shared_EXPORTS */
+#		endif /* if defined(OSAL_EXPORT) && OSAL_EXPORT */
 #	else /* if defined _WIN32 || defined __CYGWIN__ */
 #		if __GNUC__ >= 4
 #			define OS_API __attribute__((visibility("default")))
@@ -834,6 +834,29 @@ OS_API os_status_t os_make_path(
 OS_API int os_atoi(
 	const char *str
 );
+
+/**
+ * @brief Convert an integer to a string
+ *
+ * @param[in]      value               number to convert
+ * @param[out]     str                 output buffer
+ * @param[in]      str_len             output buffer length
+ * @param[in]      base                Numerical base used to represent the
+ *                                     value as a string, between 2 and 36,
+ *                                     where 10 means decimal base,
+ *                                     16 hexadecimal, 8 octal, and 2 binary.
+ *
+ * @retval         NULL                @p base is not in a valid range,
+ *                                     @p str is NULL or the buffer is not large
+ *                                     enough
+ * @retval         !NULL               a pointer to the resulting
+ *                                     null-terminated string, same as @p str
+ */
+OS_API char *os_itoa(
+	int value,
+	char *str,
+	size_t str_len,
+	int base );
 
 /**
  * @brief Compares two strings ignoring case

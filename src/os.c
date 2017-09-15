@@ -15,6 +15,55 @@
 
 #include <stdarg.h>
 
+char *os_itoa( int value, char *str, size_t str_len, int base )
+{
+	char *result = NULL;
+	if ( str && str_len > 0 && base >= 2 && base <= 36 )
+	{
+		size_t i = 0u;
+		os_bool_t is_neg = OS_FALSE;
+		int start = 0;
+
+		if ( value == 0 )
+			str[i++] = '0';
+
+		if ( value < 0 && base == 10 )
+		{
+			is_neg = OS_TRUE;
+			value = value * -1;
+		}
+
+		while ( value != 0 && i < str_len )
+		{
+			const int rem = value % base;
+			str[i++] = ( rem > 9 ) ?
+				(char)( rem - 10 ) + 'a' : (char)rem + '0';
+			value = value / base;
+		}
+
+		if ( i < str_len )
+		{
+			if ( is_neg != OS_FALSE )
+				str[i++] = '-';
+
+			str[i] = '\0';
+			--i;
+			while ( (size_t)start < i )
+			{
+				const char c = str[start];
+				str[start] = str[i];
+				str[i] = c;
+				start++;
+				i--;
+			}
+			result = str;
+		}
+	}
+	else if ( str )
+		*str = '\0';
+	return result;
+}
+
 os_status_t os_time_elapsed(
 	os_timestamp_t *start_time,
 	os_millisecond_t *elapsed_time )

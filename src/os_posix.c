@@ -273,7 +273,6 @@ int os_atoi( const char *str )
 	return result;
 }
 
-
 /* character testing support */
 os_bool_t os_char_isalnum(
 	char c )

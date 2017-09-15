@@ -18,14 +18,20 @@
 
 include( FindPackageHandleStandardArgs )
 
+set( _PROGRAMFILES     "ProgramFiles" )
+set( _PROGRAMFILES_X86 "ProgramFiles(x86)" )
 find_path( CMOCKA_INCLUDE_DIR
 	NAMES cmocka.h
 	DOC "cmocka include directory"
+	PATHS "$ENV{${_PROGRAMFILES}}/cmocka/include"
+	      "$ENV{${_PROGRAMFILES_X86}}/cmocka/include"
 )
 
 find_library( CMOCKA_LIBRARY
 	NAMES cmocka
 	DOC "Required cmocka libraries"
+	PATHS "$ENV{${_PROGRAMFILES}}/cmocka/lib"
+	      "$ENV{${_PROGRAMFILES_X86}}/cmocka/lib"
 )
 
 set( CMOCKA_LIBRARIES ${CMOCKA_LIBRARY} )
