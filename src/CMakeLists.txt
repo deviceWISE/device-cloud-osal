@@ -107,6 +107,8 @@ set_target_properties(
 		VERSION ${PACKAGE_VERSION}
 )
 target_link_libraries( "${TARGET}${TARGET_SHARED_SUFFIX}" ${C_LIBS} )
+target_compile_definitions( "${TARGET}${TARGET_SHARED_SUFFIX}" PRIVATE OSAL_EXPORT=1 )
+
 
 # Installation Rules
 ####################

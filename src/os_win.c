@@ -3460,7 +3460,6 @@ os_status_t os_time(
 	return result;
 }
 
-#if 0
 os_status_t os_time_format(
 	char *buf,
 	size_t len,
@@ -3468,19 +3467,24 @@ os_status_t os_time_format(
 	os_timestamp_t time_stamp,
 	os_bool_t to_local_time )
 {
+	union time_union {
+		FILETIME file_time;
+		ULARGE_INTEGER ul;
+	};
+
 	os_status_t result = OS_STATUS_BAD_PARAMETER;
-	if ( buf && format )
+	if ( buf && len > 0u && format )
 	{
 		const char *cur;
-		char *win_fmt;
-		size_t win_fmt_len = 0u;
-		FILETIME ft;
+		union time_union tu;
 		SYSTEMTIME st;
 		os_date_time_t date_time;
-		const char *time_zone = "UTC";
-		long time_zone_bias = 0;
-		TIME_ZONE_INFORMATION tzi;
+		LPCWSTR time_zone = L"GMT";
+		LONG time_zone_bias = 0;
+		size_t pos = 0u;
+		LCID locale = LOCALE_SYSTEM_DEFAULT;
 
+		*buf = '\0';
 		os_time_stamp_to_date_time( &date_time, time_stamp );
 
 		ZeroMemory( &st, sizeof( SYSTEMTIME ) );
@@ -3496,15 +3500,70 @@ os_status_t os_time_format(
 		/* According to the MSDN @c wDayOfWeek is ignored when
 		 * converting @c SYSTEMTIME to @c FILETIME, but filled in when
 		 * converting back */
-		SystemTimeToFileTime( &st, &ft );
-		FileTimeToSystemTime( &ft, &st );
+		SystemTimeToFileTime( &st, &tu.file_time );
+		FileTimeToSystemTime( &tu.file_time, &st );
 
 		/* Convert UTC time to local time */
 		if ( to_local_time != OS_FALSE )
 		{
+			TIME_ZONE_INFORMATION tzi;
+			if ( GetTimeZoneInformationForYear(
+				st.wYear, NULL, &tzi ) == TRUE )
+			{
+				union time_union day_date;
+				union time_union std_date;
+				SYSTEMTIME lt;
+
+				tzi.StandardDate.wYear = date_time.year;
+				tzi.DaylightDate.wYear = date_time.year;
+				SystemTimeToFileTime( &tzi.StandardDate,
+					&std_date.file_time );
+				SystemTimeToFileTime( &tzi.DaylightDate,
+					&day_date.file_time );
+
+				/* default bias */
+				time_zone_bias = tzi.Bias;
+
+				/** @todo if time zone information is set */
+				if ( tzi.StandardDate.wMonth ||
+					tzi.StandardDate.wHour ||
+					tzi.StandardDate.wMinute ||
+					tzi.StandardDate.wSecond ||
+					tzi.StandardDate.wMilliseconds )
+				{
+					if ( tu.ul.QuadPart < day_date.ul.QuadPart ||
+					     tu.ul.QuadPart > std_date.ul.QuadPart )
+					{
+						time_zone = tzi.StandardName;
+						time_zone_bias += tzi.StandardBias;
+					}
+					else
+					{
+						time_zone = tzi.DaylightName;
+						time_zone_bias += tzi.DaylightBias;
+					}
+				}
+
+				/* Windows stores the bias of a time zone as:
+				 * [local_time] + bias = [GMT]; so for
+				 * EST: [local_time] + 300 minutes = GMT;
+				 * However, we want:
+				 * GMT + [hours][minutes] = local_time [-0500]
+				 * So we take the minutes from the bias and
+				 * push them to the hundreds column, and then
+				 * extract the minutes... and reverse the symbol
+				 */
+				time_zone_bias =
+					((time_zone_bias / 60) * 100 +
+					(time_zone_bias % 100)) * -1;
+
+				SystemTimeToTzSpecificLocalTime(
+					&tzi, &st, &lt );
+				CopyMemory( &st, &lt, sizeof( SYSTEMTIME ) );
+			}
+
+#if 0
 			DWORD res;
-			SYSTEMTIME lt;
-			res = GetTimeZoneInformation( &tzi );
 			if ( res == TIME_ZONE_ID_STANDARD ||
 			     res == TIME_ZONE_ID_UNKNOWN ||
 			     res == TIME_ZONE_ID_DAYLIGHT )
@@ -3525,214 +3584,273 @@ os_status_t os_time_format(
 					&tzi, &st, &lt );
 				CopyMemory( &st, &lt, sizeof( SYSTEMTIME ) );
 			}
+#endif
 		}
 
 		/* Calculate the number of characters required for time
 		 * format in Windows form */
 		cur = format;
-		while ( *cur )
+		while ( *cur && pos < len )
 		{
 			if ( *cur == '%' )
 			{
 				++cur;
 				switch ( *cur )
 				{
-				case 'r': /* hh-mm-ss tt */
-					win_fmt_len += 11u;
+				case 'r': /* hh:mm:ss tt */
+					pos += GetTimeFormatA( locale, 0,
+						&st, "hh':'mm':'ss tt",
+						&buf[pos], len - pos );
 					break;
 				case 'F': /* yyyy-MM-dd */
-					win_fmt_len += 10u;
+					pos += GetDateFormatA( locale, 0,
+						&st, "yyyy'-'MM'-'dd",
+						&buf[pos], len - pos );
 					break;
-				case 'T': /* HH-mm-ss */
+				case 'T': /* HH:mm:ss */
+					pos += GetTimeFormatA( locale, 0,
+						&st, "HH':'mm':'ss",
+						&buf[pos], len - pos );
+					break;
 				case 'D': /* MM/dd/yy */
-					win_fmt_len += 8u;
+					pos += GetDateFormatA( locale, 0,
+						&st, "MM'/'dd'/'yy",
+						&buf[pos], len - pos );
 					break;
-				case 'R': /* HH-mm */
-					win_fmt_len += 5u;
+				case 'R': /* HH:mm */
+					pos += GetTimeFormatA( locale, 0,
+						&st, "HH':'mm",
+						&buf[pos], len - pos );
 					break;
 				case 'A': /* dddd */
+					pos += GetDateFormatA( locale, 0,
+						&st, "dddd",
+						&buf[pos], len - pos );
+					break;
 				case 'B': /* MMMM */
+					pos += GetDateFormatA( locale, 0,
+						&st, "MMMM",
+						&buf[pos], len - pos );
+					break;
 				case 'G': /* yyyy */
 				case 'Y': /* yyyy */
-					win_fmt_len += 4u;
+					pos += GetDateFormatA( locale, 0,
+						&st, "yyyy",
+						&buf[pos], len - pos );
 					break;
 				case 'a': /* ddd */
+					pos += GetDateFormatA( locale, 0,
+						&st, "ddd",
+						&buf[pos], len - pos );
+					break;
 				case 'b': /* MMM */
-					win_fmt_len += 3u;
+				case 'h':
+					pos += GetDateFormatA( locale, 0,
+						&st, "MMM",
+						&buf[pos], len - pos );
 					break;
 				case 'd': /* dd */
+					pos += GetDateFormatA( locale, 0,
+						&st, "dd",
+						&buf[pos], len - pos );
+					break;
 				case 'H': /* HH */
+					pos += GetTimeFormatA( locale, 0,
+						&st, "HH",
+						&buf[pos], len - pos );
+					break;
 				case 'I': /* hh */
+					pos += GetTimeFormatA( locale, 0,
+						&st, "hh",
+						&buf[pos], len - pos );
+					break;
 				case 'M': /* mm */
+					pos += GetTimeFormatA( locale, 0,
+						&st, "mm",
+						&buf[pos], len - pos );
+					break;
 				case 'm': /* MM */
+					pos += GetDateFormatA( locale, 0,
+						&st, "MM",
+						&buf[pos], len - pos );
+					break;
 				case 'n': /* \r\n */
+					buf[pos++] = '\n';
+					break;
 				case 'S': /* ss */
+					pos += GetTimeFormatA( locale, 0,
+						&st, "ss",
+						&buf[pos], len - pos );
+					break;
 				case 'p': /* tt */
+				case 'P':
+					{
+						const size_t save_pos = pos;
+						pos += GetTimeFormatA( locale, 0,
+							&st, "tt",
+							&buf[pos], len -
+								save_pos );
+						if ( *cur == 'P' )
+							CharLowerBuffA(
+								&buf[save_pos],
+								pos - save_pos );
+					}
+					break;
 				case 'g': /* yy */
 				case 'y': /* yy */
-					win_fmt_len += 2u;
+					pos += GetDateFormatA( locale, 0,
+						&st, "yy",
+						&buf[pos], len - pos );
 					break;
 				case 'e': /* d */
+					if ( st.wDay < 10 )
+						buf[pos++] = ' ';
+					pos += GetDateFormatA( locale, 0,
+						&st, "d",
+						&buf[pos], len - pos );
+					break;
 				case 'l': /* h */
+					if ( ( st.wHour > 0 && st.wHour < 10 ) || ( st.wHour > 12 && st.wHour < 22 ) )
+						buf[pos++] = ' ';
+					pos += GetTimeFormatA( locale, 0,
+						&st, "h",
+						&buf[pos], len - pos );
+					break;
 				case 'k': /* H */
-				case '%': /* '%' */
+					if ( st.wHour < 10 )
+						buf[pos++] = ' ';
+					pos += GetTimeFormatA( locale, 0,
+						&st, "H",
+						&buf[pos], len - pos );
+					break;
 				case 't': /* \t */
+					buf[pos++] = '\t';
+					break;
+				case 'c': /* Thu Aug 23 14:55:02 2001 */
+					pos += GetDateFormatA( locale, 0, &st,
+						NULL, &buf[pos], len - pos );
+					buf[pos++] = ' ';
+					pos += GetTimeFormatA( locale, 0, &st,
+						NULL, &buf[pos], len - pos );
+					break;
+				case 'C': /* century */
+				case 'j': /* day of year */
+				case 'U': /* week # (Sunday as first day) */
+				case 'V': /* week # (First week with 4 days) */
+				case 'W': /* week # (Monday as first day) */
 				case 'u': /* day of week (1-7) */
 				case 'w': /* day of week (0-6) */
-					++win_fmt_len;
-					break;
 				case 'z': /* time zone number +000 */
-					win_fmt_len += 4u;
+					{
+						DWORD num;
+						if ( *cur == 'C' )
+							num = st.wYear / 100;
+						else if ( *cur == 'z' )
+						{
+							if ( time_zone_bias >= 0 )
+							{
+								buf[pos++] = '+';
+								num = time_zone_bias;
+							}
+							else
+							{
+								buf[pos++] = '-';
+								num = time_zone_bias * -1;
+							}
+
+							if ( num < 1000 )
+								buf[pos++] = '0';
+							if ( num < 100 )
+								buf[pos++] = '0';
+							if ( num < 10 )
+								buf[pos++] = '0';
+						}
+						else if ( *cur == 'j' || *cur == 'U' || *cur == 'V' || *cur == 'W' )
+						{
+							num = (st.wMonth - 1) * 30 + (st.wMonth / 2) + st.wDay;
+							/* february has < 30 days */
+							if ( st.wMonth > 2 )
+							{
+								/* if leap year then -1 */
+								if ( st.wYear % 4 == 0 && (st.wYear % 100 != 0 || st.wYear % 400 == 0 ))
+									--num;
+								else
+									num -= 2;
+							}
+
+							/* convert to week # */
+							if ( *cur == 'U' || *cur == 'V' || *cur == 'W' )
+							{
+								if ( *cur == 'U' ) /* Week starts on Sunday */
+									num = (num + 7 - st.wDayOfWeek) / 7;
+								else if ( *cur == 'W' ) /* Week starts on Monday */
+									num = (num + 7 - (st.wDayOfWeek ? (st.wDayOfWeek - 1) : 6)) / 7;
+								else if ( *cur == 'V' )
+									/** @todo fix this to properly calculate based on first week with 4 days */
+									num = (num + 7 - st.wDayOfWeek) / 7 + 1;
+
+								/* ensure in 0-52 range */
+								if ( num > 52 )
+									num -= 52;
+							}
+
+							/* pad with leading '0's */
+							if ( *cur == 'j' && num < 100 )
+								buf[pos++] = '0';
+							if ( num < 10 )
+								buf[pos++] = '0';
+						}
+						else if ( *cur == 'u' )
+						{
+							num = st.wDayOfWeek;
+							if ( num == 0 )
+								num = 7;
+						}
+						else /* if ( *cur == 'w' ) */
+							num = st.wDayOfWeek;
+
+						os_itoa( num, &buf[pos],
+							len - pos, 10 );
+						++pos;
+						while ( num > 0 && pos < len )
+						{
+							num /= 10;
+							++pos;
+						}
+						break;
+					}
+				case 'x': /* locale default date */
+					pos += GetDateFormatA( locale, 0, &st,
+						NULL, &buf[pos], len - pos );
+					break;
+				case 'X': /* locale default time */
+					pos += GetTimeFormatA( locale, 0, &st,
+						NULL, &buf[pos], len - pos );
+					break;
 				case 'Z': /* time zone abbrev */
-					win_fmt_len += os_strlen( time_zone );
+					pos += WideCharToMultiByte( CP_UTF8, 0,
+						time_zone, -1, &buf[pos],
+						len, NULL, NULL );
+				case '%': /* '%' */
+					buf[pos++] = '%';
+					break;
+				default: /* single %, then non-control character */
+					buf[pos++] = '%';
+					buf[pos++] = *cur;
+					break;
 				}
 			}
 			else
-				++win_fmt_len;
+				buf[pos++] = *cur;
 			++cur;
 		}
+		buf[pos] = '\0';
 
-		win_fmt = (char*)HeapAlloc( GetProcessHeap(), 0, win_fmt_len + 1u );
-		if ( win_fmt )
-		{
-			char *win_fmt_cur = win_fmt;
-			cur = format;
-			while ( *cur )
-			{
-				if ( *cur == '%' )
-				{
-					++cur;
-					switch ( *cur )
-					{
-					case 'r': /* hh-mm-ss tt */
-						os_strcmp( win_fmt_cur, "hh-mm-ss tt" );
-						win_fmt_cur += 11;
-						break;
-					case 'F': /* yyyy-MM-dd */
-						os_strcmp( win_fmt_cur, "yyyy-MM-dd" );
-						win_fmt_cur += 10;
-						break;
-					case 'T': /* HH-mm-ss */
-						os_strcmp( win_fmt_cur, "HH-mm-ss" );
-						win_fmt_cur += 8;
-						break;
-					case 'D': /* MM/dd/yy */
-						os_strcmp( win_fmt_cur, "MM/dd/yy" );
-						win_fmt_cur += 8;
-						break;
-					case 'R': /* HH-mm */
-						os_strcmp( win_fmt_cur, "HH-mm" );
-						win_fmt_cur += 5;
-						break;
-					case 'A': /* dddd */
-						os_strcmp( win_fmt_cur, "dddd" );
-						win_fmt_cur += 4;
-						break;
-					case 'B': /* MMMM */
-						os_strcmp( win_fmt_cur, "MMMM" );
-						win_fmt_cur += 4;
-						break;
-					case 'G': /* yyyy */
-					case 'Y': /* yyyy */
-						os_strcmp( win_fmt_cur, "yyyy" );
-						win_fmt_cur += 4;
-						break;
-					case 'a': /* ddd */
-						os_strcmp( win_fmt_cur, "ddd" );
-						win_fmt_cur += 3;
-						break;
-					case 'b': /* MMM */
-						os_strcmp( win_fmt_cur, "MMM" );
-						win_fmt_cur += 3;
-						break;
-					case 'd': /* dd */
-						os_strcmp( win_fmt_cur, "dd" );
-						win_fmt_cur += 2;
-						break;
-					case 'H': /* HH */
-						os_strcmp( win_fmt_cur, "HH" );
-						win_fmt_cur += 2;
-						break;
-					case 'I': /* hh */
-						os_strcmp( win_fmt_cur, "hh" );
-						win_fmt_cur += 2;
-						break;
-					case 'M': /* mm */
-						os_strcmp( win_fmt_cur, "mm" );
-						win_fmt_cur += 2;
-						break;
-					case 'm': /* MM */
-						os_strcmp( win_fmt_cur, "MM" );
-						win_fmt_cur += 2;
-						break;
-					case 'n': /* \r\n */
-						os_strcmp( win_fmt_cur, "\r\n" );
-						win_fmt_cur += 2;
-						break;
-					case 'S': /* ss */
-						os_strcmp( win_fmt_cur, "ss" );
-						win_fmt_cur += 2;
-						break;
-					case 'p': /* tt */
-						os_strcmp( win_fmt_cur, "tt" );
-						win_fmt_cur += 2;
-						break;
-					case 'g': /* yy */
-					case 'y': /* yy */
-						os_strcmp( win_fmt_cur, "yy" );
-						win_fmt_cur += 2;
-						break;
-					case 'e': /* d */
-						*win_fmt_cur = 'd';
-						++win_fmt_cur;
-						break;
-					case 'l': /* h */
-						*win_fmt_cur = 'h';
-						++win_fmt_cur;
-						break;
-					case 'k': /* H */
-						*win_fmt_cur = 'H';
-						++win_fmt_cur;
-						break;
-					case '%': /* '%' */
-						*win_fmt_cur = '%';
-						++win_fmt_cur;
-						break;
-					case 't': /* \t */
-						*win_fmt_cur = '\t';
-						++win_fmt_cur;
-						break;
-					case 'u': /* day of week (1-7) */
-					case 'w': /* day of week (0-6) */
-						break;
-					case 'z': /* time zone number +000 */
-						win_fmt_len += 4u;
-					case 'Z': /* time zone abbrev */
-						win_fmt_len += os_strlen( time_zone );
-					}
-				}
-				else
-				{
-					*win_fmt_cur = *cur;
-					++win_fmt_cur;
-				}
-				++cur;
-			}
-			*win_fmt_cur = '\0';
-			if ( GetDateFormatA( LOCAL_SYSTEM_DEFAULT,
-				0, &st, win_fmt, win_fmt_len ) != 0 &&
-			     GetTimeFormatA( LOCAL_SYSTEM_DEFAULT,
-				0, &st, win_fmt, win_fmt_len ) != 0 )
-			{
-				os_strncpy( buf, win_fmt, len );
-				result = OS_STATUS_SUCCESS;
-			}
-			HeapFree( GetProcessHeap(), 0, win_fmt );
-		}
+		if ( !*cur )
+			result = OS_STATUS_SUCCESS;
 	}
 	return result;
 }
-#endif
 
 os_status_t os_time_sleep(
 	os_millisecond_t ms,
