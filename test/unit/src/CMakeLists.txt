@@ -12,12 +12,13 @@ set( TESTS
 	"char"
 )
 
+add_definitions( "-DOSAL_STATIC=1" )
 if ( WIN32 )
 	set( OS_SRC "os_win.c" )
 	set( OS_LIBS version Iphlpapi Rpcrt4 Shlwapi Ws2_32 )
 else()
-	set( OS_SRC "os_posix.c" ) #$<TARGET_OBJECTS:uuid> )
-	set( OS_LIBS "dl" )
+	set( OS_SRC "os_posix.c" )
+	set( OS_LIBS "dl" "uuid-unit-test" )
 endif()
 
 #include( "mock_api" )
@@ -29,6 +30,5 @@ set( TEST_CHAR_SRCS ${MOCK_API_SRCS} ${MOCK_OSAL_SRCS} "char_test.c" )
 set( TEST_CHAR_LIBS ${MOCK_API_LIBS} ${MOCK_OSAL_LIBS} ${OS_LIBS} )
 set( TEST_CHAR_UNIT ${OS_SRC} "os.c" )
 
-include( TestSupport )
-add_tests( ${TARGET} ${TESTS} )
+add_unit_tests( ${TARGET} ${TESTS} )
 

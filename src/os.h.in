@@ -1663,12 +1663,12 @@ OS_API double os_random(
 /**
  * @brief Returns the system time
  *
- * @note This function will return either an absolute time or up time depending
- *       on the system implementation and support level
+ * @note This function will return either an absolute time or up-time (in
+ *       milliseconds) depending on the limitations of the system
  *
- * @param[out]     time_stamp          current time
+ * @param[out]     time_stamp          current time or up-time (in milliseconds)
  * @param[out]     up_time             set to OS_TRUE, if the system only
- *                                     supports the up time; this is alway set
+ *                                     supports up-time; this is always set
  *                                     correctly independent of this function's
  *                                     return code (optional)
  *
@@ -1717,7 +1717,7 @@ OS_API size_t os_time_format(
  * @retval OS_STATUS_SUCCESS           on success
  */
 OS_API os_status_t os_time_elapsed(
-	os_timestamp_t *start_time,
+	const os_timestamp_t *start_time,
 	os_millisecond_t *elapsed_time );
 
 /**
@@ -1733,7 +1733,7 @@ OS_API os_status_t os_time_elapsed(
  * @retval OS_STATUS_SUCCESS           on success
  */
 OS_API os_status_t os_time_remaining(
-	os_timestamp_t *start_time,
+	const os_timestamp_t *start_time,
 	os_millisecond_t max_time_out,
 	os_millisecond_t *remaining );
 
