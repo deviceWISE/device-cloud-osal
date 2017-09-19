@@ -7,12 +7,6 @@
 # herein.  All rights not licensed by Wind River are reserved by Wind River.
 #
 
-# Definitions for build
-#######################
-if ( OSAL_WRAP )
-	add_definitions( "-DOSAL_WRAP=1" ) # true (use defines)
-endif( OSAL_WRAP )
-
 # Setup correct header files
 ############################
 if( WIN32 )
@@ -37,15 +31,12 @@ endif()
 
 # Thread support
 ################
-if ( OSAL_THREAD_SUPPORT )
-	find_package( Threads )
-	if ( THREADS_FOUND )
-		add_definitions( "-DOSAL_THREAD_SUPPORT=1" ) # true (thread support)
-		set( C_LIBS ${C_LIBS} ${CMAKE_THREAD_LIBS_INIT} )
-	endif()
-endif()
+if ( OSAL_THREAD_SUPPORT AND THREADS_FOUND )
+	set( C_LIBS ${C_LIBS} ${CMAKE_THREAD_LIBS_INIT} )
+endif ( OSAL_THREAD_SUPPORT AND THREADS_FOUND )
 
 # Generate header file
+######################
 set( IN_FILE "os.h.in" )
 set( OUT_FILE "${CMAKE_INCLUDE_OUTPUT_DIRECTORY}/os.h" )
 get_directory_property( DEFS

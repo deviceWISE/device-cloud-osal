@@ -42,6 +42,19 @@ endif( APPLE )
 option( OSAL_THREAD_SUPPORT "enable multi-thread support" ON )
 option( OSAL_WRAP "provide wrappers for simple functions, this is useful for mocking and unit testing" OFF )
 
+# Definitions for build
+#######################
+if ( OSAL_WRAP )
+	add_definitions( "-DOSAL_WRAP=1" ) # true (use defines)
+endif( OSAL_WRAP )
+
+if ( OSAL_THREAD_SUPPORT )
+	find_package( Threads )
+	if ( THREADS_FOUND )
+		add_definitions( "-DOSAL_THREAD_SUPPORT=1" ) # true (thread support)
+	endif()
+endif()
+
 add_subdirectory( "src" )
 
 ### Doxygen ###
