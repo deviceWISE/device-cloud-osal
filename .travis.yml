@@ -32,4 +32,5 @@ before_script:
 
 script:
   - make
-# - make check
+  - make check
+  #- make integration-tests

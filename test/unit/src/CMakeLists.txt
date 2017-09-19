@@ -12,13 +12,22 @@ set( TESTS
 	"char"
 )
 
+# Remove some compiler warnings for clang
+set_compiler_flag_if_supported(
+	"-Wno-conversion"
+	"-Wno-reserved-id-macro"
+	"-Wno-shorten-64-to-32"
+	"-Wno-sign-conversion"
+	"-Wno-undef"
+	"-Wno-unused-macros" )
+
 add_definitions( "-DOSAL_STATIC=1" )
 if ( WIN32 )
 	set( OS_SRC "os_win.c" )
 	set( OS_LIBS version Iphlpapi Rpcrt4 Shlwapi Ws2_32 )
 else()
 	set( OS_SRC "os_posix.c" )
-	set( OS_LIBS "dl" "uuid-unit-test" )
+	set( OS_LIBS "uuid-unit-test" "dl" ${CMAKE_THREAD_LIBS_INIT} )
 endif()
 
 #include( "mock_api" )
