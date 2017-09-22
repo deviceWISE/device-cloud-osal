@@ -67,7 +67,7 @@ typedef char os_uuid_t[16u];
 /**
  * @brief Character sequence for a line break
  */
-#define OS_FILE_LINE_BREAK             "\n"
+#define OS_FILE_LINE_BREAK             "\\n"
 
 /**
  * @brief Seek from start of file

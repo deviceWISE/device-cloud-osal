@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 # Copyright (C) 2017 Wind River Systems, Inc. All Rights Reserved.
 #
@@ -17,7 +17,7 @@ PROJECT_VERSION_PATCH="0"
 PROJECT_VERSION_TWEAK="0"
 PROJECT_START_YEAR="2017"
 
-INPUT_FILE=os/os.h.in
+INPUT_FILE=src/os.h.in
 INPUT_SYMBOL=@OS_FUNCTION_DEF@
 
 # Generate copyright
@@ -30,7 +30,7 @@ fi
 PROJECT_COPYRIGHT="Copyright (C) $COPYRIGHT_YEAR $PROJECT_VENDOR, All Rights Reserved."
 
 # Replace symbols in input file
-REPLACE=`unifdef os/os_posix.h $*`
+REPLACE=`unifdef src/os_posix.h $*`
 awk -v value="$REPLACE" -v symbol="$INPUT_SYMBOL" '$0 ~ symbol{gsub($0,value)}1' $INPUT_FILE | \
 	sed -e "s/@PROJECT_COPYRIGHT@/$PROJECT_COPYRIGHT/g" \
 		-e "s/@PROJECT_VERSION@/$PROJECT_VERSION/g" \
