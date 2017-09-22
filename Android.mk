@@ -22,11 +22,12 @@ osal_c_includes := \
     external/e2fsprogs/lib
 
 osal_src_files := \
-    os/os_android.c \
-    os/os_posix.c \
-    os.c
+    src/os_android.c \
+    src/os_posix.c \
+    src/os.c
 
 include $(CLEAR_VARS)
+LOCAL_CFLAGS := -DOSAL_WRAP=1 -DOSAL_THREAD_SUPPORT=1
 LOCAL_C_INCLUDES := $(osal_c_includes)
 LOCAL_EXPORT_C_INCLUDE_DIRS := $(LOCAL_PATH)
 LOCAL_SHARED_LIBRARIES := libdl libext2_uuid
@@ -36,6 +37,7 @@ LOCAL_SRC_FILES := $(osal_src_files)
 include $(BUILD_SHARED_LIBRARY)
 
 include $(CLEAR_VARS)
+LOCAL_CFLAGS := -DOSAL_WRAP=1 -DOSAL_THREAD_SUPPORT=1
 LOCAL_C_INCLUDES := $(osal_c_includes)
 LOCAL_EXPORT_C_INCLUDE_DIRS := $(LOCAL_PATH)
 LOCAL_STATIC_LIBRARIES := libandroidifaddrs
