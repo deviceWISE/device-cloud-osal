@@ -368,7 +368,7 @@ OS_API os_status_t os_adapters_next(
  * @see os_adapters_release
  */
 OS_API os_status_t os_adapters_obtain(
-	os_adapters_t *adapters
+	os_adapters_t **adapters
 );
 
 /**

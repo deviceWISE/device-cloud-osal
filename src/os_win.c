@@ -313,47 +313,58 @@ os_status_t os_adapters_next(
 }
 
 os_status_t os_adapters_obtain(
-	os_adapters_t *adapters )
+	os_adapters_t **adapters )
 {
-	os_status_t result = OS_STATUS_FAILURE;
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( adapters )
 	{
-		ULONG size = 0u;
 		ULONG error_code;
+		os_adapters_t *p_adapters;
+		ULONG size = 0u;
 
-		ZeroMemory( adapters, sizeof( os_adapters_t ) );
-		do
+		result = OS_STATUS_NO_MEMORY;
+		*adapters = (os_adapters_t *)HeapAlloc( GetProcessHeap(), 0,
+			sizeof( os_adapters_t ) );
+		p_adapters = *adapters;
+		if ( p_adapters )
 		{
-			adapters->adapter_first = (IP_ADAPTER_ADDRESSES *)
-				HeapAlloc( GetProcessHeap(), 0, size );
-			error_code = GetAdaptersAddresses( AF_UNSPEC,
-				GAA_FLAG_SKIP_MULTICAST,
-				NULL, adapters->adapter_first, &size );
-			if ( error_code == ERROR_BUFFER_OVERFLOW )
+			result = OS_STATUS_FAILURE;
+			ZeroMemory( p_adapters, sizeof( os_adapters_t ) );
+			do
 			{
-				HeapFree( GetProcessHeap(), 0,
-					adapters->adapter_first );
-				adapters->adapter_first = NULL;
-			}
-		} while ( error_code == ERROR_BUFFER_OVERFLOW );
+				p_adapters->adapter_first = (IP_ADAPTER_ADDRESSES *)
+					HeapAlloc( GetProcessHeap(), 0, size );
+				error_code = GetAdaptersAddresses( AF_UNSPEC,
+					GAA_FLAG_SKIP_MULTICAST,
+					NULL, p_adapters->adapter_first, &size );
+				if ( error_code == ERROR_BUFFER_OVERFLOW )
+				{
+					HeapFree( GetProcessHeap(), 0,
+						p_adapters->adapter_first );
+					HeapFree( GetProcessHeap(), 0,
+						p_adapters );
+				}
+			} while ( error_code == ERROR_BUFFER_OVERFLOW );
 
-		if ( error_code == ERROR_SUCCESS )
-		{
-			adapters->adapter_current = adapters->adapter_first;
-			while( adapters->adapter_current && !adapters->current )
+			if ( error_code == ERROR_SUCCESS )
 			{
-				adapters->current = adapters->adapter_current->FirstUnicastAddress;
-				if ( !adapters->current )
-					adapters->adapter_current = adapters->adapter_current->Next;
-			}
+				p_adapters->adapter_current = p_adapters->adapter_first;
+				while( p_adapters->adapter_current && !p_adapters->current )
+				{
+					p_adapters->current = p_adapters->adapter_current->FirstUnicastAddress;
+					if ( !p_adapters->current )
+						p_adapters->adapter_current = p_adapters->adapter_current->Next;
+				}
 
-			if ( adapters->current )
-				result = OS_STATUS_SUCCESS;
-			else
-			{
-				HeapFree( GetProcessHeap(), 0,
-					adapters->adapter_first );
-				ZeroMemory( adapters, sizeof( struct os_adapters ) );
+				if ( p_adapters->current )
+					result = OS_STATUS_SUCCESS;
+				else
+				{
+					HeapFree( GetProcessHeap(), 0,
+						p_adapters->adapter_first );
+					HeapFree( GetProcessHeap(), 0,
+						p_adapters );
+				}
 			}
 		}
 	}
@@ -363,11 +374,12 @@ os_status_t os_adapters_obtain(
 os_status_t os_adapters_release(
 	os_adapters_t *adapters )
 {
-	os_status_t result = OS_STATUS_FAILURE;
-	if ( adapters && adapters->adapter_first )
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
+	if ( adapters )
 	{
-		HeapFree( GetProcessHeap(), 0, adapters->adapter_first );
-		ZeroMemory( adapters, sizeof( struct os_adapters ) );
+		if ( adapters->adapter_first )
+			HeapFree( GetProcessHeap(), 0, adapters->adapter_first );
+		HeapFree( GetProcessHeap(), 0, adapters );
 		result = OS_STATUS_SUCCESS;
 	}
 	return result;

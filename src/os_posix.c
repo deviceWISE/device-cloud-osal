@@ -238,15 +238,23 @@ os_status_t os_adapters_next(
 }
 
 os_status_t os_adapters_obtain(
-	os_adapters_t *adapters )
+	os_adapters_t **adapters )
 {
-	os_status_t result = OS_STATUS_FAILURE;
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( adapters )
 	{
-		if ( getifaddrs( &adapters->first ) == 0 )
+		*adapters = (os_adapters_t*)malloc( sizeof( os_adapters_t ) );
+		result = OS_STATUS_NO_MEMORY;
+		if ( *adapters )
 		{
-			adapters->current = adapters->first;
-			result = OS_STATUS_SUCCESS;
+			result = OS_STATUS_FAILURE;
+			if ( getifaddrs( &(*adapters)->first ) == 0 )
+			{
+				(*adapters)->current = (*adapters)->first;
+				result = OS_STATUS_SUCCESS;
+			}
+			else
+				free( *adapters );
 		}
 	}
 	return result;
@@ -255,11 +263,12 @@ os_status_t os_adapters_obtain(
 os_status_t os_adapters_release(
 	os_adapters_t *adapters )
 {
-	os_status_t result = OS_STATUS_FAILURE;
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( adapters )
 	{
 		if ( adapters->first )
 			freeifaddrs( adapters->first );
+		free( adapters );
 		result = OS_STATUS_SUCCESS;
 	}
 	return result;
