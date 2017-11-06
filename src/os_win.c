@@ -3134,6 +3134,8 @@ os_status_t os_system_info(
 				service_pack,
 				OS_SYSTEM_INFO_MAX_LEN );
 
+		os_strncpy( sys_info->kernel_version, "",
+			OS_SYSTEM_INFO_MAX_LEN );
 		os_strncpy( sys_info->vendor_name, vendor_name,
 			OS_SYSTEM_INFO_MAX_LEN );
 		os_strncpy( sys_info->system_name, system_name,

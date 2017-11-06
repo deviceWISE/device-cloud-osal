@@ -256,6 +256,8 @@ typedef struct os_system_info
 	char system_release[OS_SYSTEM_INFO_MAX_LEN + 1u];
 	/** @brief operating system version */
 	char system_version[OS_SYSTEM_INFO_MAX_LEN + 1u];
+	/** @brief kernel version */
+	char kernel_version[OS_SYSTEM_INFO_MAX_LEN + 1u];
 	/** @brief operating system flag */
 	os_uint8_t system_flags;
 } os_system_info_t;

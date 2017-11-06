@@ -160,7 +160,7 @@ os_status_t os_adapters_mac(
 	char *mac,
 	size_t mac_len )
 {
-	os_status_t result = OS_STATUS_FAILURE;
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( adapters && adapters->current && mac && mac_len > 0u )
 	{
 #if defined(__linux__) || defined (_WRS_KERNEL)
@@ -168,6 +168,7 @@ os_status_t os_adapters_mac(
 		const int socket_fd =
 			socket( adapters->current->ifa_addr->sa_family,
 				SOCK_DGRAM, 0 );
+		result = OS_STATUS_FAILURE;
 		if ( socket_fd != OS_SOCKET_INVALID )
 		{
 			memset( &ifr, 0, sizeof( struct ifreq ) );
@@ -197,16 +198,16 @@ os_status_t os_adapters_mac(
 				/* loop through to produce mac address */
 				os_bool_t good_mac = OS_FALSE;
 				size_t i;
-				for ( i = 0u; i < id_len && i * 3u <= mac_len; ++i )
+				for ( i = 0u; i < id_len && i * 3u < mac_len; ++i )
 				{
 					if ( id[ i ] > 0u )
 						good_mac = OS_TRUE;
-					snprintf( &mac[ i * 3u ], 3, "%2.2x:", id[ i ] );
+					snprintf( &mac[ i * 3u ], 4, "%2.2x:", id[ i ] );
 				}
 
 				/* null-terminate mac */
-				if ( i * 3u < mac_len )
-					mac_len = i * 3u;
+				if ( i > 0u && i * 3u < mac_len )
+					mac_len = (i * 3u);
 				mac[ mac_len - 1u ] = '\0';
 
 				/* mac contained at least 1 non-zero value */
@@ -243,14 +244,15 @@ os_status_t os_adapters_obtain(
 	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( adapters )
 	{
-		*adapters = (os_adapters_t*)malloc( sizeof( os_adapters_t ) );
+		os_adapters_t *const adptrs = *adapters =
+			(os_adapters_t*)malloc( sizeof( os_adapters_t ) );
 		result = OS_STATUS_NO_MEMORY;
-		if ( *adapters )
+		if ( adptrs )
 		{
 			result = OS_STATUS_FAILURE;
-			if ( getifaddrs( &(*adapters)->first ) == 0 )
+			if ( getifaddrs( &adptrs->first ) == 0 )
 			{
-				(*adapters)->current = (*adapters)->first;
+				adptrs->current = adptrs->first;
 				result = OS_STATUS_SUCCESS;
 			}
 			else
@@ -1991,6 +1993,10 @@ os_status_t os_system_info(
 		strncpy( sys_info->system_name, uts_info.sysname,
 			OS_SYSTEM_INFO_MAX_LEN );
 		strncpy( sys_info->system_platform, uts_info.machine,
+			OS_SYSTEM_INFO_MAX_LEN );
+		strncpy( sys_info->system_version, uts_info.version,
+			OS_SYSTEM_INFO_MAX_LEN );
+		strncpy( sys_info->kernel_version, uts_info.release,
 			OS_SYSTEM_INFO_MAX_LEN );
 
 		/* Read "ID" and "VERSION_ID" field from
