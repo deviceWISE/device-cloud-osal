@@ -30,7 +30,8 @@ fi
 PROJECT_COPYRIGHT="Copyright (C) $COPYRIGHT_YEAR $PROJECT_VENDOR, All Rights Reserved."
 
 # Replace symbols in input file
-REPLACE=`unifdef src/os_posix.h $*`
+sed 's/"\\n"/"\\\\n"/' src/os_posix.h > os_posix_tmp.h
+REPLACE=`unifdef os_posix_tmp.h $*`
 awk -v value="$REPLACE" -v symbol="$INPUT_SYMBOL" '$0 ~ symbol{gsub($0,value)}1' $INPUT_FILE | \
 	sed -e "s/@PROJECT_COPYRIGHT@/$PROJECT_COPYRIGHT/g" \
 		-e "s/@PROJECT_VERSION@/$PROJECT_VERSION/g" \
