@@ -690,38 +690,6 @@ OS_API os_status_t os_file_delete(
 OS_API os_bool_t os_file_exists(
 	const char *file_path
 );
-
-/**
- * @brief Move the current position in an file stream
- *
- * @param[in,out]  stream              stream to pointer of
- * @param[in]      offset              amount to remove file pointer
- * @param[in]      whence              where to apply the offset at
- *
- * @retval OS_STATUS_BAD_PARAMETER     bad parameter passed to the function
- * @retval OS_STATUS_FAILURE           failed to move file pointer
- * @retval OS_STATUS_SUCCESS           on success
- */
-OS_API os_status_t os_file_seek(
-	os_file_t stream,
-	long offset,
-	int whence
-);
-
-/**
- * @brief Synchronize a file's in-core state with storage device
- *
- * @param[in]      file_path           path to file to synchronize
- *
- * @retval OS_STATUS_BAD_PARAMETER     bad parameter passed to the function
- * @retval OS_STATUS_SUCCESS           successfully sync the file
- * @retval OS_STATUS_FAILURE           failed to sync file stream
- *
- */
-OS_API os_status_t os_file_sync(
-	const char *file_path
-);
-
 /**
  * @brief Get size of file in bytes
  *
@@ -783,6 +751,39 @@ OS_API os_status_t os_file_move(
 OS_API os_file_t os_file_open(
 	const char *file_path,
 	int flags
+);
+
+/**
+ * @brief Move the current position in an file stream
+ *
+ * @param[in,out]  stream              stream to pointer of open file
+ * @param[in]      offset              amount to remove file pointer
+ * @param[in]      whence              where to apply the offset at
+ *
+ * @retval OS_STATUS_BAD_PARAMETER     bad parameter passed to the function
+ * @retval OS_STATUS_FAILURE           failed to move file pointer
+ * @retval OS_STATUS_SUCCESS           on success
+ *
+ * @see os_file_tell
+ */
+OS_API os_status_t os_file_seek(
+	os_file_t stream,
+	long offset,
+	int whence
+);
+
+/**
+ * @brief Synchronize a file's in-core state with storage device
+ *
+ * @param[in]      file_path           path to file to synchronize
+ *
+ * @retval OS_STATUS_BAD_PARAMETER     bad parameter passed to the function
+ * @retval OS_STATUS_SUCCESS           successfully sync the file
+ * @retval OS_STATUS_FAILURE           failed to sync file stream
+ *
+ */
+OS_API os_status_t os_file_sync(
+	const char *file_path
 );
 
 /**

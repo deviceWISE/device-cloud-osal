@@ -881,75 +881,6 @@ char *os_file_gets(
 	return str;
 }
 
-size_t os_file_puts(
-	char *str,
-	os_file_t stream )
-{
-	DWORD len;
-	DWORD result;
-	len = (DWORD)os_strlen( str );
-	WriteFile( stream, str, len, &result, NULL );
-	return (size_t)result;
-}
-
-size_t os_file_read(
-	void *ptr,
-	size_t size,
-	size_t nmemb,
-	os_file_t stream )
-{
-	size_t result = 0;
-	if ( size > 0 && nmemb > 0 )
-	{
-		DWORD number_of_bytes_read = 0;
-		ReadFile( stream, ptr, ( size * nmemb ),
-			&number_of_bytes_read, NULL );
-		result = number_of_bytes_read / size;
-	}
-	return result;
-}
-
-os_status_t os_file_seek(
-	os_file_t stream,
-	long offset,
-	int whence
-)
-{
-	os_status_t result = OS_STATUS_BAD_PARAMETER;
-	if ( stream != OS_FILE_INVALID )
-	{
-
-		result = OS_STATUS_FAILURE;
-		if ( SetFilePointer( stream, offset, NULL, whence )
-			!= INVALID_SET_FILE_POINTER )
-			result = OS_STATUS_SUCCESS;
-	}
-	return result;
-}
-
-os_status_t os_file_sync( const char *UNUSED(file_path) )
-{
-	/* buffers will be flushed when a stream is closed */
-	return OS_STATUS_SUCCESS;
-}
-
-size_t os_file_write(
-	const void *ptr,
-	size_t size,
-	size_t nmemb,
-	os_file_t stream )
-{
-	size_t result = 0;
-	if ( size > 0 && nmemb > 0 )
-	{
-		DWORD number_of_bytes_wrote = 0;
-		WriteFile( stream, ptr, ( size * nmemb ),
-			&number_of_bytes_wrote, NULL );
-		result = number_of_bytes_wrote / size;
-	}
-	return result;
-}
-
 os_uint64_t os_file_get_size(
 	const char *file_path )
 {
@@ -1041,6 +972,77 @@ os_file_t os_file_open(
 	return result;
 }
 
+size_t os_file_puts(
+	char *str,
+	os_file_t stream )
+{
+	DWORD len;
+	DWORD result;
+	len = (DWORD)os_strlen( str );
+	WriteFile( stream, str, len, &result, NULL );
+	return (size_t)result;
+}
+
+size_t os_file_read(
+	void *ptr,
+	size_t size,
+	size_t nmemb,
+	os_file_t stream )
+{
+	size_t result = 0;
+	if ( size > 0 && nmemb > 0 )
+	{
+		DWORD number_of_bytes_read = 0;
+		ReadFile( stream, ptr, ( size * nmemb ),
+			&number_of_bytes_read, NULL );
+		result = number_of_bytes_read / size;
+	}
+	return result;
+}
+
+os_status_t os_file_seek(
+	os_file_t stream,
+	long offset,
+	int whence )
+{
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
+	if ( stream != OS_FILE_INVALID )
+	{
+
+		result = OS_STATUS_FAILURE;
+		if ( SetFilePointer( stream, offset, NULL, whence )
+			!= INVALID_SET_FILE_POINTER )
+			result = OS_STATUS_SUCCESS;
+	}
+	return result;
+}
+
+os_status_t os_file_sync(
+	const char *UNUSED(file_path) )
+{
+	/* buffers will be flushed when a stream is closed */
+	return OS_STATUS_SUCCESS;
+}
+
+long int os_file_tell(
+	os_file_t stream )
+{
+	long int result = -1L;
+	if ( stream != OS_FILE_INVALID )
+	{
+		DWORD low_file_size = 0, high_file_size = 0;
+		low_file_size = GetFileSize( stream, &high_file_size );
+		if ( low_file_size != INVALID_FILE_SIZE )
+		{
+			LARGE_INTEGER large_int;
+			large_int.LowPart = low_file_size;
+			large_int.HighPart = high_file_size;
+			result = (long int)large_int.QuadPart;
+		}
+	}
+	return result;
+}
+
 os_status_t os_file_temp(
 	char *prototype,
 	size_t suffix_len )
@@ -1064,6 +1066,23 @@ os_status_t os_file_temp(
 			if ( os_file_exists( prototype ) == OS_FALSE )
 				result = OS_STATUS_SUCCESS;
 		}
+	}
+	return result;
+}
+
+size_t os_file_write(
+	const void *ptr,
+	size_t size,
+	size_t nmemb,
+	os_file_t stream )
+{
+	size_t result = 0;
+	if ( size > 0 && nmemb > 0 )
+	{
+		DWORD number_of_bytes_wrote = 0;
+		WriteFile( stream, ptr, ( size * nmemb ),
+			&number_of_bytes_wrote, NULL );
+		result = number_of_bytes_wrote / size;
 	}
 	return result;
 }

@@ -71,19 +71,19 @@ typedef char os_uuid_t[16u];
 
 /**
  * @brief Seek from start of file
- * @see os_file_fseek
+ * @see os_file_seek
  */
 #define OS_FILE_SEEK_START             SEEK_SET
 
 /**
  * @brief Seek from current position in file
- * @see os_file_fseek
+ * @see os_file_seek
  */
 #define OS_FILE_SEEK_CURRENT           SEEK_CUR
 
 /**
  * @brief Seek from end of file
- * @see os_file_fseek
+ * @see os_file_seek
  */
 #define OS_FILE_SEEK_END               SEEK_END
 
@@ -243,6 +243,25 @@ OS_API size_t os_file_read(
 #else
 OS_API size_t os_file_puts(
 	char *str,
+	os_file_t stream
+);
+#endif
+
+/**
+ * @brief Returns the current position in a file stream
+ *
+ * @param[in,out]  stream              stream to pointer of open file
+ *
+ * @retval OS_STATUS_BAD_PARAMETER     bad parameter passed to the function
+ * @retval OS_STATUS_FAILURE           failed to move file pointer
+ * @retval OS_STATUS_SUCCESS           on success
+ *
+ * @see os_file_seek
+ */
+#if !OSAL_WRAP
+#define os_file_tell(stream)           (long int)ftell(stream)
+#else
+OS_API long int os_file_tell(
 	os_file_t stream
 );
 #endif
