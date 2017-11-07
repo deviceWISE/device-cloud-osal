@@ -47,17 +47,17 @@ typedef USHORT in_port_t;
 #define OS_FILE_LINE_BREAK             "\r\n"
 /**
  * @brief Seek from start of file
- * @see os_file_fseek
+ * @see os_file_seek
  */
 #define OS_FILE_SEEK_START             FILE_BEGIN
 /**
  * @brief Seek from current position in file
- * @see os_file_fseek
+ * @see os_file_seek
  */
 #define OS_FILE_SEEK_CURRENT           FILE_CURRENT
 /**
  * @brief Seek from end of file
- * @see os_file_fseek
+ * @see os_file_seek
  */
 #define OS_FILE_SEEK_END               FILE_END
 /**
@@ -458,6 +458,24 @@ OS_API char *os_file_gets(
 );
 
 /**
+ * @brief Write bytes from an array into a file stream
+ *
+ * @note Stops writing when encountering a null terminator
+ * @note Does not write the null terminator to the stream
+ *
+ * @param[in]      str                 Pointer to array to write from
+ * @param[in,out]  stream              Pointer to file to write to
+ *
+ * @return         Number of bytes written
+ *
+ * @see os_file_fgets
+ */
+OS_API size_t os_file_puts(
+	char *str,
+	os_file_t stream
+);
+
+/**
  * @brief Read bytes from a file into an array
  *
  * @note Stops when encountering max read, EOF, or null terminator
@@ -477,20 +495,17 @@ OS_API size_t os_file_read(
 );
 
 /**
- * @brief Write bytes from an array into a file stream
+ * @brief Returns the current position in a file stream
  *
- * @note Stops writing when encountering a null terminator
- * @note Does not write the null terminator to the stream
+ * @param[in,out]  stream              stream to pointer of open file
  *
- * @param[in]      str                 Pointer to array to write from
- * @param[in,out]  stream              Pointer to file to write to
+ * @retval OS_STATUS_BAD_PARAMETER     bad parameter passed to the function
+ * @retval OS_STATUS_FAILURE           failed to move file pointer
+ * @retval OS_STATUS_SUCCESS           on success
  *
- * @return         Number of bytes written
- *
- * @see os_file_fgets
+ * @see os_file_seek
  */
-OS_API size_t os_file_puts(
-	char *str,
+OS_API long int os_file_tell(
 	os_file_t stream
 );
 

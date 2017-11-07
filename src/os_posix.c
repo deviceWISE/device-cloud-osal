@@ -822,52 +822,6 @@ char *os_file_gets(
 }
 #endif /* if defined(OSAL_WRAP) && OSAL_WRAP */
 
-os_status_t os_file_seek(
-	os_file_t stream,
-	long offset,
-	int whence
-)
-{
-	os_status_t result = OS_STATUS_BAD_PARAMETER;
-	if ( stream != OS_FILE_INVALID )
-	{
-		result = OS_STATUS_FAILURE;
-		if ( fseek( stream, offset, whence ) == 0 )
-			result = OS_STATUS_SUCCESS;
-	}
-	return result;
-}
-
-os_status_t os_file_sync(
-	const char *file_path )
-{
-	os_status_t result = OS_STATUS_BAD_PARAMETER;
-	if ( file_path )
-	{
-		int fd;
-		result = OS_STATUS_FAILURE;
-#ifndef _WRS_KERNEL
-		fd = open( file_path, O_RDONLY );
-#else
-		fd = open( file_path, O_RDONLY, 0 );
-#endif
-		if ( fd >= 0 )
-		{
-			if ( fsync( fd ) == 0 )
-				result = OS_STATUS_SUCCESS;
-			close( fd );
-		}
-	}
-#ifndef _WRS_KERNEL
-	else
-	{
-		sync();
-		result = OS_STATUS_SUCCESS;
-	}
-#endif
-	return result;
-}
-
 os_uint64_t os_file_get_size(
 	const char *file_path )
 {
@@ -991,6 +945,60 @@ size_t os_file_read(
 	os_file_t stream )
 {
 	return fread( ptr, size, nmemb, stream );
+}
+#endif /* if defined(OSAL_WRAP) && OSAL_WRAP */
+
+os_status_t os_file_seek(
+	os_file_t stream,
+	long offset,
+	int whence
+)
+{
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
+	if ( stream != OS_FILE_INVALID )
+	{
+		result = OS_STATUS_FAILURE;
+		if ( fseek( stream, offset, whence ) == 0 )
+			result = OS_STATUS_SUCCESS;
+	}
+	return result;
+}
+
+os_status_t os_file_sync(
+	const char *file_path )
+{
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
+	if ( file_path )
+	{
+		int fd;
+		result = OS_STATUS_FAILURE;
+#ifndef _WRS_KERNEL
+		fd = open( file_path, O_RDONLY );
+#else
+		fd = open( file_path, O_RDONLY, 0 );
+#endif
+		if ( fd >= 0 )
+		{
+			if ( fsync( fd ) == 0 )
+				result = OS_STATUS_SUCCESS;
+			close( fd );
+		}
+	}
+#ifndef _WRS_KERNEL
+	else
+	{
+		sync();
+		result = OS_STATUS_SUCCESS;
+	}
+#endif
+	return result;
+}
+
+#if defined(OSAL_WRAP) && OSAL_WRAP
+long int os_file_tell(
+	os_file_t stream )
+{
+	return ftell( stream );
 }
 #endif /* if defined(OSAL_WRAP) && OSAL_WRAP */
 
