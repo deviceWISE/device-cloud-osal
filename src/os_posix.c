@@ -822,35 +822,6 @@ char *os_file_gets(
 }
 #endif /* if defined(OSAL_WRAP) && OSAL_WRAP */
 
-os_uint64_t os_file_get_size(
-	const char *file_path )
-{
-	struct stat file_stat;
-
-	if ( stat( file_path, &file_stat ) != 0 )
-		file_stat.st_size = 0;
-
-	return (os_uint64_t)file_stat.st_size;
-}
-
-os_uint64_t os_file_get_size_handle(
-	os_file_t file_handle )
-{
-	long file_size = 0;
-
-	if ( file_handle )
-	{
-		long cur_pos = ftell( file_handle );
-		if ( fseek( file_handle, 0, SEEK_END ) == 0 )
-		{
-			file_size = ftell( file_handle );
-			if ( cur_pos != file_size )
-				fseek( file_handle, cur_pos, SEEK_SET );
-		}
-	}
-	return (os_uint64_t)file_size;
-}
-
 os_status_t os_file_move(
 	const char *old_path,
 	const char *new_path
@@ -962,6 +933,35 @@ os_status_t os_file_seek(
 			result = OS_STATUS_SUCCESS;
 	}
 	return result;
+}
+
+os_uint64_t os_file_size(
+	const char *file_path )
+{
+	struct stat file_stat;
+
+	if ( stat( file_path, &file_stat ) != 0 )
+		file_stat.st_size = 0;
+
+	return (os_uint64_t)file_stat.st_size;
+}
+
+os_uint64_t os_file_size_handle(
+	os_file_t file_handle )
+{
+	long int file_size = 0L;
+
+	if ( file_handle )
+	{
+		long int cur_pos = ftell( file_handle );
+		if ( fseek( file_handle, 0, SEEK_END ) == 0 )
+		{
+			file_size = ftell( file_handle );
+			if ( cur_pos != file_size )
+				fseek( file_handle, cur_pos, SEEK_SET );
+		}
+	}
+	return (os_uint64_t)file_size;
 }
 
 os_status_t os_file_sync(

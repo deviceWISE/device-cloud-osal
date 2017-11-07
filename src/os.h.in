@@ -690,27 +690,6 @@ OS_API os_status_t os_file_delete(
 OS_API os_bool_t os_file_exists(
 	const char *file_path
 );
-/**
- * @brief Get size of file in bytes
- *
- * @param[in]      file_path           path to file
- *
- * @return         File size in bytes
- */
-OS_API os_uint64_t os_file_get_size(
-	const char *file_path
-);
-
-/**
- * @brief Get size of file in bytes
- *
- * @param[in]      file_handle         file handle
- *
- * @return         File size in bytes
- */
-OS_API os_uint64_t os_file_get_size_handle(
-	os_file_t file_handle
-);
 
 /**
  * @brief Moves a file in the file system
@@ -770,6 +749,32 @@ OS_API os_status_t os_file_seek(
 	os_file_t stream,
 	long offset,
 	int whence
+);
+
+/**
+ * @brief Get size of file in bytes
+ *
+ * @param[in]      file_path           path to file
+ *
+ * @return         File size in bytes
+ *
+ * @see os_file_size_handle
+ */
+OS_API os_uint64_t os_file_size(
+	const char *file_path
+);
+
+/**
+ * @brief Get size of file in bytes
+ *
+ * @param[in]      file_handle         file handle
+ *
+ * @return         File size in bytes
+ *
+ * @see os_file_size
+ */
+OS_API os_uint64_t os_file_size_handle(
+	os_file_t file_handle
 );
 
 /**

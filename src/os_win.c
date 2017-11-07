@@ -881,32 +881,6 @@ char *os_file_gets(
 	return str;
 }
 
-os_uint64_t os_file_get_size(
-	const char *file_path )
-{
-
-	WIN32_FILE_ATTRIBUTE_DATA attr;
-	LARGE_INTEGER size;
-	LONGLONG file_size = 0;
-
-	if ( GetFileAttributesEx( file_path, GetFileExInfoStandard, &attr ) )
-	{
-		size.HighPart = attr.nFileSizeHigh;
-		size.LowPart = attr.nFileSizeLow;
-		file_size = size.QuadPart;
-	}
-	return (os_uint64_t)file_size;
-}
-
-os_uint64_t os_file_get_size_handle(
-	os_file_t file_handle )
-{
-	DWORD file_size = 0;
-	if ( file_handle )
-		file_size = GetFileSize( file_handle, NULL );
-	return (os_uint64_t)file_size;
-}
-
 os_status_t os_file_move(
 	const char *old_path,
 	const char *new_path
@@ -1015,6 +989,32 @@ os_status_t os_file_seek(
 			result = OS_STATUS_SUCCESS;
 	}
 	return result;
+}
+
+os_uint64_t os_file_size(
+	const char *file_path )
+{
+
+	WIN32_FILE_ATTRIBUTE_DATA attr;
+	LARGE_INTEGER size;
+	LONGLONG file_size = 0;
+
+	if ( GetFileAttributesEx( file_path, GetFileExInfoStandard, &attr ) )
+	{
+		size.HighPart = attr.nFileSizeHigh;
+		size.LowPart = attr.nFileSizeLow;
+		file_size = size.QuadPart;
+	}
+	return (os_uint64_t)file_size;
+}
+
+os_uint64_t os_file_size_handle(
+	os_file_t file_handle )
+{
+	DWORD file_size = 0;
+	if ( file_handle )
+		file_size = GetFileSize( file_handle, NULL );
+	return (os_uint64_t)file_size;
 }
 
 os_status_t os_file_sync(
