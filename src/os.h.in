@@ -270,7 +270,7 @@ typedef struct os_system_info
  * @brief Maximum path length
  */
 #ifndef PATH_MAX
-#	define PATH_MAX 4096
+#	define PATH_MAX 0
 #endif
 
 

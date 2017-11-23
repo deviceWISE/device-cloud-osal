@@ -13,6 +13,7 @@
 #endif
 
 #include <stdarg.h> /* for: va_list */
+#include <limits.h> /* for: PATH_MAX definition */
 #include <stdio.h> /* for: FILE *, feof, fgets, fread, fputs, fwrite, fprintf, printf, snprintf, vfprintf */
 #include <signal.h> /* for SIGINT, ... */
 
