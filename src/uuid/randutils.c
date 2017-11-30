@@ -13,7 +13,9 @@
 #include <string.h>
 #include <sys/time.h>
 
+#ifndef __vxworks
 #include <sys/syscall.h>
+#endif
 
 #include "randutils.h"
 
@@ -28,6 +30,7 @@
 THREAD_LOCAL unsigned short ul_jrand_seed[3];
 #endif
 
+#ifndef __vxworks
 int random_get_fd(void)
 {
 	int i, fd;
@@ -55,6 +58,7 @@ int random_get_fd(void)
 		rand();
 	return fd;
 }
+#endif
 
 
 /*
@@ -65,13 +69,24 @@ int random_get_fd(void)
 void random_get_bytes(void *buf, size_t nbytes)
 {
 	size_t i, n = nbytes;
+#ifndef __vxworks
 	int fd = random_get_fd();
+#endif
 	int lose_counter = 0;
 	unsigned char *cp = (unsigned char *) buf;
 
+#ifdef __vxworks
+	{
+#else
 	if (fd >= 0) {
+#endif
 		while (n > 0) {
+#ifdef __vxworks
+			ssize_t x = (ssize_t)1;
+			*cp = (unsigned char)(rand() & 0xff);
+#else
 			ssize_t x = read(fd, cp, n);
+#endif
 			if (x <= 0) {
 				if (lose_counter++ > 16)
 					break;
@@ -82,7 +97,9 @@ void random_get_bytes(void *buf, size_t nbytes)
 			lose_counter = 0;
 		}
 
+#ifndef __vxworks
 		close(fd);
+#endif
 	}
 
 	/*

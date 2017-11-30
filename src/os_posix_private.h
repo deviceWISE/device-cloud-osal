@@ -19,7 +19,9 @@
 
 /* includes for #defined functions */
 #include <ctype.h>
+#ifndef __vxworks
 #include <dlfcn.h>
+#endif
 #include <errno.h>
 #include <limits.h> /* for PATH_MAX */
 #include <pthread.h>
@@ -30,21 +32,17 @@
 #include <unistd.h> /* for sleep */
 #include <time.h>   /* for nanosleep */
 
-#ifndef _WRS_KERNEL
+#ifndef __vxworks
 #include <sys/utsname.h> /* for struct utsname */
 #endif
 
-#ifndef _WRS_KERNEL
-#	include <uuid/uuid.h>   /* osals uuid header, not system, for libuuid functions + uuid_t */
-#endif
+#include <uuid/uuid.h>   /* osals uuid header, not system, for libuuid functions + uuid_t */
 
-#ifndef _WRS_KERNEL
 /** @brief Maximum length of a host name on POSIX systems */
 #ifndef _POSIX_HOST_NAME_MAX
 #	define _POSIX_HOST_NAME_MAX 64
 #endif
 #define OS_HOST_MAX_LEN _POSIX_HOST_NAME_MAX
-#endif
 
 #include <arpa/inet.h>  /* for inet_ntoa, inet_htons */
 #include <dirent.h>     /* for DIR*, opendir, closedir */
@@ -56,7 +54,7 @@
 #include <signal.h>     /* for siginfo_t */
 #include <sys/socket.h> /* for struct addrinfo */
 
-#if defined(__linux__) || defined (_WRS_KERNEL)
+#if defined(__linux__) || defined (__vxworks)
 #	include <net/if.h>    /* for struct ifconf */
 #endif
 #include <ifaddrs.h>
