@@ -108,7 +108,7 @@ static void test_os_time_elapsed( void **state )
 		 * out by as much as 5% (+ 1 millisecond) */
 		assert_in_range( time_elapsed,
 			test_times[i],
-			(os_millisecond_t)((double)test_times[i] * 1.05) + 1u );
+			(os_millisecond_t)((double)test_times[i] * 1.25) + 1u );
 	}
 }
 
