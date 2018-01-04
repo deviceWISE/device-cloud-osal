@@ -32,9 +32,9 @@
 #include <bootLib.h>
 #ifdef _WRS_CONFIG_SYS_PWR_OFF
 #include <powerOffLib.h>
-#endif
+#endif /* _WRS_CONFIG_SYS_PWR_OFF */
 extern BOOT_PARAMS sysBootParams;
-#endif
+#endif /* _WRS_KERNEL */
 
 #define VX_RW_SEM_MAX_READERS (255)
 
@@ -43,10 +43,63 @@ extern const char *deviceCloudRtpDirGet (void);
 extern unsigned int deviceCloudPriorityGet (void);
 extern unsigned int deviceCloudStackSizeGet (void);
 #else
-#define deviceCloudRtpDirGet()    "/bd0:1/bin"
-#define deviceCloudPriorityGet()  100
-#define deviceCloudStackSizeGet() 0x10000
-#endif
+static char config_dir[PATH_MAX] = "/bd0:1/etc/iot";
+static char runtime_dir[PATH_MAX] = "/bd0:1/var/lib/iot";
+static char rtp_dir[PATH_MAX] = "/bd0:1/bin";
+static int priority = 100;
+static int stack_size = 0x10000;
+
+void deviceCloudConfigDirSet (char *str)
+    {
+    strncpy(config_dir, str, PATH_MAX);
+    }
+
+void deviceCloudRuntimeDirSet (char *str)
+    {
+    strncpy(runtime_dir, str, PATH_MAX);
+    }
+
+void deviceCloudRtpDirSet (char *str)
+    {
+    strncpy(rtp_dir, str, PATH_MAX);
+    }
+
+void deviceCloudPrioritySet (char *str)
+    {
+    priority = atoi(str);
+    }
+
+void deviceCloudStackSizeSet (char *str)
+    {
+    stack_size = atoi(str);
+    }
+
+const char *deviceCloudConfigDirGet (void)
+    {
+    return config_dir;
+    }
+
+const char *deviceCloudRuntimeDirGet (void)
+    {
+    return runtime_dir;
+    }
+
+const char *deviceCloudRtpDirGet (void)
+    {
+    return rtp_dir;
+    }
+
+unsigned int deviceCloudPriorityGet (void)
+    {
+    return priority;
+    }
+
+unsigned int deviceCloudStackSizeGet (void)
+    {
+    return stack_size;
+    }
+#endif /* _WRS_KERNEL */
+
 
 os_status_t os_system_info(
 	os_system_info_t *sys_info )
@@ -69,7 +122,7 @@ os_status_t os_system_info(
 		strncpy( sys_info->host_name, sysBootParams.targetName, OS_SYSTEM_INFO_MAX_LEN );
 #else
 		strncpy( sys_info->host_name, "", OS_SYSTEM_INFO_MAX_LEN );
-#endif
+#endif /* _WRS_KERNEL */
 		sys_info->system_flags = 0;
 	}
 	return OS_STATUS_SUCCESS;
@@ -109,7 +162,7 @@ os_status_t os_process_cleanup( void )
 #ifndef _WRS_KERNEL
 	if ( waitpid( -1, NULL, WNOHANG ) > 0 )
 		result = OS_STATUS_SUCCESS;
-#endif
+#endif /* _WRS_KERNEL */
 	return result;
 }
 
@@ -250,9 +303,9 @@ os_status_t os_thread_rwlock_destroy(
 	return result;
 }
 
+#ifdef _WRS_KERNEL
 static void os_vxworks_reboot(void)
 {
-#ifdef _WRS_KERNEL
 	/* Wait 5 seconds for messages to propagate */
 
 	sleep (5);
@@ -260,10 +313,9 @@ static void os_vxworks_reboot(void)
 	/* Force a cold reboot - We do not return */
 
 	sysToMonitor(2);
-#endif
 }
 
-#if defined(_WRS_KERNEL) && defined(_WRS_CONFIG_SYS_PWR_OFF)
+#if defined(_WRS_CONFIG_SYS_PWR_OFF)
 static void os_vxworks_shutdown(void)
 {
 	/* Wait 5 seconds for messages to propagate */
@@ -281,7 +333,8 @@ static void os_vxworks_decommission(void)
 
 	powerOff();
 }
-#endif
+#endif /* _WRS_CONFIG_SYS_PWR_OFF */
+#endif /* _WRS_KERNEL */
 
 os_status_t os_system_run(
 	const char *command,
@@ -309,44 +362,29 @@ os_status_t os_system_run(
 	 * Go through list of supported commands
 	 */
 
-	if (strncmp (argv[0], "reboot", sizeof("reboot")) == 0) {
-		if (taskSpawn ("tReboot", 10, 0, 0x1000,
-			(FUNCPTR) os_vxworks_reboot,
-			0, 0, 0, 0, 0, 0, 0, 0, 0, 0) == TASK_ID_ERROR) {
-			return OS_STATUS_FAILURE;
-		}
-	} else if (strncmp (argv[0], "shutdown", sizeof("shutdown")) == 0) {
-#if defined(_WRS_KERNEL) && defined(_WRS_CONFIG_SYS_PWR_OFF)
-		if (taskSpawn ("tShutdown", 10, 0, 0x1000,
-			(FUNCPTR) os_vxworks_shutdown,
-			0, 0, 0, 0, 0, 0, 0, 0, 0, 0) == TASK_ID_ERROR) {
-			return OS_STATUS_FAILURE;
-		}
-#else
-		return OS_STATUS_FAILURE;
-#endif
-	} else if (strncmp (argv[0], "decommission", sizeof("decommission")) == 0) {
-#if defined(_WRS_KERNEL) && defined(_WRS_CONFIG_SYS_PWR_OFF)
-		if (taskSpawn ("tDecommission", 10, 0, 0x1000,
-			(FUNCPTR) os_vxworks_decommission,
-			0, 0, 0, 0, 0, 0, 0, 0, 0, 0) == TASK_ID_ERROR) {
-			return OS_STATUS_FAILURE;
-		}
-#else
-		return OS_STATUS_FAILURE;
-#endif
-	} else if (strncmp (argv[0], "iot-update-copy", sizeof("iot-update-copy")) == 0) {
+        if (strstr (argv[0], "iot-control") != NULL) {
+                if ( chdir ( deviceCloudRtpDirGet() ) != 0 )
+                        return OS_STATUS_FAILURE;
+
+                argv[0] = "iot-control";
+                if (rtpSpawn (argv[0], argv, NULL,
+                        deviceCloudPriorityGet(),
+                        deviceCloudStackSizeGet(),
+                        RTP_LOADED_WAIT, VX_FP_TASK) == RTP_ID_ERROR) {
+                        return OS_STATUS_FAILURE;
+                }
+	} else if (strstr (argv[0], "iot-update") != NULL) {
 		if ( chdir ( deviceCloudRtpDirGet() ) != 0 )
 			return OS_STATUS_FAILURE;
 
-		argv[0] = "iot-update-copy";
+		argv[0] = "iot-update";
 		if (rtpSpawn (argv[0], argv, NULL,
 			deviceCloudPriorityGet(),
 			deviceCloudStackSizeGet(),
 			RTP_LOADED_WAIT, VX_FP_TASK) == RTP_ID_ERROR) {
 			return OS_STATUS_FAILURE;
 		}
-	} else if (strncmp (argv[0], "iot-relay", sizeof("iot-relay")) == 0) {
+	} else if (strstr (argv[0], "iot-relay") != NULL) {
 		if ( chdir ( deviceCloudRtpDirGet() ) != 0 )
 			return OS_STATUS_FAILURE;
 
@@ -356,6 +394,28 @@ os_status_t os_system_run(
 			RTP_LOADED_WAIT, VX_FP_TASK) == RTP_ID_ERROR) {
 			return OS_STATUS_FAILURE;
 		}
+#if defined(_WRS_KERNEL)
+        } else if (strncmp (argv[0], "reboot", sizeof("reboot")) == 0) {
+                if (taskSpawn ("tReboot", 10, 0, 0x1000,
+                        (FUNCPTR) os_vxworks_reboot,
+                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0) == TASK_ID_ERROR) {
+                        return OS_STATUS_FAILURE;
+                }
+#if defined(_WRS_CONFIG_SYS_PWR_OFF)
+        } else if (strncmp (argv[0], "shutdown", sizeof("shutdown")) == 0) {
+                if (taskSpawn ("tShutdown", 10, 0, 0x1000,
+                        (FUNCPTR) os_vxworks_shutdown,
+                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0) == TASK_ID_ERROR) {
+                        return OS_STATUS_FAILURE;
+                }
+        } else if (strncmp (argv[0], "decommission", sizeof("decommission")) == 0) {
+                if (taskSpawn ("tDecommission", 10, 0, 0x1000,
+                        (FUNCPTR) os_vxworks_decommission,
+                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0) == TASK_ID_ERROR) {
+                        return OS_STATUS_FAILURE;
+                }
+#endif /* _WRS_CONFIG_SYS_PWR_OFF */
+#endif /* _WRS_KERNEL */
 	} else {
 		printf("Invalid command:%s\n", command);
 		return OS_STATUS_FAILURE;
@@ -375,7 +435,9 @@ os_status_t os_system_run_wait(
 	os_millisecond_t UNUSED(max_time_out) )
 {
 	os_file_t pipes[2u] = {NULL, NULL};
-	return os_system_run(command, exit_status, pipes);
+	os_status_t result = os_system_run(command, exit_status, pipes);
+	sleep(10);
+	return result;
 }
 
 os_uint32_t os_system_pid( void )
