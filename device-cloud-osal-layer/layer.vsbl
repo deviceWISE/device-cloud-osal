@@ -1,0 +1,29 @@
+/* layer.vsbl file for Device Cloud OSAL layer  */
+/*
+ * Copyright (c) 2017 Wind River Systems, Inc.
+ *
+ * The right to copy, distribute, modify, or otherwise make use
+ * of this software may be licensed only pursuant to the terms
+ * of an applicable Wind River license agreement.
+ */
+
+/*
+Modification history
+--------------------
+05oct17,yat  Created
+*/
+
+Layer OSAL
+    {
+    SYNOPSIS          Device Cloud operating system abstraction layer
+    HELP              This provides the Device Cloud operating system abstraction layer.
+    VERSION           2.4.0.0
+    VENDOR            Wind River
+    FEATURE           HDC
+    LAYER_REQUIRES    UNIX
+    FEATURE_REQUIRES  {HDC HDC24}
+    SUBSCRIBE         UNIX
+    OPTIONAL          YES
+    DEFAULT           NO
+    DOC_BUILD         NO
+    }
