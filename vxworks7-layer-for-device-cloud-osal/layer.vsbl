@@ -20,8 +20,8 @@ Layer OSAL
     VERSION           2.4.0.0
     VENDOR            Wind River
     FEATURE           HDC
-    LAYER_REQUIRES    UNIX
-    FEATURE_REQUIRES  {HDC HDC24}
+    FEATURE_REQUIRES  {HDC HDC24} \
+                      {UNIX UNIX_KERNEL_LIB}
     SUBSCRIBE         UNIX
     OPTIONAL          YES
     DEFAULT           NO
