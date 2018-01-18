@@ -13,7 +13,7 @@ Modification history
 05oct17,yat  Created
 */
 
-Layer OSAL
+Layer DEVICE_CLOUD_OSAL
     {
     SYNOPSIS          Device Cloud operating system abstraction layer
     HELP              This provides the Device Cloud operating system abstraction layer.

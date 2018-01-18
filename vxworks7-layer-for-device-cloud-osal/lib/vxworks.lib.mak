@@ -15,7 +15,7 @@ LIB_FORMAT = both
 
 BUILD_ALL_OBJS = TRUE
 
-DEVICE_CLOUD_OSAL_DIR = $(VSB_DIR)/3pp/HDC_OSAL/device_cloud_osal_repo
+DEVICE_CLOUD_OSAL_DIR = $(VSB_DIR)/3pp/DEVICE_CLOUD_OSAL/device_cloud_osal_repo
 
 SRC_DIRS = \
 	$(DEVICE_CLOUD_OSAL_DIR)/src \
