@@ -36,15 +36,15 @@
 #include <net/if_dl.h>   /* for struct sockaddr_dl */
 #endif /* ifdef __APPLE__ */
 
-#ifndef _WRS_KERNEL
+#if !defined(__VXWORKS__)
 #include <dlfcn.h>       /* for dlclose, dlopen, dlsym */
 #include <pwd.h>         /* for getpwnam */
 #include <regex.h>       /* for regular expression support */
 #include <sys/statvfs.h> /* for struct statsfs */
 #include <termios.h>     /* for terminal input */
-#endif /* _WRS_KERNEL */
+#endif /* __VXWORKS__ */
 
-#if defined(__linux__) || defined (_WRS_KERNEL)
+#if defined(__linux__) || defined (__VXWORKS__)
 #	include <sys/ioctl.h> /* for ioctl */
 #	ifndef ETHER_ADDR_LEN
 		/** @brief Ethernet (mac) address length */
@@ -56,9 +56,12 @@
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdisabled-macro-expansion"
 
-#ifdef _WRS_KERNEL
+#if defined(__VXWORKS__)
 typedef u_short in_port_t;
-#endif
+
+#define sync()
+#endif /* __VXWORKS__ */
+
 /**
  * @brief Time in milliseconds to wait between retrying an operation
  */
@@ -167,7 +170,7 @@ os_status_t os_adapters_mac(
 	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( adapters && adapters->current && mac && mac_len > 0u )
 	{
-#if defined(__linux__) || defined (_WRS_KERNEL)
+#if defined(__linux__) || defined (__VXWORKS__)
 		struct ifreq ifr;
 		const int socket_fd =
 			socket( adapters->current->ifa_addr->sa_family,
@@ -181,13 +184,13 @@ os_status_t os_adapters_mac(
 			if ( ioctl( socket_fd, SIOCGIFHWADDR, &ifr ) == 0 )
 			{
 				unsigned char *id =
-#ifndef _WRS_KERNEL
+#if !defined(__VXWORKS__)
 					(unsigned char *)( ifr.ifr_hwaddr.sa_data );
 #else
 					(unsigned char *)( ifr.ifr_addr.sa_data );
-#endif
+#endif /* __VXWORKS__ */
 				const size_t id_len = ETHER_ADDR_LEN;
-#else /*  defined(__linux__) || defined (_WRS_KERNEL) */
+#else /*  defined(__linux__) || defined (__VXWORKS__) */
 		{
 			if ( ( adapters->current->ifa_addr->sa_family == AF_LINK ) &&
 				adapters->current->ifa_addr &&
@@ -198,7 +201,7 @@ os_status_t os_adapters_mac(
 					(struct sockaddr_dl *)(void*)adapters->current->ifa_addr;
 				unsigned char *id = (unsigned char *)LLADDR( sdl );
 				const size_t id_len = sdl->sdl_alen;
-#endif /*  defined(__linux__) || defined (_WRS_KERNEL) */
+#endif /*  defined(__linux__) || defined (__VXWORKS__) */
 				/* loop through to produce mac address */
 				os_bool_t good_mac = OS_FALSE;
 				size_t i;
@@ -218,7 +221,7 @@ os_status_t os_adapters_mac(
 				if ( good_mac != OS_FALSE )
 					result = OS_STATUS_SUCCESS;
 			}
-#if defined( __linux__ ) || defined ( _WRS_KERNEL )
+#if defined( __linux__ ) || defined ( __VXWORKS__ )
 			close( socket_fd );
 #endif
 		}
@@ -438,7 +441,7 @@ os_status_t os_directory_close(
 	}
 	return result;
 }
-#ifndef _WRS_KERNEL
+#if !defined(__VXWORKS__)
 os_status_t os_directory_delete(
 	const char *path, const char *regex, os_bool_t recursive )
 {
@@ -570,7 +573,7 @@ os_status_t os_directory_delete(
 	}
 	return result;
 }
-#endif
+#endif /* __VXWORKS__ */
 
 os_bool_t os_directory_exists(
 	const char *dir_path )
@@ -591,6 +594,7 @@ os_bool_t os_directory_exists(
 	return result;
 }
 
+#if !defined(__VXWORKS__)
 os_uint64_t os_directory_free_space( const char *path )
 {
 	os_uint64_t free_space = 0u;
@@ -601,6 +605,7 @@ os_uint64_t os_directory_free_space( const char *path )
 			(os_uint64_t)sfs.f_bavail;
 	return free_space;
 }
+#endif /* __VXWORKS__ */
 
 const char *os_directory_get_temp_dir( char *dest, size_t size )
 {
@@ -641,15 +646,19 @@ os_status_t os_directory_next(
 				path[ path_len - 1 ] = '\0';
 				if ( files_only != OS_FALSE )
 				{
+#if !defined(__VXWORKS__)
 					if ( d->d_type == DT_UNKNOWN )
+#endif /* __VXWORKS__ */
 					{
 						struct stat s;
 						if ( ( lstat( path, &s ) == 0 ) &&
 							!S_ISREG( s.st_mode ) )
 							continue;
 					}
+#if !defined(__VXWORKS__)
 					else if ( d->d_type != DT_REG )
 						continue;
+#endif /* __VXWORKS__ */
 				}
 				break;
 			}
@@ -701,6 +710,7 @@ os_status_t os_file_close(
 	return result;
 }
 
+#if !defined(__VXWORKS__)
 os_status_t os_file_chown(
 	const char *path,
 	const char *user )
@@ -730,11 +740,7 @@ os_status_t os_file_copy(
 		int fd_from;
 
 		result = OS_STATUS_FAILURE;
-#ifndef _WRS_KERNEL
 		fd_from = open( old_path, O_RDONLY );
-#else
-		fd_from = open( old_path, O_RDONLY, 0 );
-#endif
 		if ( fd_from >= 0 )
 		{
 			char buf[4096];
@@ -779,6 +785,7 @@ os_status_t os_file_copy(
 	}
 	return result;
 }
+#endif /* __VXWORKS__ */
 
 os_status_t os_file_delete(
 	const char *path )
@@ -835,6 +842,8 @@ os_status_t os_file_move(
 	if ( old_path && new_path )
 	{
 		result = OS_STATUS_FAILURE;
+		if ( os_file_exists( new_path ) != OS_FALSE )
+			os_file_delete( new_path );
 		if ( rename( old_path, new_path ) == 0 )
 			result = OS_STATUS_SUCCESS;
 	}
@@ -976,11 +985,11 @@ os_status_t os_file_sync(
 	{
 		int fd;
 		result = OS_STATUS_FAILURE;
-#ifndef _WRS_KERNEL
+#if !defined(__VXWORKS__)
 		fd = open( file_path, O_RDONLY );
 #else
 		fd = open( file_path, O_RDONLY, 0 );
-#endif
+#endif /* __VXWORKS__ */
 		if ( fd >= 0 )
 		{
 			if ( fsync( fd ) == 0 )
@@ -988,13 +997,11 @@ os_status_t os_file_sync(
 			close( fd );
 		}
 	}
-#ifndef _WRS_KERNEL
 	else
 	{
 		sync();
 		result = OS_STATUS_SUCCESS;
 	}
-#endif
 	return result;
 }
 
@@ -1031,6 +1038,7 @@ size_t os_file_write(
 }
 #endif /* if defined(OSAL_WRAP) && OSAL_WRAP */
 
+#if !defined(__VXWORKS__)
 char os_key_wait( void )
 {
 	char result = '\0';
@@ -1069,6 +1077,7 @@ os_lib_handle os_library_open(
 	return dlopen( path, RTLD_LAZY );
 }
 #endif /* if defined(OSAL_WRAP) && OSAL_WRAP */
+#endif /* __VXWORKS__ */
 
 /* memory functions */
 #if defined(OSAL_WRAP) && OSAL_WRAP
@@ -1352,6 +1361,7 @@ os_bool_t os_path_is_absolute( const char *path )
 	return result;
 }
 
+#if !defined(__VXWORKS__)
 os_status_t os_path_executable(
 	char *path,
 	size_t size )
@@ -1374,6 +1384,7 @@ os_status_t os_process_cleanup( void )
 		result = OS_STATUS_SUCCESS;
 	return result;
 }
+#endif /* __VXWORKS__ */
 
 /* socket functions */
 int os_get_host_address(
@@ -1863,6 +1874,7 @@ os_status_t os_stream_echo_set(
 	os_file_t stream, os_bool_t enable )
 {
 	os_status_t result = OS_STATUS_BAD_PARAMETER;
+#if !defined(__VXWORKS__)
 	if ( stream )
 	{
 		struct termios termios;
@@ -1878,6 +1890,7 @@ os_status_t os_stream_echo_set(
 				result = OS_STATUS_SUCCESS;
 		}
 	}
+#endif /* __VXWORKS__ */
 	return result;
 }
 
@@ -1980,6 +1993,7 @@ const char *os_system_error_string(
 	return strerror( error_number );
 }
 
+#if !defined(__VXWORKS__)
 os_status_t os_system_info(
 	os_system_info_t *sys_info )
 {
@@ -2260,6 +2274,7 @@ os_status_t os_system_run_wait(
 	}
 	return result;
 }
+#endif /* __VXWORKS__ */
 
 os_status_t os_system_shutdown(
 	os_bool_t reboot , unsigned int delay)
@@ -2503,6 +2518,7 @@ os_status_t os_thread_condition_wait(
 }
 #endif /* if defined(OSAL_WRAP) && OSAL_WRAP */
 
+#if !defined(__VXWORKS__)
 os_status_t os_thread_create(
 	os_thread_t *thread,
 	os_thread_main_t main,
@@ -2517,6 +2533,7 @@ os_status_t os_thread_create(
 	}
 	return result;
 }
+#endif /* __VXWORKS__ */
 
 os_status_t os_thread_destroy(
 	os_thread_t *thread )
@@ -2598,6 +2615,7 @@ os_status_t os_thread_mutex_destroy(
 	return result;
 }
 
+#if !defined(__VXWORKS__)
 os_status_t os_thread_rwlock_create(
 	os_thread_rwlock_t *lock )
 {
@@ -2675,6 +2693,7 @@ os_status_t os_thread_rwlock_destroy(
 	}
 	return result;
 }
+#endif /* __VXWORKS__ */
 #endif /* if defined(OSAL_THREAD_SUPPORT) && OSAL_THREAD_SUPPORT */
 
 /* uuid support */
