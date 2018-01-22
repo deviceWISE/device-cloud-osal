@@ -13,9 +13,9 @@
 #include <string.h>
 #include <sys/time.h>
 
-#ifndef __vxworks
+#if !defined(__VXWORKS__)
 #include <sys/syscall.h>
-#endif
+#endif /* __VXWORKS__ */
 
 #include "randutils.h"
 
@@ -30,7 +30,7 @@
 THREAD_LOCAL unsigned short ul_jrand_seed[3];
 #endif
 
-#ifndef __vxworks
+#if !defined(__VXWORKS__)
 int random_get_fd(void)
 {
 	int i, fd;
@@ -58,7 +58,7 @@ int random_get_fd(void)
 		rand();
 	return fd;
 }
-#endif
+#endif /* __VXWORKS__ */
 
 
 /*
@@ -69,24 +69,24 @@ int random_get_fd(void)
 void random_get_bytes(void *buf, size_t nbytes)
 {
 	size_t i, n = nbytes;
-#ifndef __vxworks
+#if !defined(__VXWORKS__)
 	int fd = random_get_fd();
-#endif
+#endif /* __VXWORKS__ */
 	int lose_counter = 0;
 	unsigned char *cp = (unsigned char *) buf;
 
-#ifdef __vxworks
+#if defined(__VXWORKS__)
 	{
 #else
 	if (fd >= 0) {
-#endif
+#endif /* __VXWORKS__ */
 		while (n > 0) {
-#ifdef __vxworks
+#if defined(__VXWORKS__)
 			ssize_t x = (ssize_t)1;
 			*cp = (unsigned char)(rand() & 0xff);
 #else
 			ssize_t x = read(fd, cp, n);
-#endif
+#endif /* __VXWORKS__ */
 			if (x <= 0) {
 				if (lose_counter++ > 16)
 					break;
@@ -97,9 +97,9 @@ void random_get_bytes(void *buf, size_t nbytes)
 			lose_counter = 0;
 		}
 
-#ifndef __vxworks
+#if !defined(__VXWORKS__)
 		close(fd);
-#endif
+#endif /* __VXWORKS__ */
 	}
 
 	/*

@@ -23,9 +23,9 @@
 
 /* includes for #defined functions */
 #include <ctype.h>
-#ifndef __vxworks
+#if !defined(__VXWORKS__)
 #include <dlfcn.h>
-#endif
+#endif /* __VXWORKS__ */
 #include <errno.h>
 #include <limits.h> /* for PATH_MAX */
 #include <pthread.h>
@@ -36,9 +36,9 @@
 #include <unistd.h> /* for sleep */
 #include <time.h>   /* for nanosleep */
 
-#ifndef __vxworks
+#if !defined(__VXWORKS__)
 #include <sys/utsname.h> /* for struct utsname */
-#endif
+#endif /* __VXWORKS__ */
 
 #include <uuid/uuid.h>   /* osals uuid header, not system, for libuuid functions + uuid_t */
 
@@ -58,7 +58,7 @@
 #include <signal.h>     /* for siginfo_t */
 #include <sys/socket.h> /* for struct addrinfo */
 
-#if defined(__linux__) || defined (__vxworks)
+#if defined(__linux__) || defined (__VXWORKS__)
 #	include <net/if.h>    /* for struct ifconf */
 #endif
 #include <ifaddrs.h>

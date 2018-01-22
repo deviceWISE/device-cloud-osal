@@ -15,7 +15,7 @@
  * OR CONDITIONS OF ANY KIND, either express or implied."
  */
 
-#ifdef __vxworks
+#if defined(__VXWORKS__)
 #include <vxWorks.h>
 #include <ioLib.h>
 #include "os.h"
@@ -450,4 +450,4 @@ os_uint32_t os_system_pid( void )
 	return (os_uint32_t) (ULONG) taskIdSelf();
 }
 
-#endif /* __vxworks */
+#endif /* __VXWORKS__ */

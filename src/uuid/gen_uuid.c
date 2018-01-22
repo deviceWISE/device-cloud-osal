@@ -573,7 +573,7 @@ void uuid_generate_random(uuid_t out)
 	__uuid_generate_random(out, &num);
 }
 
-#ifndef __vxworks
+#if !defined(__VXWORKS__)
 /*
  * Check whether good random source (/dev/random or /dev/urandom)
  * is available.
@@ -584,7 +584,7 @@ static int have_random_source(void)
 
 	return (!stat("/dev/random", &s) || !stat("/dev/urandom", &s));
 }
-#endif
+#endif /* __VXWORKS__ */
 
 /*
  * This is the generic front-end to uuid_generate_random and
@@ -594,10 +594,10 @@ static int have_random_source(void)
  */
 void uuid_generate(uuid_t out)
 {
-#ifndef __vxworks
+#if !defined(__VXWORKS__)
 	if (have_random_source())
 		uuid_generate_random(out);
 	else
-#endif
+#endif /* __VXWORKS__ */
 		uuid_generate_time(out);
 }
