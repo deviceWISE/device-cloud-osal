@@ -8,7 +8,7 @@
 #
 # Modification history
 # --------------------
-# 05oct17,yat  Created
+# 05oct17,yat  created
 
 include $(WIND_KRNL_MK)/defs.ver.mk
 
