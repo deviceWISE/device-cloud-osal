@@ -436,7 +436,6 @@ os_status_t os_system_run_wait(
 {
 	os_file_t pipes[2u] = {NULL, NULL};
 	os_status_t result = os_system_run(command, exit_status, pipes);
-	sleep(10);
 	return result;
 }
 
