@@ -28,6 +28,7 @@ Layer DEVICE_CLOUD_OSAL
     VERSION           3.0.0.0
     VENDOR            Wind River
     FEATURE           HDC
+    PARENT            HDC_3_0_0_0
     FEATURE_REQUIRES  {HDC HDC3} \
                       {UNIX UNIX_KERNEL_LIB}
     SUBSCRIBE         UNIX
