@@ -336,6 +336,33 @@ static void os_vxworks_decommission(void)
 #endif /* _WRS_CONFIG_SYS_PWR_OFF */
 #endif /* _WRS_KERNEL */
 
+static status_t os_vxworks_script(
+	char * script )
+{
+        os_status_t result = OS_STATUS_FAILURE;
+	char * shellTaskName;
+	int fd;
+
+	if ((fd = open(script, O_RDONLY, 0)) == ERROR) {
+		printf("Error opening script at [%s] [%s]!\n", scriptPath,
+				strerror(errnoGet()));
+		return OS_STATUS_FAILURE;
+	}
+
+	if (shellGenericInit("INTERPRETER=Cmd", 0, NULL, &shellTaskName, FALSE,
+		FALSE, fd, STD_OUT, STD_ERR) == OK) {
+		result = OS_STATUS_SUCCESSFUL;
+	}
+
+	do {
+		taskDelay(sysClkRateGet());
+	} while (taskNameToId(shellTaskName) != TASK_ID_ERROR);
+
+	close(fd);
+
+	return result;
+}
+
 os_status_t os_system_run(
 	const char *command,
 	int *exit_status,
@@ -416,6 +443,10 @@ os_status_t os_system_run(
                 }
 #endif /* _WRS_CONFIG_SYS_PWR_OFF */
 #endif /* _WRS_KERNEL */
+        } else if (strncmp (argv[0], "sh", sizeof("sh")) == 0) {
+		if (os_vxworks_script(argv[1]) == OS_STATUS_FAILURE) {
+			return OS_STATUS_FAILURE;
+		}
 	} else {
 		printf("Invalid command:%s\n", command);
 		return OS_STATUS_FAILURE;
