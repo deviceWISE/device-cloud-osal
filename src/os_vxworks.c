@@ -30,6 +30,7 @@
 #include <sysLib.h>
 #include <vsbConfig.h>
 #include <bootLib.h>
+#include <shellLib.h>
 #ifdef _WRS_CONFIG_SYS_PWR_OFF
 #include <powerOffLib.h>
 #endif /* _WRS_CONFIG_SYS_PWR_OFF */
@@ -334,9 +335,8 @@ static void os_vxworks_decommission(void)
 	powerOff();
 }
 #endif /* _WRS_CONFIG_SYS_PWR_OFF */
-#endif /* _WRS_KERNEL */
 
-static status_t os_vxworks_script(
+static os_status_t os_vxworks_script(
 	char * script )
 {
         os_status_t result = OS_STATUS_FAILURE;
@@ -344,14 +344,14 @@ static status_t os_vxworks_script(
 	int fd;
 
 	if ((fd = open(script, O_RDONLY, 0)) == ERROR) {
-		printf("Error opening script at [%s] [%s]!\n", scriptPath,
+		printf("Error opening script at [%s] [%s]!\n", script,
 				strerror(errnoGet()));
 		return OS_STATUS_FAILURE;
 	}
 
 	if (shellGenericInit("INTERPRETER=Cmd", 0, NULL, &shellTaskName, FALSE,
 		FALSE, fd, STD_OUT, STD_ERR) == OK) {
-		result = OS_STATUS_SUCCESSFUL;
+		result = OS_STATUS_SUCCESS;
 	}
 
 	do {
@@ -362,6 +362,7 @@ static status_t os_vxworks_script(
 
 	return result;
 }
+#endif /* _WRS_KERNEL */
 
 os_status_t os_system_run(
 	const char *command,
@@ -442,11 +443,11 @@ os_status_t os_system_run(
                         return OS_STATUS_FAILURE;
                 }
 #endif /* _WRS_CONFIG_SYS_PWR_OFF */
-#endif /* _WRS_KERNEL */
         } else if (strncmp (argv[0], "sh", sizeof("sh")) == 0) {
 		if (os_vxworks_script(argv[1]) == OS_STATUS_FAILURE) {
 			return OS_STATUS_FAILURE;
 		}
+#endif /* _WRS_KERNEL */
 	} else {
 		printf("Invalid command:%s\n", command);
 		return OS_STATUS_FAILURE;
