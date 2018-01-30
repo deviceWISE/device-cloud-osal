@@ -43,6 +43,7 @@ extern BOOT_PARAMS sysBootParams;
 extern const char *deviceCloudRtpDirGet (void);
 extern unsigned int deviceCloudPriorityGet (void);
 extern unsigned int deviceCloudStackSizeGet (void);
+extern int iot_update_main ( int argc, char* argv[] );
 #else
 static char config_dir[PATH_MAX] = "/bd0:1/etc/iot";
 static char runtime_dir[PATH_MAX] = "/bd0:1/var/lib/iot";
@@ -369,7 +370,7 @@ os_status_t os_system_run(
 	int *exit_status,
 	os_file_t pipe_files[2u] )
 {
-	const char * argv[10];
+	static const char * argv[10];
 	int argc = 0;
 
 	/* set a default exit status */
@@ -380,9 +381,11 @@ os_status_t os_system_run(
 	/* tokenize the command */
 
 	argv[argc] = strtok (command, " ");
+printf("+++++++++++++[%d][%s]\n", argc, argv[argc]);
 
 	while ((argv[argc] != NULL) && (++argc < 9)) {
 		argv[argc] = strtok (NULL, " ");
+printf("+++++++++++++[%d][%s]\n", argc, argv[argc]);
 	}
 	argv[9] = NULL;
 
@@ -402,6 +405,15 @@ os_status_t os_system_run(
                         return OS_STATUS_FAILURE;
                 }
 	} else if (strstr (argv[0], "iot-update") != NULL) {
+#if defined(_WRS_KERNEL)
+		if (taskSpawn ("tUpdate",
+			deviceCloudPriorityGet(), 0,
+			deviceCloudStackSizeGet(),
+                        (FUNCPTR) iot_update_main,
+                        argc, argv, 0, 0, 0, 0, 0, 0, 0, 0) == TASK_ID_ERROR) {
+                        return OS_STATUS_FAILURE;
+                }
+#else
 		if ( chdir ( deviceCloudRtpDirGet() ) != 0 )
 			return OS_STATUS_FAILURE;
 
@@ -412,6 +424,8 @@ os_status_t os_system_run(
 			RTP_LOADED_WAIT, VX_FP_TASK) == RTP_ID_ERROR) {
 			return OS_STATUS_FAILURE;
 		}
+#endif /* _WRS_KERNEL */
+		sleep(10);
 	} else if (strstr (argv[0], "iot-relay") != NULL) {
 		if ( chdir ( deviceCloudRtpDirGet() ) != 0 )
 			return OS_STATUS_FAILURE;
