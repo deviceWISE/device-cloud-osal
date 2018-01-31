@@ -130,6 +130,7 @@ os_status_t os_system_info(
 	return OS_STATUS_SUCCESS;
 }
 
+#if 0
 os_status_t os_file_copy(
 	const char *old_path,
 	const char *new_path )
@@ -138,12 +139,12 @@ os_status_t os_file_copy(
 
 	if (copy(old_path, new_path) == OK)
 	{
-		sleep(5);
 		result = OS_STATUS_SUCCESS;
 	}
 
 	return result;
 }
+#endif
 
 os_status_t os_path_executable(
 	char *path,
@@ -326,15 +327,6 @@ static void os_vxworks_shutdown(void)
 
 	powerOff();
 }
-
-static void os_vxworks_decommission(void)
-{
-	/* Wait 5 seconds for messages to propagate */
-
-	sleep (5);
-
-	powerOff();
-}
 #endif /* _WRS_CONFIG_SYS_PWR_OFF */
 
 static os_status_t os_vxworks_script(
@@ -345,12 +337,10 @@ static os_status_t os_vxworks_script(
 	int fd;
 
 	if ((fd = open(script, O_RDONLY, 0)) == ERROR) {
-		printf("Error opening script at [%s] [%s]!\n", script,
-				strerror(errnoGet()));
 		return OS_STATUS_FAILURE;
 	}
 
-	if (shellGenericInit("INTERPRETER=Cmd", 0, NULL, &shellTaskName, FALSE,
+	if (shellGenericInit("INTERPRETER=C", 0, NULL, &shellTaskName, FALSE,
 		FALSE, fd, STD_OUT, STD_ERR) == OK) {
 		result = OS_STATUS_SUCCESS;
 	}
@@ -381,11 +371,9 @@ os_status_t os_system_run(
 	/* tokenize the command */
 
 	argv[argc] = strtok (command, " ");
-printf("+++++++++++++[%d][%s]\n", argc, argv[argc]);
 
 	while ((argv[argc] != NULL) && (++argc < 9)) {
 		argv[argc] = strtok (NULL, " ");
-printf("+++++++++++++[%d][%s]\n", argc, argv[argc]);
 	}
 	argv[9] = NULL;
 
@@ -425,7 +413,6 @@ printf("+++++++++++++[%d][%s]\n", argc, argv[argc]);
 			return OS_STATUS_FAILURE;
 		}
 #endif /* _WRS_KERNEL */
-		sleep(10);
 	} else if (strstr (argv[0], "iot-relay") != NULL) {
 		if ( chdir ( deviceCloudRtpDirGet() ) != 0 )
 			return OS_STATUS_FAILURE;
@@ -452,7 +439,7 @@ printf("+++++++++++++[%d][%s]\n", argc, argv[argc]);
                 }
         } else if (strncmp (argv[0], "decommission", sizeof("decommission")) == 0) {
                 if (taskSpawn ("tDecommission", 10, 0, 0x1000,
-                        (FUNCPTR) os_vxworks_decommission,
+                        (FUNCPTR) os_vxworks_shutdown,
                         0, 0, 0, 0, 0, 0, 0, 0, 0, 0) == TASK_ID_ERROR) {
                         return OS_STATUS_FAILURE;
                 }
