@@ -2,7 +2,7 @@
  * @file
  * @brief source file defining implementations for Windows systems
  *
- * @copyright Copyright (C) 2016-2017 Wind River Systems, Inc. All Rights Reserved.
+ * @copyright Copyright (C) 2016-2018 Wind River Systems, Inc. All Rights Reserved.
  *
  * @license Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -406,7 +406,7 @@ os_bool_t os_char_isalnum(
 	char c )
 {
 	os_bool_t result = OS_FALSE;
-	if ( IsCharAlphaNumeric( c ) )
+	if ( IsCharAlphaNumericA( c ) )
 		result = OS_TRUE;
 	return result;
 }
@@ -416,7 +416,7 @@ os_bool_t os_char_isxdigit(
 {
 	const char ch = c;
 	os_bool_t result = OS_FALSE;
-	if ( ( ch >= '0' && ch <= '9' ) || ( ch >='A' && ch <= 'F' ) ||
+	if ( ( ch >= '0' && ch <= '9' ) || ( ch >= 'A' && ch <= 'F' ) ||
 		( ch >= 'a' && ch <= 'f' ) )
 		result = OS_TRUE;
 	return result;
@@ -1451,20 +1451,30 @@ int os_printf(
 
 size_t os_env_expand(
 	char *src,
-	size_t len )
+	size_t in_len,
+	size_t out_len )
 {
 	size_t result = 0u;
-	if ( src )
+	if ( src && in_len <= out_len )
 	{
-		result = (size_t)ExpandEnvironmentStrings( src, NULL, 0u );
-		if ( result < len )
+		if ( in_len > 0u )
+			src[in_len - 1u] = '\0';
+		result = (size_t)ExpandEnvironmentStringsA( src, NULL, 0u );
+		if ( result > 1u )
+			result -= 2u;
+		if ( result + 1u <= out_len )
 		{
-			char *dest = (char*)HeapAlloc( GetProcessHeap(), 0,
-				result + 1u );
+			char *dest;
+			/* according to documentation, this should be size of
+			 * the string + null-terminator + 1, so add +2 to result
+			 * to ensure enough space */
+			dest = (char*)HeapAlloc( GetProcessHeap(), 0,
+				result + 2u );
 			if ( dest )
 			{
-				ExpandEnvironmentStrings( src, dest, len );
-				os_memcpy( src, dest, len );
+				ExpandEnvironmentStringsA( src, dest,
+					result + 2u );
+				os_memcpy( src, dest, result + 1u );
 				HeapFree( GetProcessHeap(), 0, dest );
 			}
 		}
@@ -1481,7 +1491,17 @@ size_t os_env_get(
 	if ( dest && len > 0u )
 		dest[0] = '\0';
 	if ( env && dest && len > 0u )
-		result = (size_t)GetEnvironmentVariable( env, dest, len );
+	{
+		result = (size_t)GetEnvironmentVariableA( env, dest, len );
+		if ( result > len )
+		{
+			/*
+			 * result includes the space for the null-terminator,
+			 * if the buffer was not large enough
+			 */
+			--result;
+		}
+	}
 	return result;
 }
 

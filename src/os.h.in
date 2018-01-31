@@ -975,19 +975,25 @@ OS_API char *os_strtok(
  * @note Enviroment variables in the source string are in the format as defined
  *       by the operating system (i.e. for Windows: %VAR%; for POSIX: $VAR )
  *
- * @param[in]      src                 source string (containing environment
+ * @param[in,out]  src                 source string (containing environment
  *                                     variable as defined by the operating
  *                                     system)
- * @param[in]      len                 buffer size
+ * @param[in]      in_len              input buffer size (0 if null-terminated)
+ * @param[in]      out_len             output buffer size
+ *                                     (will be null-terminated, 0 if wanting to
+ *                                     know output size)
  *
- * @return the size of the output string (0 if either src is NULL) or
- * required size if too small
+ * @retval 0       if src is NULL or the input length is > the output length
+ * @retval >0      the size of the output string not including the
+ *                 null-terminating character (or the required size if:
+ *                 out_len == 0)
  *
  * @see os_env_get
  */
 OS_API size_t os_env_expand(
 	char *src,
-	size_t len
+	size_t in_len,
+	size_t out_len
 );
 
 /**
