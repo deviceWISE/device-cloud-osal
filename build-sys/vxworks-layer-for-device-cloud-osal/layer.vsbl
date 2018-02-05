@@ -24,7 +24,7 @@ Modification history
 Layer DEVICE_CLOUD_OSAL
     {
     SYNOPSIS          Device Cloud operating system abstraction layer
-    HELP              This provides the Device Cloud operating system abstraction layer.
+    HELP              This layer provides the Device Cloud operating system abstraction layer.
     VERSION           3.0.0.0
     VENDOR            Wind River
     FEATURE           HDC
