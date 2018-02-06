@@ -1296,6 +1296,7 @@ int os_printf(
 	va_end( args );
 	return result;
 }
+#endif /* if defined(OSAL_WRAP) && OSAL_WRAP */
 
 int os_snprintf(
 	char *str,
@@ -1306,11 +1307,19 @@ int os_snprintf(
 	int result;
 	va_list args;
 	va_start( args, format );
-	result = os_vsnprintf( str, size, format, args );
+#if defined( __APPLE__ )
+	if ( !format )
+		result = -1;
+	else
+#endif /* if defined( __APPLE__ ) */
+		result = os_vsnprintf( str, size, format, args );
+	if ( result < 0 || (size_t)result > size )
+		result = -1;
 	va_end( args );
 	return result;
 }
 
+#if defined(OSAL_WRAP) && OSAL_WRAP
 int os_vfprintf(
 	os_file_t stream,
 	const char *format,
@@ -1318,7 +1327,7 @@ int os_vfprintf(
 {
 	return vfprintf( stream, format, args );
 }
-#endif /* if defined( OSAL_WRAP ) */
+#endif /* if defined(OSAL_WRAP) && OSAL_WRAP */
 
 int os_vsnprintf(
 	char *str,
@@ -1327,8 +1336,6 @@ int os_vsnprintf(
 	va_list args )
 {
 	int result = vsnprintf( str, size, format, args );
-	if ( (size_t)result >= size )
-		result = -1;
 	return result;
 }
 

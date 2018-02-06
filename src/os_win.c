@@ -1623,7 +1623,7 @@ int os_vsnprintf(
 {
 	int result = -1;
 	char *str_end = NULL;
-	if ( StringCchVPrintfEx( str, size, &str_end, NULL, 0, format, args ) ==
+	if ( StringCchVPrintfExA( str, size, &str_end, NULL, 0, format, args ) ==
 		S_OK )
 		result = str_end - str;
 	return result;

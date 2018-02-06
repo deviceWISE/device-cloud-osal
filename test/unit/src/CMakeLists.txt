@@ -15,6 +15,7 @@
 set( TARGET "os" )
 set( TESTS
 	"char"
+	"printf"
 )
 
 # Remove some compiler warnings for clang
@@ -43,6 +44,11 @@ set( TEST_CHAR_MOCK ${MOCK_API_PART} ${MOCK_OSAL_FUNC} )
 set( TEST_CHAR_SRCS ${MOCK_API_SRCS} ${MOCK_OSAL_SRCS} "char_test.c" )
 set( TEST_CHAR_LIBS ${MOCK_API_LIBS} ${MOCK_OSAL_LIBS} ${OS_LIBS} )
 set( TEST_CHAR_UNIT ${OS_SRC} "os.c" )
+
+set( TEST_PRINTF_MOCK ${MOCK_API_PART} ${MOCK_OSAL_FUNC} )
+set( TEST_PRINTF_SRCS ${MOCK_API_SRCS} ${MOCK_OSAL_SRCS} "printf_test.c" )
+set( TEST_PRINTF_LIBS ${MOCK_API_LIBS} ${MOCK_OSAL_LIBS} ${OS_LIBS} )
+set( TEST_PRINTF_UNIT ${OS_SRC} "os.c" )
 
 add_unit_tests( ${TARGET} ${TESTS} )
 
