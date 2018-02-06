@@ -378,7 +378,8 @@ OS_API int os_fprintf(
 	os_file_t stream,
 	const char *format,
 	...
-) __attribute__((format(printf,2,3)));
+);
+
 /**
  * @brief Writes output to standard out
  *
@@ -393,27 +394,8 @@ OS_API int os_fprintf(
 OS_API int os_printf(
 	const char *format,
 	...
-) __attribute__((format(printf,1,2)));
-/**
- * @brief Writes output to a string with a maximum size
- *
- * @param[out]     str                 string to output to
- * @param[in]      size                maximum size of buffer
- * @param[in]      format              string format
- * @param[in]      ...                 items to replace based on @p format
- *
- * @return the number of characters printed including the null-terminator,
- *         if the output is truncated then the return value -1
- *
- * @see os_sprintf
- * @see os_vsnprintf
- */
-OS_API int os_snprintf(
-	char *str,
-	size_t size,
-	const char *format,
-	...
-) __attribute__((format(printf,3,4)));
+);
+
 /**
  * @brief Writes output to an open file stream using a va_list
  *
@@ -432,7 +414,8 @@ OS_API int os_vfprintf(
 	os_file_t stream,
 	const char *format,
 	va_list args
-) __attribute__((format(printf,2,0)));
+);
+
 /**
  * @brief Writes output to a string with a maximum size using a va_list
  *
@@ -452,7 +435,7 @@ OS_API int os_vsnprintf(
 	size_t size,
 	const char *format,
 	va_list args
-) __attribute__((format(printf,3,0)));
+);
 
 /**
  * @brief Read bytes from a file into a char array
