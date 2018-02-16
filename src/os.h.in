@@ -975,19 +975,25 @@ OS_API char *os_strtok(
  * @note Enviroment variables in the source string are in the format as defined
  *       by the operating system (i.e. for Windows: %VAR%; for POSIX: $VAR )
  *
- * @param[in]      src                 source string (containing environment
+ * @param[in,out]  src                 source string (containing environment
  *                                     variable as defined by the operating
  *                                     system)
- * @param[in]      len                 buffer size
+ * @param[in]      in_len              input buffer size (0 if null-terminated)
+ * @param[in]      out_len             output buffer size
+ *                                     (will be null-terminated, 0 if wanting to
+ *                                     know output size)
  *
- * @return the size of the output string (0 if either src is NULL) or
- * required size if too small
+ * @retval 0       if src is NULL or the input length is > the output length
+ * @retval >0      the size of the output string not including the
+ *                 null-terminating character (or the required size if:
+ *                 out_len == 0)
  *
  * @see os_env_get
  */
 OS_API size_t os_env_expand(
 	char *src,
-	size_t len
+	size_t in_len,
+	size_t out_len
 );
 
 /**
@@ -1022,7 +1028,9 @@ OS_API size_t os_env_get(
  * @param[in]      format              string format
  * @param[in]      ...                 items to replace based on @p format
  *
- * @return the number of characters printed including the null-terminator
+ * @retval >=0 the number of characters printed not including the
+ *             null-terminator
+ * @retval <0  an error occurred
  *
  * @see os_snprintf
  */
@@ -1031,6 +1039,28 @@ OS_API int os_sprintf(
 	const char *format,
 	...
 ) __attribute__((format(printf,2,3)));
+
+/**
+ * @brief Writes output to a string with a maximum size
+ *
+ * @param[out]     str                 string to output to
+ * @param[in]      size                maximum size of buffer
+ * @param[in]      format              string format
+ * @param[in]      ...                 items to replace based on @p format
+ *
+ * @retval >=0     the number of characters printed not including the
+ *                 null-terminator
+ * @retval -1      an error occurred or the buffer is too small
+ *
+ * @see os_sprintf
+ * @see os_vsnprintf
+ */
+OS_API int os_snprintf(
+	char *str,
+	size_t size,
+	const char *format,
+	...
+) __attribute__((format(printf,3,4)));
 
 /**
  * @brief Flushes a stream to ensure a buffer is transmitted

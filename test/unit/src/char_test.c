@@ -1,8 +1,8 @@
 /**
  * @file
- * @brief unit testing for IoT library (action source file)
+ * @brief unit testing for OSAL library (character related functions)
  *
- * @copyright Copyright (C) 2017 Wind River Systems, Inc. All Rights Reserved.
+ * @copyright Copyright (C) 2017-2018 Wind River Systems, Inc. All Rights Reserved.
  *
  * @license Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.

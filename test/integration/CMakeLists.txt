@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2017 Wind River Systems, Inc. All Rights Reserved.
+# Copyright (C) 2017-2018 Wind River Systems, Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,6 +13,7 @@
 #
 
 set( TESTS
+	"env"
 	"time"
 )
 
@@ -21,6 +22,10 @@ add_definitions( "-DOSAL_STATIC=1" )
 set( OS_LIB ${TARGET}${TARGET_STATIC_SUFFIX} )
 
 include_directories( "${CMAKE_BINARY_DIR}/out" )
+
+# env test
+set( TEST_ENV_SRCS "env_test.c" )
+set( TEST_ENV_LIBS ${OS_LIB} )
 
 # time test
 set( TEST_TIME_SRCS "time_test.c" )

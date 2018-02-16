@@ -646,31 +646,6 @@ OS_API int os_printf(
 #endif
 
 /**
- * @brief Writes output to a string with a maximum size
- *
- * @param[out]     str                 string to output to
- * @param[in]      size                maximum size of buffer
- * @param[in]      format              string format
- * @param[in]      ...                 items to replace based on @p format
- *
- * @return the number of characters printed including the null-terminator,
- *         if the output is truncated then the return value -1
- *
- * @see os_sprintf
- * @see os_vsnprintf
- */
-#if !OSAL_WRAP
-#define os_snprintf                    snprintf
-#else
-OS_API int os_snprintf(
-	char *str,
-	size_t size,
-	const char *format,
-	...
-) __attribute__((format(printf,3,4)));
-#endif
-
-/**
  * @brief Writes output to an open file stream using a va_list
  *
  * @param[in]      stream              stream to write to

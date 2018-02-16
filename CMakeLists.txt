@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2017 Wind River Systems, Inc. All Rights Reserved.
+# Copyright (C) 2017-2018 Wind River Systems, Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -44,8 +44,20 @@ if( APPLE )
 endif( APPLE )
 
 ### Build Library ###
-option( OSAL_THREAD_SUPPORT "enable multi-thread support" ON )
-option( OSAL_WRAP "provide wrappers for simple functions, this is useful for mocking and unit testing" OFF )
+# Similiar to the cmake "option" command, except that it ensures that the
+# given variable has a value defined and is not defined to "blank"
+# Arguments:
+#   VAR_NAME - name of the variable
+#   VAR_DESCRIPTION - description of the variable
+#   ... - initial value for th eoption (ON or OFF)
+function( OPTION_ENSURE_SET VAR_NAME VAR_DESCRIPTION )
+	if ( DEFINED ${VAR_NAME} AND "x${${VAR_NAME}}" STREQUAL "x" )
+		unset( ${VAR_NAME} CACHE )
+	endif ( DEFINED ${VAR_NAME} AND "x${${VAR_NAME}}" STREQUAL "x" )
+	option( ${ARGV} )
+endfunction( OPTION_ENSURE_SET )
+option_ensure_set( OSAL_THREAD_SUPPORT "enable multi-thread support" ON )
+option_ensure_set( OSAL_WRAP "provide wrappers for simple functions, this is useful for mocking and unit testing" OFF )
 
 # Definitions for build
 #######################

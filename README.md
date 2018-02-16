@@ -1,3 +1,5 @@
+[![Coverity Scan Build Status](https://scan.coverity.com/projects/15035/badge.svg)](https://scan.coverity.com/projects/15035)
+
 # Operating System Abstraction Layer
 
 This repository is abstracts operating system calls into a library.  This allows
