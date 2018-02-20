@@ -2,13 +2,17 @@
  * @file
  * @brief declares functions for the operating system abstraction layer
  *
- * @copyright Copyright (C) 2017 Wind River Systems, All Rights Reserved.
+ * @copyright Copyright (C) 2017-2018 Wind River Systems, All Rights Reserved.
  *
- * @license The right to copy, distribute or otherwise make use of this software
- * may be licensed only pursuant to the terms of an applicable Wind River
- * license agreement.  No license to Wind River intellectual property rights is
- * granted herein.  All rights not licensed by Wind River are reserved by Wind
- * River.
+ * @license Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at:
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed
+ * under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES
+ * OR CONDITIONS OF ANY KIND, either express or implied."
  */
 #ifndef OS_H
 #define OS_H
@@ -262,14 +266,33 @@ typedef struct os_system_info
 	os_uint8_t system_flags;
 } os_system_info_t;
 
+/**
+ * @file
+ * @brief Function definitions for POSIX operating systems
+ *
+ * @copyright Copyright (C) 2016-2017 Wind River Systems, Inc. All Rights Reserved.
+ *
+ * @license Licensed under the Apache License, Version 2.0 (the "License");
+
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at:
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software distributed
+ * under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES
+ * OR CONDITIONS OF ANY KIND, either express or implied."
+ */
+
 
 #include <pthread.h> /* for: pthread_t, pthread_cond_t, pthread_mutex_t, pthread_rwlock_t */
 
 #include <stdarg.h> /* for: va_list */
+#include <limits.h> /* for: PATH_MAX definition */
 #include <stdio.h> /* for: FILE *, feof, fgets, fread, fputs, fwrite, fprintf, printf, snprintf, vfprintf */
 #include <signal.h> /* for SIGINT, ... */
 
-#ifdef __vxworks
+#ifdef __VXWORKS__
 #define remainder fmod
 #endif
 
@@ -301,7 +324,7 @@ typedef pthread_mutex_t os_thread_mutex_t;
 /**
  * @brief Thread read/write lock
  */
-#ifdef __vxworks
+#ifdef __VXWORKS__
 typedef SEM_ID os_thread_rwlock_t;
 #else
 typedef pthread_rwlock_t os_thread_rwlock_t;
@@ -807,28 +830,6 @@ OS_API int os_printf(
 	const char *format,
 	...
 ) __attribute__((format(printf,1,2)));
-
-
-/**
- * @brief Writes output to a string with a maximum size
- *
- * @param[out]     str                 string to output to
- * @param[in]      size                maximum size of buffer
- * @param[in]      format              string format
- * @param[in]      ...                 items to replace based on @p format
- *
- * @return the number of characters printed including the null-terminator,
- *         if the output is truncated then the return value -1
- *
- * @see os_sprintf
- * @see os_vsnprintf
- */
-OS_API int os_snprintf(
-	char *str,
-	size_t size,
-	const char *format,
-	...
-) __attribute__((format(printf,3,4)));
 
 
 /**
@@ -2015,19 +2016,25 @@ OS_API char *os_strtok(
  * @note Enviroment variables in the source string are in the format as defined
  *       by the operating system (i.e. for Windows: %VAR%; for POSIX: $VAR )
  *
- * @param[in]      src                 source string (containing environment
+ * @param[in,out]  src                 source string (containing environment
  *                                     variable as defined by the operating
  *                                     system)
- * @param[in]      len                 buffer size
+ * @param[in]      in_len              input buffer size (0 if null-terminated)
+ * @param[in]      out_len             output buffer size
+ *                                     (will be null-terminated, 0 if wanting to
+ *                                     know output size)
  *
- * @return the size of the output string (0 if either src is NULL) or
- * required size if too small
+ * @retval 0       if src is NULL or the input length is > the output length
+ * @retval >0      the size of the output string not including the
+ *                 null-terminating character (or the required size if:
+ *                 out_len == 0)
  *
  * @see os_env_get
  */
 OS_API size_t os_env_expand(
 	char *src,
-	size_t len
+	size_t in_len,
+	size_t out_len
 );
 
 /**
@@ -2062,7 +2069,9 @@ OS_API size_t os_env_get(
  * @param[in]      format              string format
  * @param[in]      ...                 items to replace based on @p format
  *
- * @return the number of characters printed including the null-terminator
+ * @retval >=0 the number of characters printed not including the
+ *             null-terminator
+ * @retval <0  an error occurred
  *
  * @see os_snprintf
  */
@@ -2071,6 +2080,28 @@ OS_API int os_sprintf(
 	const char *format,
 	...
 ) __attribute__((format(printf,2,3)));
+
+/**
+ * @brief Writes output to a string with a maximum size
+ *
+ * @param[out]     str                 string to output to
+ * @param[in]      size                maximum size of buffer
+ * @param[in]      format              string format
+ * @param[in]      ...                 items to replace based on @p format
+ *
+ * @retval >=0     the number of characters printed not including the
+ *                 null-terminator
+ * @retval -1      an error occurred or the buffer is too small
+ *
+ * @see os_sprintf
+ * @see os_vsnprintf
+ */
+OS_API int os_snprintf(
+	char *str,
+	size_t size,
+	const char *format,
+	...
+) __attribute__((format(printf,3,4)));
 
 /**
  * @brief Flushes a stream to ensure a buffer is transmitted
