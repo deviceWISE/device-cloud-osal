@@ -2,7 +2,7 @@
  * @file
  * @brief source file defining functions for POSIX systems
  *
- * @copyright Copyright (C) 2016-2017 Wind River Systems, Inc. All Rights Reserved.
+ * @copyright Copyright (C) 2016-2018 Wind River Systems, Inc. All Rights Reserved.
  *
  * @license Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1155,29 +1155,36 @@ void os_memzero(
 /* print functions */
 size_t os_env_expand(
 	char *src,
-	size_t len )
+	size_t in_len,
+	size_t out_len )
 {
 	size_t result = 0u;
-	if ( src )
+	if ( src && in_len <= out_len )
 	{
 		char *dest = src;
-		while ( *src )
+		char *src_end = NULL;
+		if ( in_len > 0u )
+			src_end = src + in_len;
+		while ( *src && ( !src_end || src < src_end ) )
 		{
 			if ( *src == '$' )
 			{
 				const char *env_start;
 				const char *env_value = NULL;
-				char env_name[256u];
 				++src;
 				env_start = src;
 				if ( isalpha( *src ) || *src == '_' )
 				{
 					++src;
-					while( isalnum( *src ) || *src == '_' )
+					while( ( isalnum( *src ) || *src == '_' ) &&
+						( !src_end || src < src_end ) )
+					{
 						++src;
+					}
 				}
 				if ( src != env_start )
 				{
+					char env_name[256u];
 					size_t name_len = (size_t)(src-env_start);
 					if ( name_len < 256u )
 					{
@@ -1190,17 +1197,21 @@ size_t os_env_expand(
 						{
 							const size_t val_len =
 								strlen( env_value );
-							if ( val_len < len - result )
+							size_t var_name_offset = 0u;
+							if ( val_len >= name_len )
+								var_name_offset = (val_len-name_len) + 1u;
+							if ( out_len > result && val_len < out_len - result - var_name_offset - name_len - 1u )
 							{
-								
 								memmove( dest + val_len,
 									src,
-									len - result - name_len - 1u );
+									out_len - result - name_len - 1u - var_name_offset );
 								strncpy( dest,
 									env_value,
 									val_len );
 								dest += val_len;
 								src += val_len - name_len;
+								if ( src_end )
+									src_end += val_len  - name_len;
 							}
 							result += val_len;
 						}
@@ -1226,7 +1237,7 @@ size_t os_env_expand(
 					++src;
 				if ( *src != '\0' )
 				{
-					if ( result < len )
+					if ( result < out_len )
 					{
 						*dest = *src;
 						++dest;
@@ -1238,7 +1249,7 @@ size_t os_env_expand(
 		}
 
 		/* add null-terminator */
-		if ( result < len )
+		if ( result < out_len )
 			*dest = '\0';
 	}
 	return result;
@@ -1294,6 +1305,7 @@ int os_printf(
 	va_end( args );
 	return result;
 }
+#endif /* if defined(OSAL_WRAP) && OSAL_WRAP */
 
 int os_snprintf(
 	char *str,
@@ -1304,11 +1316,19 @@ int os_snprintf(
 	int result;
 	va_list args;
 	va_start( args, format );
-	result = os_vsnprintf( str, size, format, args );
+#if defined( __APPLE__ )
+	if ( !format )
+		result = -1;
+	else
+#endif /* if defined( __APPLE__ ) */
+		result = os_vsnprintf( str, size, format, args );
+	if ( result < 0 || (size_t)result > size )
+		result = -1;
 	va_end( args );
 	return result;
 }
 
+#if defined(OSAL_WRAP) && OSAL_WRAP
 int os_vfprintf(
 	os_file_t stream,
 	const char *format,
@@ -1316,7 +1336,7 @@ int os_vfprintf(
 {
 	return vfprintf( stream, format, args );
 }
-#endif /* if defined( OSAL_WRAP ) */
+#endif /* if defined(OSAL_WRAP) && OSAL_WRAP */
 
 int os_vsnprintf(
 	char *str,
@@ -1325,8 +1345,6 @@ int os_vsnprintf(
 	va_list args )
 {
 	int result = vsnprintf( str, size, format, args );
-	if ( (size_t)result >= size )
-		result = -1;
 	return result;
 }
 

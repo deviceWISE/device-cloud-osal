@@ -2,7 +2,7 @@
  * @file
  * @brief Source file for common test support functions
  *
- * @copyright Copyright (C) 2017 Wind River Systems, Inc. All Rights Reserved.
+ * @copyright Copyright (C) 2017-2018 Wind River Systems, Inc. All Rights Reserved.
  *
  * @license Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ int MOCK_SYSTEM_ENABLED = 0;
 
 void test_initialize( int argc, char **argv )
 {
+	srand( (unsigned int)( time( NULL ) ) );
 	MOCK_SYSTEM_ENABLED = 1;
 }
 
@@ -53,7 +54,6 @@ void test_generate_random_string( char *dest, size_t len )
 
 		/* obtain random character */
 		cur_pos = dest;
-		srand( (unsigned int)( ( size_t )( time( NULL ) ) * len ) );
 		for ( i = 0; i < len - 1u; ++i )
 		{
 			*cur_pos = random_chars[(size_t)rand() % random_chars_len];
