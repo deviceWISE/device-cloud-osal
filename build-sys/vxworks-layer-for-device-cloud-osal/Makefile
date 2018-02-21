@@ -18,8 +18,6 @@
 
 PRE_BUILD_DIRS = lib
 
-SHARED_PUBLIC_H_DIRS = h
-
 BUILD_DIRS = lib
 BUILD_USER_DIRS = lib
 

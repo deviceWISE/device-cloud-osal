@@ -26,6 +26,9 @@ PKG_BUILD_TARGETS := src
 PKG_BUILD_DIR := $(PKG_NAME)/src
 PKG_PATCH_DIR := $(PKG_NAME)
 
+KERNEL_PUBLIC_H_FILES = vxworks_h/os.h
+USER_PUBLIC_H_FILES = vxworks_h/os.h
+
 PKG_EXTRA_SRC :=
 
 include $(WIND_KRNL_MK)/rules.unix.ports.mk
