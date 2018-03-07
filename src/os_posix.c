@@ -392,7 +392,7 @@ os_status_t os_directory_create_nowait(
 				os_directory_create_nowait( temp_path );
 		}
 
-#ifndef _WRS_KERNEL
+#if !defined(_WRS_KERNEL)
 		if ( mkdir( path, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH ) == 0 )
 #else
 		if ( ( mkdir( path ) == OK ) &&

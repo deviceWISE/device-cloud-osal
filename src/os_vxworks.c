@@ -26,7 +26,7 @@
 #include <rtpLib.h>
 #include <pthread.h>
 #include <wait.h>
-#ifdef _WRS_KERNEL
+#if defined(_WRS_KERNEL)
 #include <sysLib.h>
 #include <vsbConfig.h>
 #include <bootLib.h>
@@ -39,7 +39,7 @@ extern BOOT_PARAMS sysBootParams;
 
 #define VX_RW_SEM_MAX_READERS (255)
 
-#ifdef _WRS_KERNEL
+#if defined(_WRS_KERNEL)
 extern const char *deviceCloudRtpDirGet (void);
 extern unsigned int deviceCloudPriorityGet (void);
 extern unsigned int deviceCloudStackSizeGet (void);
@@ -120,7 +120,7 @@ os_status_t os_system_info(
 		strncpy( sys_info->system_version, VXWORKS_VERSION, OS_SYSTEM_INFO_MAX_LEN );
 		strncpy( sys_info->system_release, _WRS_CONFIG_CORE_KERNEL_VERSION, OS_SYSTEM_INFO_MAX_LEN );
 		strncpy( sys_info->system_platform, sysModel(), OS_SYSTEM_INFO_MAX_LEN );
-#ifdef _WRS_KERNEL
+#if defined(_WRS_KERNEL)
 		strncpy( sys_info->host_name, sysBootParams.targetName, OS_SYSTEM_INFO_MAX_LEN );
 #else
 		strncpy( sys_info->host_name, "", OS_SYSTEM_INFO_MAX_LEN );
@@ -162,7 +162,7 @@ os_status_t os_path_executable(
 os_status_t os_process_cleanup( void )
 {
 	os_status_t result = OS_STATUS_FAILURE;
-#ifndef _WRS_KERNEL
+#if !defined(_WRS_KERNEL)
 	if ( waitpid( -1, NULL, WNOHANG ) > 0 )
 		result = OS_STATUS_SUCCESS;
 #endif /* _WRS_KERNEL */
@@ -306,7 +306,7 @@ os_status_t os_thread_rwlock_destroy(
 	return result;
 }
 
-#ifdef _WRS_KERNEL
+#if defined(_WRS_KERNEL)
 static void os_vxworks_reboot(void)
 {
 	/* Wait 5 seconds for messages to propagate */
