@@ -13,7 +13,7 @@
 include $(WIND_KRNL_MK)/defs.ver.mk
 
 PKG_NAME := device_cloud_osal_repo
-PKG_URL = https://github.com/Wind-River/device-cloud-osal.git $(PKG_NAME); cd $(PKG_NAME) && git checkout vxworks_layer_test && git checkout -b vxworks && git reset HEAD --hard
+PKG_URL = https://github.com/Wind-River/device-cloud-osal.git $(PKG_NAME); cd $(PKG_NAME) && git checkout vxworks_layer && git checkout -b vxworks && git reset HEAD --hard
 PKG_FILE_TYPE = git
 
 PKG_BUILD_TARGETS := src
