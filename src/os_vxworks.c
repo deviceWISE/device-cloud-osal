@@ -53,27 +53,32 @@ static int stack_size = 0x10000;
 
 void deviceCloudConfigDirSet (char *str)
     {
-    strncpy(config_dir, str, PATH_MAX);
+    if ((str != NULL) && (str != '\0'))
+        strncpy(config_dir, str, PATH_MAX);
     }
 
 void deviceCloudRuntimeDirSet (char *str)
     {
-    strncpy(runtime_dir, str, PATH_MAX);
+    if ((str != NULL) && (str != '\0'))
+        strncpy(runtime_dir, str, PATH_MAX);
     }
 
 void deviceCloudRtpDirSet (char *str)
     {
-    strncpy(rtp_dir, str, PATH_MAX);
+    if ((str != NULL) && (str != '\0'))
+        strncpy(rtp_dir, str, PATH_MAX);
     }
 
 void deviceCloudPrioritySet (char *str)
     {
-    priority = atoi(str);
+    if ((str != NULL) && (str != '\0'))
+        priority = atoi(str);
     }
 
 void deviceCloudStackSizeSet (char *str)
     {
-    stack_size = atoi(str);
+    if ((str != NULL) && (str != '\0'))
+        stack_size = atoi(str);
     }
 
 const char *deviceCloudConfigDirGet (void)
