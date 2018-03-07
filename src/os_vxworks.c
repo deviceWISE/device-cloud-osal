@@ -40,7 +40,7 @@ extern BOOT_PARAMS sysBootParams;
 #define VX_RW_SEM_MAX_READERS (255)
 
 #if defined(_WRS_KERNEL)
-extern const char *deviceCloudRtpDirGet ( void );
+extern const char *deviceCloudBinDirGet ( void );
 extern unsigned int deviceCloudPriorityGet ( void );
 extern unsigned int deviceCloudStackSizeGet ( void );
 extern int control_main ( int argc, char* argv[] );
@@ -48,7 +48,7 @@ extern int iot_update_main ( int argc, char* argv[] );
 #else
 static char config_dir[PATH_MAX] = "/bd0:1/etc/iot";
 static char runtime_dir[PATH_MAX] = "/bd0:1/var/lib/iot";
-static char rtp_dir[PATH_MAX] = "/bd0:1/bin";
+static char bin_dir[PATH_MAX] = "/bd0:1/bin";
 static int priority = 100;
 static int stack_size = 0x10000;
 
@@ -64,10 +64,10 @@ void deviceCloudRuntimeDirSet (char *str)
 		strncpy(runtime_dir, str, PATH_MAX);
 }
 
-void deviceCloudRtpDirSet (char *str)
+void deviceCloudBinDirSet (char *str)
 {
         if ((str != NULL) && (str != '\0'))
-		strncpy(rtp_dir, str, PATH_MAX);
+		strncpy(bin_dir, str, PATH_MAX);
 }
 
 void deviceCloudPrioritySet (char *str)
@@ -92,9 +92,9 @@ const char *deviceCloudRuntimeDirGet ( void )
         return runtime_dir;
 }
 
-const char *deviceCloudRtpDirGet ( void )
+const char *deviceCloudBinDirGet ( void )
 {
-        return rtp_dir;
+        return bin_dir;
 }
 
 unsigned int deviceCloudPriorityGet ( void )
@@ -159,7 +159,7 @@ os_status_t os_path_executable(
 	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( path )
 	{
-		strncpy(path, deviceCloudRtpDirGet(), size);
+		strncpy(path, deviceCloudBinDirGet(), size);
 		result = OS_STATUS_SUCCESS;
 	}
 	return result;
@@ -388,7 +388,7 @@ os_status_t os_system_run(
 	 */
 
 	if (strstr (argv[0], "iot-relay") != NULL) {
-		if ( chdir ( deviceCloudRtpDirGet() ) != 0 )
+		if ( chdir ( deviceCloudBinDirGet() ) != 0 )
 			return OS_STATUS_FAILURE;
 
 		if (rtpSpawn (argv[0], argv, NULL,
