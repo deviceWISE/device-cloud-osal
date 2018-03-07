@@ -32,7 +32,7 @@
  * %End-Header%
  */
 
-#ifndef _WRS_KERNEL
+#if !defined(_WRS_KERNEL)
 #include <inttypes.h>
 #endif
 #include <sys/types.h>

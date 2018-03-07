@@ -26,7 +26,7 @@
 #include <rtpLib.h>
 #include <pthread.h>
 #include <wait.h>
-#ifdef _WRS_KERNEL
+#if defined(_WRS_KERNEL)
 #include <sysLib.h>
 #include <vsbConfig.h>
 #include <bootLib.h>
@@ -39,10 +39,11 @@ extern BOOT_PARAMS sysBootParams;
 
 #define VX_RW_SEM_MAX_READERS (255)
 
-#ifdef _WRS_KERNEL
-extern const char *deviceCloudRtpDirGet (void);
-extern unsigned int deviceCloudPriorityGet (void);
-extern unsigned int deviceCloudStackSizeGet (void);
+#if defined(_WRS_KERNEL)
+extern const char *deviceCloudRtpDirGet ( void );
+extern unsigned int deviceCloudPriorityGet ( void );
+extern unsigned int deviceCloudStackSizeGet ( void );
+extern int control_main ( int argc, char* argv[] );
 extern int iot_update_main ( int argc, char* argv[] );
 #else
 static char config_dir[PATH_MAX] = "/bd0:1/etc/iot";
@@ -52,54 +53,59 @@ static int priority = 100;
 static int stack_size = 0x10000;
 
 void deviceCloudConfigDirSet (char *str)
-    {
-    strncpy(config_dir, str, PATH_MAX);
-    }
+{
+        if ((str != NULL) && (str != '\0'))
+		strncpy(config_dir, str, PATH_MAX);
+}
 
 void deviceCloudRuntimeDirSet (char *str)
-    {
-    strncpy(runtime_dir, str, PATH_MAX);
-    }
+{
+        if ((str != NULL) && (str != '\0'))
+		strncpy(runtime_dir, str, PATH_MAX);
+}
 
 void deviceCloudRtpDirSet (char *str)
-    {
-    strncpy(rtp_dir, str, PATH_MAX);
-    }
+{
+        if ((str != NULL) && (str != '\0'))
+		strncpy(rtp_dir, str, PATH_MAX);
+}
 
 void deviceCloudPrioritySet (char *str)
-    {
-    priority = atoi(str);
-    }
+{
+        if ((str != NULL) && (str != '\0'))
+		priority = atoi(str);
+}
 
 void deviceCloudStackSizeSet (char *str)
-    {
-    stack_size = atoi(str);
-    }
+{
+        if ((str != NULL) && (str != '\0'))
+		stack_size = atoi(str);
+}
 
-const char *deviceCloudConfigDirGet (void)
-    {
-    return config_dir;
-    }
+const char *deviceCloudConfigDirGet ( void )
+{
+        return config_dir;
+}
 
-const char *deviceCloudRuntimeDirGet (void)
-    {
-    return runtime_dir;
-    }
+const char *deviceCloudRuntimeDirGet ( void )
+{
+        return runtime_dir;
+}
 
-const char *deviceCloudRtpDirGet (void)
-    {
-    return rtp_dir;
-    }
+const char *deviceCloudRtpDirGet ( void )
+{
+        return rtp_dir;
+}
 
-unsigned int deviceCloudPriorityGet (void)
-    {
-    return priority;
-    }
+unsigned int deviceCloudPriorityGet ( void )
+{
+        return priority;
+}
 
-unsigned int deviceCloudStackSizeGet (void)
-    {
-    return stack_size;
-    }
+unsigned int deviceCloudStackSizeGet ( void )
+{
+        return stack_size;
+}
 #endif /* _WRS_KERNEL */
 
 
@@ -120,7 +126,7 @@ os_status_t os_system_info(
 		strncpy( sys_info->system_version, VXWORKS_VERSION, OS_SYSTEM_INFO_MAX_LEN );
 		strncpy( sys_info->system_release, _WRS_CONFIG_CORE_KERNEL_VERSION, OS_SYSTEM_INFO_MAX_LEN );
 		strncpy( sys_info->system_platform, sysModel(), OS_SYSTEM_INFO_MAX_LEN );
-#ifdef _WRS_KERNEL
+#if defined(_WRS_KERNEL)
 		strncpy( sys_info->host_name, sysBootParams.targetName, OS_SYSTEM_INFO_MAX_LEN );
 #else
 		strncpy( sys_info->host_name, "", OS_SYSTEM_INFO_MAX_LEN );
@@ -162,7 +168,7 @@ os_status_t os_path_executable(
 os_status_t os_process_cleanup( void )
 {
 	os_status_t result = OS_STATUS_FAILURE;
-#ifndef _WRS_KERNEL
+#if !defined(_WRS_KERNEL)
 	if ( waitpid( -1, NULL, WNOHANG ) > 0 )
 		result = OS_STATUS_SUCCESS;
 #endif /* _WRS_KERNEL */
@@ -306,8 +312,8 @@ os_status_t os_thread_rwlock_destroy(
 	return result;
 }
 
-#ifdef _WRS_KERNEL
-static void os_vxworks_reboot(void)
+#if defined(_WRS_KERNEL)
+static void os_vxworks_reboot( void )
 {
 	/* Wait 5 seconds for messages to propagate */
 
@@ -319,7 +325,7 @@ static void os_vxworks_reboot(void)
 }
 
 #if defined(_WRS_CONFIG_SYS_PWR_OFF)
-static void os_vxworks_shutdown(void)
+static void os_vxworks_shutdown( void )
 {
 	/* Wait 5 seconds for messages to propagate */
 
@@ -332,7 +338,7 @@ static void os_vxworks_shutdown(void)
 static os_status_t os_vxworks_script(
 	char * script )
 {
-        os_status_t result = OS_STATUS_FAILURE;
+	os_status_t result = OS_STATUS_FAILURE;
 	char * shellTaskName;
 	int fd;
 
@@ -381,70 +387,54 @@ os_status_t os_system_run(
 	 * Go through list of supported commands
 	 */
 
-        if (strstr (argv[0], "iot-control") != NULL) {
-                if ( chdir ( deviceCloudRtpDirGet() ) != 0 )
-                        return OS_STATUS_FAILURE;
+	if (strstr (argv[0], "iot-relay") != NULL) {
+		if ( chdir ( deviceCloudRtpDirGet() ) != 0 )
+			return OS_STATUS_FAILURE;
 
-                argv[0] = "iot-control";
-                if (rtpSpawn (argv[0], argv, NULL,
-                        deviceCloudPriorityGet(),
-                        deviceCloudStackSizeGet(),
-                        RTP_LOADED_WAIT, VX_FP_TASK) == RTP_ID_ERROR) {
-                        return OS_STATUS_FAILURE;
-                }
-	} else if (strstr (argv[0], "iot-update") != NULL) {
+		if (rtpSpawn (argv[0], argv, NULL,
+			deviceCloudPriorityGet(),
+			deviceCloudStackSizeGet(),
+			RTP_LOADED_WAIT, VX_FP_TASK) == RTP_ID_ERROR) {
+			return OS_STATUS_FAILURE;
+		}
 #if defined(_WRS_KERNEL)
+	} else if (strstr (argv[0], "iot-control") != NULL) {
+		if (taskSpawn ("tControl",
+			deviceCloudPriorityGet(), 0,
+			deviceCloudStackSizeGet(),
+			(FUNCPTR) control_main,
+			argc, argv, 0, 0, 0, 0, 0, 0, 0, 0) == TASK_ID_ERROR) {
+			return OS_STATUS_FAILURE;
+		}
+	} else if (strstr (argv[0], "iot-update") != NULL) {
 		if (taskSpawn ("tUpdate",
 			deviceCloudPriorityGet(), 0,
 			deviceCloudStackSizeGet(),
-                        (FUNCPTR) iot_update_main,
-                        argc, argv, 0, 0, 0, 0, 0, 0, 0, 0) == TASK_ID_ERROR) {
-                        return OS_STATUS_FAILURE;
-                }
-#else
-		if ( chdir ( deviceCloudRtpDirGet() ) != 0 )
-			return OS_STATUS_FAILURE;
-
-		argv[0] = "iot-update";
-		if (rtpSpawn (argv[0], argv, NULL,
-			deviceCloudPriorityGet(),
-			deviceCloudStackSizeGet(),
-			RTP_LOADED_WAIT, VX_FP_TASK) == RTP_ID_ERROR) {
+			(FUNCPTR) iot_update_main,
+			argc, argv, 0, 0, 0, 0, 0, 0, 0, 0) == TASK_ID_ERROR) {
 			return OS_STATUS_FAILURE;
 		}
-#endif /* _WRS_KERNEL */
-	} else if (strstr (argv[0], "iot-relay") != NULL) {
-		if ( chdir ( deviceCloudRtpDirGet() ) != 0 )
-			return OS_STATUS_FAILURE;
-
-		if (rtpSpawn (argv[0], argv, NULL,
-			deviceCloudPriorityGet(),
-		 	deviceCloudStackSizeGet(),
-			RTP_LOADED_WAIT, VX_FP_TASK) == RTP_ID_ERROR) {
+	} else if (strncmp (argv[0], "reboot", sizeof("reboot")) == 0) {
+		if (taskSpawn ("tReboot", 10, 0, 0x1000,
+			(FUNCPTR) os_vxworks_reboot,
+			0, 0, 0, 0, 0, 0, 0, 0, 0, 0) == TASK_ID_ERROR) {
 			return OS_STATUS_FAILURE;
 		}
-#if defined(_WRS_KERNEL)
-        } else if (strncmp (argv[0], "reboot", sizeof("reboot")) == 0) {
-                if (taskSpawn ("tReboot", 10, 0, 0x1000,
-                        (FUNCPTR) os_vxworks_reboot,
-                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0) == TASK_ID_ERROR) {
-                        return OS_STATUS_FAILURE;
-                }
 #if defined(_WRS_CONFIG_SYS_PWR_OFF)
-        } else if (strncmp (argv[0], "shutdown", sizeof("shutdown")) == 0) {
-                if (taskSpawn ("tShutdown", 10, 0, 0x1000,
-                        (FUNCPTR) os_vxworks_shutdown,
-                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0) == TASK_ID_ERROR) {
-                        return OS_STATUS_FAILURE;
-                }
-        } else if (strncmp (argv[0], "decommission", sizeof("decommission")) == 0) {
-                if (taskSpawn ("tDecommission", 10, 0, 0x1000,
-                        (FUNCPTR) os_vxworks_shutdown,
-                        0, 0, 0, 0, 0, 0, 0, 0, 0, 0) == TASK_ID_ERROR) {
-                        return OS_STATUS_FAILURE;
-                }
+	} else if (strncmp (argv[0], "shutdown", sizeof("shutdown")) == 0) {
+		if (taskSpawn ("tShutdown", 10, 0, 0x1000,
+			(FUNCPTR) os_vxworks_shutdown,
+			0, 0, 0, 0, 0, 0, 0, 0, 0, 0) == TASK_ID_ERROR) {
+			return OS_STATUS_FAILURE;
+		}
+	} else if (strncmp (argv[0], "decommission", sizeof("decommission")) == 0) {
+		if (taskSpawn ("tDecommission", 10, 0, 0x1000,
+			(FUNCPTR) os_vxworks_shutdown,
+			0, 0, 0, 0, 0, 0, 0, 0, 0, 0) == TASK_ID_ERROR) {
+			return OS_STATUS_FAILURE;
+		}
 #endif /* _WRS_CONFIG_SYS_PWR_OFF */
-        } else if (strncmp (argv[0], "sh", sizeof("sh")) == 0) {
+	} else if (strncmp (argv[0], "sh", sizeof("sh")) == 0) {
 		if (os_vxworks_script(argv[1]) == OS_STATUS_FAILURE) {
 			return OS_STATUS_FAILURE;
 		}
