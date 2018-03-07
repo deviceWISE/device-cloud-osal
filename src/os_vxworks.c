@@ -54,57 +54,57 @@ static int stack_size = 0x10000;
 
 void deviceCloudConfigDirSet (char *str)
 {
-        if ((str != NULL) && (str != '\0'))
+	if ((str != NULL) && (str != '\0'))
 		strncpy(config_dir, str, PATH_MAX);
 }
 
 void deviceCloudRuntimeDirSet (char *str)
 {
-        if ((str != NULL) && (str != '\0'))
+	if ((str != NULL) && (str != '\0'))
 		strncpy(runtime_dir, str, PATH_MAX);
 }
 
 void deviceCloudBinDirSet (char *str)
 {
-        if ((str != NULL) && (str != '\0'))
+	if ((str != NULL) && (str != '\0'))
 		strncpy(bin_dir, str, PATH_MAX);
 }
 
 void deviceCloudPrioritySet (char *str)
 {
-        if ((str != NULL) && (str != '\0'))
+	if ((str != NULL) && (str != '\0'))
 		priority = atoi(str);
 }
 
 void deviceCloudStackSizeSet (char *str)
 {
-        if ((str != NULL) && (str != '\0'))
+	if ((str != NULL) && (str != '\0'))
 		stack_size = atoi(str);
 }
 
 const char *deviceCloudConfigDirGet ( void )
 {
-        return config_dir;
+	return config_dir;
 }
 
 const char *deviceCloudRuntimeDirGet ( void )
 {
-        return runtime_dir;
+	return runtime_dir;
 }
 
 const char *deviceCloudBinDirGet ( void )
 {
-        return bin_dir;
+	return bin_dir;
 }
 
 unsigned int deviceCloudPriorityGet ( void )
 {
-        return priority;
+	return priority;
 }
 
 unsigned int deviceCloudStackSizeGet ( void )
 {
-        return stack_size;
+	return stack_size;
 }
 #endif /* _WRS_KERNEL */
 
@@ -438,11 +438,17 @@ os_status_t os_system_run(
 		if (os_vxworks_script(argv[1]) == OS_STATUS_FAILURE) {
 			return OS_STATUS_FAILURE;
 		}
-#endif /* _WRS_KERNEL */
 	} else {
-		printf("Invalid command:%s\n", command);
-		return OS_STATUS_FAILURE;
+		if (os_vxworks_script(argv[0]) == OS_STATUS_FAILURE) {
+			return OS_STATUS_FAILURE;
+		}
 	}
+#else
+	} else {
+	       printf("Invalid command:%s\n", command);
+	       return OS_STATUS_FAILURE;
+	}
+#endif /* _WRS_KERNEL */
 
 	if ( exit_status )
 		*exit_status = 0;
