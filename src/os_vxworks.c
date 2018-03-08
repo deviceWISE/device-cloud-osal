@@ -40,7 +40,7 @@ extern BOOT_PARAMS sysBootParams;
 #define VX_RW_SEM_MAX_READERS (255)
 
 #if defined(_WRS_KERNEL)
-extern const char *deviceCloudRtpDirGet ( void );
+extern const char *deviceCloudBinDirGet ( void );
 extern unsigned int deviceCloudPriorityGet ( void );
 extern unsigned int deviceCloudStackSizeGet ( void );
 extern int control_main ( int argc, char* argv[] );
@@ -48,63 +48,63 @@ extern int iot_update_main ( int argc, char* argv[] );
 #else
 static char config_dir[PATH_MAX] = "/bd0:1/etc/iot";
 static char runtime_dir[PATH_MAX] = "/bd0:1/var/lib/iot";
-static char rtp_dir[PATH_MAX] = "/bd0:1/bin";
+static char bin_dir[PATH_MAX] = "/bd0:1/bin";
 static int priority = 100;
 static int stack_size = 0x10000;
 
 void deviceCloudConfigDirSet (char *str)
 {
-        if ((str != NULL) && (str != '\0'))
+	if ((str != NULL) && (str != '\0'))
 		strncpy(config_dir, str, PATH_MAX);
 }
 
 void deviceCloudRuntimeDirSet (char *str)
 {
-        if ((str != NULL) && (str != '\0'))
+	if ((str != NULL) && (str != '\0'))
 		strncpy(runtime_dir, str, PATH_MAX);
 }
 
-void deviceCloudRtpDirSet (char *str)
+void deviceCloudBinDirSet (char *str)
 {
-        if ((str != NULL) && (str != '\0'))
-		strncpy(rtp_dir, str, PATH_MAX);
+	if ((str != NULL) && (str != '\0'))
+		strncpy(bin_dir, str, PATH_MAX);
 }
 
 void deviceCloudPrioritySet (char *str)
 {
-        if ((str != NULL) && (str != '\0'))
+	if ((str != NULL) && (str != '\0'))
 		priority = atoi(str);
 }
 
 void deviceCloudStackSizeSet (char *str)
 {
-        if ((str != NULL) && (str != '\0'))
+	if ((str != NULL) && (str != '\0'))
 		stack_size = atoi(str);
 }
 
 const char *deviceCloudConfigDirGet ( void )
 {
-        return config_dir;
+	return config_dir;
 }
 
 const char *deviceCloudRuntimeDirGet ( void )
 {
-        return runtime_dir;
+	return runtime_dir;
 }
 
-const char *deviceCloudRtpDirGet ( void )
+const char *deviceCloudBinDirGet ( void )
 {
-        return rtp_dir;
+	return bin_dir;
 }
 
 unsigned int deviceCloudPriorityGet ( void )
 {
-        return priority;
+	return priority;
 }
 
 unsigned int deviceCloudStackSizeGet ( void )
 {
-        return stack_size;
+	return stack_size;
 }
 #endif /* _WRS_KERNEL */
 
@@ -134,35 +134,6 @@ os_status_t os_system_info(
 		sys_info->system_flags = 0;
 	}
 	return OS_STATUS_SUCCESS;
-}
-
-#if 0
-os_status_t os_file_copy(
-	const char *old_path,
-	const char *new_path )
-{
-	os_status_t result = OS_STATUS_FAILURE;
-
-	if (copy(old_path, new_path) == OK)
-	{
-		result = OS_STATUS_SUCCESS;
-	}
-
-	return result;
-}
-#endif
-
-os_status_t os_path_executable(
-	char *path,
-	size_t size )
-{
-	os_status_t result = OS_STATUS_BAD_PARAMETER;
-	if ( path )
-	{
-		strncpy(path, deviceCloudRtpDirGet(), size);
-		result = OS_STATUS_SUCCESS;
-	}
-	return result;
 }
 
 os_status_t os_process_cleanup( void )
@@ -388,7 +359,7 @@ os_status_t os_system_run(
 	 */
 
 	if (strstr (argv[0], "iot-relay") != NULL) {
-		if ( chdir ( deviceCloudRtpDirGet() ) != 0 )
+		if ( chdir ( deviceCloudBinDirGet() ) != 0 )
 			return OS_STATUS_FAILURE;
 
 		if (rtpSpawn (argv[0], argv, NULL,
@@ -438,11 +409,17 @@ os_status_t os_system_run(
 		if (os_vxworks_script(argv[1]) == OS_STATUS_FAILURE) {
 			return OS_STATUS_FAILURE;
 		}
-#endif /* _WRS_KERNEL */
 	} else {
-		printf("Invalid command:%s\n", command);
-		return OS_STATUS_FAILURE;
+		if (os_vxworks_script(argv[0]) == OS_STATUS_FAILURE) {
+			return OS_STATUS_FAILURE;
+		}
 	}
+#else
+	} else {
+	       printf("Invalid command:%s\n", command);
+	       return OS_STATUS_FAILURE;
+	}
+#endif /* _WRS_KERNEL */
 
 	if ( exit_status )
 		*exit_status = 0;
@@ -460,16 +437,6 @@ os_status_t os_system_run_wait(
 	os_file_t pipes[2u] = {NULL, NULL};
 	os_status_t result = os_system_run(command, exit_status, pipes);
 	return result;
-}
-
-os_uint32_t os_system_pid( void )
-{
-	/*
-	* VxWorks TASK_ID is a 64-bit pointer on a 64-bit host... We need to get the
-	* ID and convert it to a non-pointer and then cast to the return type to
-	* avoid a compiler warning.
- 	*/
-	return (os_uint32_t) (ULONG) taskIdSelf();
 }
 
 #endif /* __VXWORKS__ */
