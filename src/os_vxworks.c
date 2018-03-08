@@ -136,35 +136,6 @@ os_status_t os_system_info(
 	return OS_STATUS_SUCCESS;
 }
 
-#if 0
-os_status_t os_file_copy(
-	const char *old_path,
-	const char *new_path )
-{
-	os_status_t result = OS_STATUS_FAILURE;
-
-	if (copy(old_path, new_path) == OK)
-	{
-		result = OS_STATUS_SUCCESS;
-	}
-
-	return result;
-}
-#endif
-
-os_status_t os_path_executable(
-	char *path,
-	size_t size )
-{
-	os_status_t result = OS_STATUS_BAD_PARAMETER;
-	if ( path )
-	{
-		strncpy(path, deviceCloudBinDirGet(), size);
-		result = OS_STATUS_SUCCESS;
-	}
-	return result;
-}
-
 os_status_t os_process_cleanup( void )
 {
 	os_status_t result = OS_STATUS_FAILURE;
@@ -466,16 +437,6 @@ os_status_t os_system_run_wait(
 	os_file_t pipes[2u] = {NULL, NULL};
 	os_status_t result = os_system_run(command, exit_status, pipes);
 	return result;
-}
-
-os_uint32_t os_system_pid( void )
-{
-	/*
-	* VxWorks TASK_ID is a 64-bit pointer on a 64-bit host... We need to get the
-	* ID and convert it to a non-pointer and then cast to the return type to
-	* avoid a compiler warning.
- 	*/
-	return (os_uint32_t) (ULONG) taskIdSelf();
 }
 
 #endif /* __VXWORKS__ */
