@@ -2865,6 +2865,20 @@ OS_API os_status_t os_uuid_to_string_lower(
 	size_t len
 );
 
+#if !defined(_WRS_KERNEL)
+extern void deviceCloudConfigDirSet ( const char *str );
+extern void deviceCloudRuntimeDirSet ( const char *str );
+extern void deviceCloudBinDirSet ( const char *str );
+extern void deviceCloudPrioritySet ( const char *str );
+extern void deviceCloudStackSizeSet ( const char *str );
+#endif /* _WRS_KERNEL */
+
+extern const char *deviceCloudConfigDirGet ( void );
+extern const char *deviceCloudRuntimeDirGet ( void );
+extern const char *deviceCloudBinDirGet ( void );
+extern unsigned int deviceCloudPriorityGet ( void );
+extern unsigned int deviceCloudStackSizeGet ( void );
+
 #ifdef __cplusplus
 }
 #endif /* ifdef __cplusplus */
