@@ -838,6 +838,7 @@ OS_API os_status_t os_thread_condition_timed_wait(
  * @param[in,out]  thread              newly created thread object
  * @param[in]      main                main method to call for the thread
  * @param[in]      arg                 user specific data
+ * @param[in]      stack_size          size of stack to use (0 = default)
  *
  * @retval OS_STATUS_BAD_PARAMETER     invalid parameter passed to function
  * @retval OS_STATUS_FAILURE           function failed
@@ -846,7 +847,8 @@ OS_API os_status_t os_thread_condition_timed_wait(
 OS_API os_status_t os_thread_create(
 	os_thread_t *thread,
 	os_thread_main_t main,
-	void *arg
+	void *arg,
+	size_t stack_size
 );
 
 /**

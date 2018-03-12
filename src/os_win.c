@@ -3232,6 +3232,9 @@ os_uint32_t os_system_pid( void )
 os_status_t os_system_run(
 	const char *command,
 	int *exit_status,
+	os_bool_t UNUSED(privileged),
+	int priority,
+	size_t UNUSED(stack_size),
 	os_file_t pipe_files[2u] )
 {
 	os_status_t result = OS_STATUS_NOT_EXECUTABLE;
@@ -3291,8 +3294,40 @@ os_status_t os_system_run(
 			command,
 			PATH_MAX );
 
+	/* determine process priority */
+	if ( priority != 0 )
+	{
+		/* list of priorities high-to-low */
+		const DWORD priorities[] = {
+			REALTIME_PRIORITY_CLASS,
+			HIGH_PRIORITY_CLASS,
+			ABOVE_NORMAL_PRIORITY_CLASS,
+			NORMAL_PRIORITY_CLASS,
+			BELOW_NORMAL_PRIORITY_CLASS,
+			IDLE_PRIORITY_CLASS };
+
+		/* note this is not "const" to avoid undefined const
+		 * initialization ordering in C standard */
+		int i, i_max = sizeof(priorities)/sizeof(DWORD);
+
+		const DWORD cur_priority =
+			GetPriorityClass(GetCurrentProcess());
+
+		/* find match */
+		for ( i = 0; i < i_max &&
+			priorities[i] != cur_priority; ++i)
+
+		/* bounds check */
+		if (i + priority < 0) i = 0;
+		else if (i + priority > i_max) i = i_max;
+		else i += priority;
+
+		priority = priorities[i];
+	}
+
 	if (CreateProcess(NULL, (LPTSTR)command_with_comspec, NULL, NULL,
-		inheritHandles, DETACHED_PROCESS, NULL, NULL, &start_info, &proc_info))
+		inheritHandles, DETACHED_PROCESS | priority, NULL, NULL,
+		&start_info, &proc_info) != 0)
 	{
 		result = OS_STATUS_INVOKED;
 
@@ -3305,6 +3340,9 @@ os_status_t os_system_run(
 os_status_t os_system_run_wait(
 	const char *command,
 	int *exit_status,
+	os_bool_t UNUSED(privileged),
+	int priority,
+	size_t UNUSED(stack_size),
 	char *out_buf[2u],
 	size_t out_len[2u],
 	os_millisecond_t max_time_out )
@@ -3379,8 +3417,40 @@ os_status_t os_system_run_wait(
 				command,
 				PATH_MAX );
 
-		if (CreateProcess(NULL, (LPTSTR)command_with_comspec, NULL, NULL,
-			inheritHandles, DETACHED_PROCESS, NULL, NULL, &start_info, &proc_info))
+		/* determine process priority */
+		if ( priority != 0 )
+		{
+			/* list of priorities high-to-low */
+			const DWORD priorities[] = {
+				REALTIME_PRIORITY_CLASS,
+				HIGH_PRIORITY_CLASS,
+				ABOVE_NORMAL_PRIORITY_CLASS,
+				NORMAL_PRIORITY_CLASS,
+				BELOW_NORMAL_PRIORITY_CLASS,
+				IDLE_PRIORITY_CLASS };
+
+			/* note this is not "const" to avoid undefined const
+			 * initialization ordering in C standard */
+			int i, i_max = sizeof(priorities)/sizeof(DWORD);
+
+			const DWORD cur_priority =
+				GetPriorityClass(GetCurrentProcess());
+
+			/* find match */
+			for ( i = 0; i < i_max &&
+				priorities[i] != cur_priority; ++i)
+
+			/* bounds check */
+			if (i + priority < 0) i = 0;
+			else if (i + priority > i_max) i = i_max;
+			else i += priority;
+
+			priority = priorities[i];
+		}
+
+		if (CreateProcess(NULL, (LPTSTR)command_with_comspec, NULL,
+			NULL, inheritHandles, DETACHED_PROCESS | priority,
+			NULL, NULL, &start_info, &proc_info) != 0)
 		{
 			os_millisecond_t time_elapsed;
 			cmd_result = STILL_ACTIVE;
@@ -3439,7 +3509,7 @@ os_status_t os_system_shutdown(
 		os_snprintf( cmd, PATH_MAX, "%s %d", "shutdown /r /t ",
 			delay * SECONDS_IN_MINUTE );
 
-	return os_system_run( cmd, NULL, pipes );
+	return os_system_run( cmd, NULL, OS_TRUE, 0, 0u, pipes );
 }
 
 os_bool_t os_terminal_vt100_support(
@@ -4065,14 +4135,15 @@ os_status_t os_thread_condition_wait(
 os_status_t os_thread_create(
 	os_thread_t *thread,
 	os_thread_main_t main,
-	void *arg )
+	void *arg,
+	size_t stack_size )
 {
 	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( thread && main )
 	{
 		result = OS_STATUS_FAILURE;
-		if ( ( *thread = CreateThread( NULL, 0, main, arg, 0, NULL ) )
-			!= NULL )
+		if ( ( *thread = CreateThread( NULL, (SIZE_T)stack_size,
+				main, arg, 0, NULL ) ) != NULL )
 			result = OS_STATUS_SUCCESS;
 	}
 	return result;

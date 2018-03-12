@@ -17,6 +17,7 @@
 
 #include "os.h"
 #include "src/os_android.h"
+
 os_status_t os_service_restart(
 	const char *id,
 	const char *exe,

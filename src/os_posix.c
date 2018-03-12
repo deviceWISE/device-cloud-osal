@@ -17,74 +17,45 @@
 
 #include "os_posix_private.h"
 
-#include <ctype.h>       /* for isalha, isalnum */
+#include <ctype.h>       /* for isalpha, isalnum, isxdigit */
 #include <errno.h>       /* for errno */
+#include <ifaddrs.h>     /* for getifaddrs, freeifaddrs */
 #include <stdarg.h>      /* for va_start, va_end, va_list */
 #include <stdlib.h>      /* for getenv */
 #include <stdio.h>       /* for snprintf */
 #include <string.h>      /* for strncpy, strerror */
-#include <unistd.h>      /* for close */
-#include <sys/socket.h>  /* for setsockopt */
-#include <sys/stat.h>    /* for struct filestat, stat */
-#include <sys/time.h>    /* for gettimeofday */
-#include <sys/types.h>   /* for uid_t and gid_t */
-#include <sys/wait.h>    /* for waitpid */
-#ifdef __APPLE__
-#include <mach/clock.h>  /* for clock_get_time */
-#include <mach/mach.h>   /* for mach_port_deallocate, mach_task_self */
+#include <arpa/inet.h>   /* for inet_ntop */
 #include <net/if.h>      /* for if_nametoindex */
-#include <net/if_dl.h>   /* for struct sockaddr_dl */
-#endif /* ifdef __APPLE__ */
-
-#ifndef _WRS_KERNEL
-#include <dlfcn.h>       /* for dlclose, dlopen, dlsym */
-#include <pwd.h>         /* for getpwnam */
-#include <regex.h>       /* for regular expression support */
-#include <sys/statvfs.h> /* for struct statsfs */
-#include <termios.h>     /* for terminal input */
-#endif /* _WRS_KERNEL */
+#include <netinet/in.h>  /* for AF_LINK (apple) */
+#include <sys/ioctl.h>   /* for ioctl */
+#include <sys/socket.h>  /* for setsockopt + AF_LINK (freebsd) */
+#include <sys/stat.h>    /* for lstat */
+#include <sys/time.h>    /* for gettimeofday */
+#include <sys/types.h>   /* for uid_t and gid_t, + u_char, u_short (freebsd) */
+#include <sys/utsname.h> /* for struct utsname */
 
 #if defined( __linux__ )
 #	include <linux/if_packet.h> /* for sockaddr_ll */
-#else
+#elif defined( __VXWORKS__ )
+#	include <net/if_ll.h>       /* for sockaddr_ll */
+#elif defined( __APPLE__ )
+#	include <mach/clock.h>      /* for clock_get_time */
+#	include <mach/mach.h>       /* for mach_port_deallocate, mach_task_self */
 #	include <net/if_dl.h>       /* for LLADDR definition */
 #endif /* if defined( __linux__ ) */
-#include <arpa/inet.h>      /* for inet_ntop */
-#include <ifaddrs.h>        /* for getifaddrs, freeifaddrs */
-#include <net/if.h>         /* for if_nametoindex */
-#include <netinet/in.h>     /* for AF_LINK (apple) */
-#include <sys/ioctl.h>      /* for ioctl */
-#include <sys/socket.h>     /* for AF_LINK (freebsd) */
-#include <sys/types.h>      /* for u_char, u_short (freebsd) */
-#ifndef ETHER_ADDR_LEN
+
+#if !defined( ETHER_ADDR_LEN )
 	/** @brief Ethernet (mac) address length */
 #	define ETHER_ADDR_LEN 6u
-#endif
+#endif /* if !defined( ETHER_ADDR_LEN ) */
 
 /* compiler flags to remove */
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdisabled-macro-expansion"
 
-#ifdef _WRS_KERNEL
+#if defined(__VXWORKS__)
 typedef u_short in_port_t;
-#endif
-/**
- * @brief Time in milliseconds to wait between retrying an operation
- */
-#define LOOP_WAIT_TIME 100u
-
-/**
- * @brief Base shell command for executing external processes with
- */
-#define OS_COMMAND_SH                  "/bin/sh", "sh", "-c"
-/**
- * @brief Operating system reboot command
- */
-#define OS_REBOOT_CMD                  "/sbin/shutdown -r "
-/**
- * @brief Operating system shutdown command
- */
-#define OS_SHUTDOWN_CMD                "/sbin/shutdown -h "
+#endif /* if defined(__VXWORKS__) */
 
 #if defined(OSAL_THREAD_SUPPORT) && OSAL_THREAD_SUPPORT
 /**
@@ -247,7 +218,7 @@ os_status_t os_adapters_mac(
 		const unsigned int id_len = ETHER_ADDR_LEN;
 		os_bool_t good_mac = OS_FALSE;
 
-#if defined( __linux__ )
+#if defined( __linux__ ) || defined(__VXWORKS__)
 		const struct sockaddr_ll *s = (const struct sockaddr_ll *)
 			(const void *)adapter->cur->ifa_addr;
 		id = (const unsigned char *)(s->sll_addr);
@@ -434,11 +405,12 @@ int os_clock_realtime( struct timespec *ts )
 }
 #endif /* defined(OSAL_THREAD_SUPPORT) && OSAL_THREAD_SUPPORT */
 
-/* file & directory support */
+/* directory support */
 os_status_t os_directory_create(
 		const char *path,
 		os_millisecond_t timeout )
 {
+#define CREATE_WAIT_TIME_MS  100u
 	os_status_t result;
 	os_timestamp_t start_time;
 	os_millisecond_t time_elapsed = 0u;
@@ -449,7 +421,7 @@ os_status_t os_directory_create(
 		if ( result != OS_STATUS_SUCCESS )
 		{
 			os_time_elapsed( &start_time, &time_elapsed );
-			os_time_sleep( LOOP_WAIT_TIME, OS_TRUE );
+			os_time_sleep( CREATE_WAIT_TIME_MS, OS_TRUE );
 		}
 	} while ( result != OS_STATUS_SUCCESS &&
 		( timeout == 0u || time_elapsed < timeout ) );
@@ -484,7 +456,7 @@ os_status_t os_directory_create_nowait(
 				os_directory_create_nowait( temp_path );
 		}
 
-#ifndef _WRS_KERNEL
+#if !defined(_WRS_KERNEL)
 		if ( mkdir( path, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH ) == 0 )
 #else
 		if ( ( mkdir( path ) == OK ) &&
@@ -533,139 +505,6 @@ os_status_t os_directory_close(
 	}
 	return result;
 }
-#ifndef _WRS_KERNEL
-os_status_t os_directory_delete(
-	const char *path, const char *regex, os_bool_t recursive )
-{
-/** @brief maximum regular expression string length */
-#define REGEX_MAX_LEN   64u
-	os_status_t result = OS_STATUS_BAD_PARAMETER;
-	if ( path )
-	{
-		regex_t regex_obj;
-		const char *regex_pos = regex;
-		char regex_str[REGEX_MAX_LEN];
-		result = OS_STATUS_SUCCESS;
-		if ( regex == NULL || *regex == '\0' )
-			regex_pos = "*";
-		else if ( os_strncmp( regex, ".", 2u ) == 0 ||
-			os_strncmp( regex, "..", 3u ) == 0 ||
-			os_strstr( regex, "/" ) != NULL )
-			result = OS_STATUS_BAD_REQUEST;
-
-		if ( result == OS_STATUS_SUCCESS )
-		{
-			/* convert file regular expressionto POSIX regular
-			 * expression (i.e. "*.txt" -> "^.*\.txt$") */
-			size_t i = 0u;
-			regex_str[i++] = '^';
-			/* REGEX_MAX_LEN - 3u: 1 spot for '$' character and
-			 * 1 spot for '\0'. Which are after the loop to prevent
-			 * going past the end of the array.  But inside array
-			 * 'i' may increase by 2. */
-			while ( *regex_pos && i < REGEX_MAX_LEN - 3u )
-			{
-				if ( *regex_pos == '.' || *regex_pos == '|' ||
-					*regex_pos == '^' || *regex_pos == '$' ||
-					*regex_pos == '[' || *regex_pos == ']' ||
-					*regex_pos == '{' || *regex_pos == '}' ||
-					*regex_pos == '(' || *regex_pos == ')' ||
-					*regex_pos == '\\' || *regex_pos == '/' )
-					regex_str[i++] = '\\';
-				else if ( *regex_pos == '*' ||
-					*regex_pos == '+' || *regex_pos == '?' )
-					regex_str[i++] = '.';
-				regex_str[i++] = *regex_pos;
-				++regex_pos;
-			}
-			regex_str[i++] = '$';
-			regex_str[i++] = '\0';
-		}
-
-		/* compile regular expression */
-		if ( result == OS_STATUS_SUCCESS &&
-			regcomp( &regex_obj, regex_str, REG_NOSUB ) )
-				result = OS_STATUS_BAD_REQUEST;
-
-		if ( result == OS_STATUS_SUCCESS )
-		{
-			DIR *d = opendir( path );
-			if ( d )
-			{
-				struct dirent *p;
-				/* loop through all files */
-				while ( result == OS_STATUS_SUCCESS &&
-					( p = readdir( d ) ) )
-				{
-					if ( strncmp( p->d_name, ".", 2u ) != 0 &&
-					     strncmp( p->d_name, "..", 3u ) != 0 )
-					{
-						char *buf;
-						size_t buf_size =
-							strlen( path ) +
-							strlen( p->d_name ) + 2u;
-						buf = (char *)malloc( buf_size );
-						if ( buf )
-						{
-							struct stat st;
-							snprintf( buf, buf_size,
-								"%s/%s", path,
-								p->d_name );
-
-							if ( stat( buf, &st ) == 0 )
-							{
-								/* check for matching
-								 * files in sub-directory */
-								if ( recursive != OS_FALSE &&
-									S_ISDIR( st.st_mode ) )
-									result = os_directory_delete(
-										buf, regex, recursive );
-
-								/* name matches regular
-								 * expression */
-								if ( regexec( &regex_obj,
-									p->d_name, 0,
-									NULL, 0 ) == 0 )
-								{
-									if ( S_ISDIR( st.st_mode ) )
-									{
-										/* delete all files
-										 * within sub-directory */
-										result = os_directory_delete(
-											buf, NULL, OS_TRUE );
-									}
-									else if ( unlink( buf ) != 0 )
-										result = OS_STATUS_FAILURE;
-								}
-							}
-							else
-								result = OS_STATUS_FAILURE;
-							free( buf );
-						}
-						else
-							result = OS_STATUS_NO_MEMORY;
-					}
-				}
-				closedir( d );
-			}
-			else
-				result = OS_STATUS_FAILURE;
-			regfree( &regex_obj );
-
-			/* delete the directory */
-			if ( result == OS_STATUS_SUCCESS && regex == NULL )
-			{
-				int retval = rmdir( path );
-				if ( retval == ENOTEMPTY )
-					result = OS_STATUS_TRY_AGAIN;
-				else if ( retval != 0 )
-					result = OS_STATUS_FAILURE;
-			}
-		}
-	}
-	return result;
-}
-#endif
 
 os_bool_t os_directory_exists(
 	const char *dir_path )
@@ -684,17 +523,6 @@ os_bool_t os_directory_exists(
 				os_system_error_string( errno ) );
 	}
 	return result;
-}
-
-os_uint64_t os_directory_free_space( const char *path )
-{
-	os_uint64_t free_space = 0u;
-	struct statvfs sfs;
-
-	if ( statvfs( path, &sfs ) != -1 )
-		free_space = (os_uint64_t)sfs.f_bsize *
-			(os_uint64_t)sfs.f_bavail;
-	return free_space;
 }
 
 const char *os_directory_get_temp_dir( char *dest, size_t size )
@@ -736,15 +564,19 @@ os_status_t os_directory_next(
 				path[ path_len - 1 ] = '\0';
 				if ( files_only != OS_FALSE )
 				{
+#if !defined(__VXWORKS__)
 					if ( d->d_type == DT_UNKNOWN )
+#endif /* if !defined(__VXWORKS__) */
 					{
 						struct stat s;
 						if ( ( lstat( path, &s ) == 0 ) &&
 							!S_ISREG( s.st_mode ) )
 							continue;
 					}
+#if !defined(__VXWORKS__)
 					else if ( d->d_type != DT_REG )
 						continue;
+#endif /* if !defined(__VXWORKS__) */
 				}
 				break;
 			}
@@ -787,31 +619,13 @@ os_dir_t *os_directory_open(
 	return out;
 }
 
+/* file support */
 os_status_t os_file_close(
 	os_file_t handle )
 {
 	os_status_t result = OS_STATUS_FAILURE;
 	if ( handle && fflush( handle ) == 0 && fclose( handle ) == 0 )
 		result = OS_STATUS_SUCCESS;
-	return result;
-}
-
-os_status_t os_file_chown(
-	const char *path,
-	const char *user )
-{
-	os_status_t result = OS_STATUS_BAD_PARAMETER;
-	if ( path && user && *path != '\0' && *user != '\0' )
-	{
-		int sys_result = -1;
-		struct passwd const *pwd = getpwnam( user );
-		if ( pwd )
-			sys_result = chown( path, pwd->pw_uid, pwd->pw_gid );
-		if ( sys_result == 0 )
-			result = OS_STATUS_SUCCESS;
-		else
-			result = OS_STATUS_FAILURE;
-	}
 	return result;
 }
 
@@ -1071,11 +885,11 @@ os_status_t os_file_sync(
 	{
 		int fd;
 		result = OS_STATUS_FAILURE;
-#ifndef _WRS_KERNEL
+#if !defined(__VXWORKS__)
 		fd = open( file_path, O_RDONLY );
-#else
+#else /* if !defined(__VXWORKS__) */
 		fd = open( file_path, O_RDONLY, 0 );
-#endif
+#endif /* else if !defined(__VXWORKS__) */
 		if ( fd >= 0 )
 		{
 			if ( fsync( fd ) == 0 )
@@ -1083,13 +897,13 @@ os_status_t os_file_sync(
 			close( fd );
 		}
 	}
-#ifndef _WRS_KERNEL
 	else
 	{
+#if !defined(__VXWORKS__)
 		sync();
+#endif /* !defined(__VXWORKS__) */
 		result = OS_STATUS_SUCCESS;
 	}
-#endif
 	return result;
 }
 
@@ -1123,45 +937,6 @@ size_t os_file_write(
 	os_file_t stream )
 {
 	return fwrite( ptr, size, nmemb, stream );
-}
-#endif /* if defined(OSAL_WRAP) && OSAL_WRAP */
-
-char os_key_wait( void )
-{
-	char result = '\0';
-	struct termios new, old;
-	tcgetattr( 0, &old ); /* grab old terminal i/o settings */
-	new = old; /* make new settings same as old settings */
-	new.c_lflag &= (unsigned int)~ICANON; /* disable buffered i/o */
-	new.c_lflag &= (unsigned int)~ECHO; /* disable echo mode */
-	tcsetattr( 0, TCSANOW, &new );
-	result = (char)getchar();
-	tcsetattr( 0, TCSANOW, &old );
-	return result;
-}
-
-
-os_status_t os_library_close(
-	os_lib_handle lib )
-{
-	os_status_t result = OS_STATUS_FAILURE;
-	if ( lib && dlclose( lib ) == 0 )
-		result = OS_STATUS_SUCCESS;
-	return result;
-}
-
-#if defined(OSAL_WRAP) && OSAL_WRAP
-void *os_library_find(
-	os_lib_handle lib,
-	const char *function )
-{
-	return dlsym( lib, function );
-}
-
-os_lib_handle os_library_open(
-	const char *path )
-{
-	return dlopen( path, RTLD_LAZY );
 }
 #endif /* if defined(OSAL_WRAP) && OSAL_WRAP */
 
@@ -1455,36 +1230,11 @@ os_bool_t os_flush( os_file_t stream )
 	return result;
 }
 
-/* memory functions */
-
 os_bool_t os_path_is_absolute( const char *path )
 {
 	os_bool_t result = OS_FALSE;
 	if ( path && *path == OS_DIR_SEP )
 		result = OS_TRUE;
-	return result;
-}
-
-os_status_t os_path_executable(
-	char *path,
-	size_t size )
-{
-	os_status_t result = OS_STATUS_BAD_PARAMETER;
-	if ( path )
-	{
-		result = OS_STATUS_FAILURE;
-		if ( readlink( "/proc/self/exe", path, size ) > 0 )
-			result = OS_STATUS_SUCCESS;
-	}
-	return result;
-}
-
-/* process functions */
-os_status_t os_process_cleanup( void )
-{
-	os_status_t result = OS_STATUS_FAILURE;
-	if ( waitpid( -1, NULL, WNOHANG ) > 0 )
-		result = OS_STATUS_SUCCESS;
 	return result;
 }
 
@@ -1972,28 +1722,6 @@ os_status_t os_socket_write(
 	return result;
 }
 
-os_status_t os_stream_echo_set(
-	os_file_t stream, os_bool_t enable )
-{
-	os_status_t result = OS_STATUS_BAD_PARAMETER;
-	if ( stream )
-	{
-		struct termios termios;
-		result = OS_STATUS_FAILURE;
-		if ( tcgetattr( fileno( stream ), &termios ) == 0 )
-		{
-			if ( enable )
-				termios.c_lflag |= ECHO;
-			else
-				termios.c_lflag &= (unsigned int)~ECHO;
-
-			if ( tcsetattr( fileno( stream ), TCSAFLUSH, &termios ) == 0 )
-				result = OS_STATUS_SUCCESS;
-		}
-	}
-	return result;
-}
-
 #if defined(OSAL_WRAP) && OSAL_WRAP
 char *os_strchr(
 	const char *s,
@@ -2093,300 +1821,12 @@ const char *os_system_error_string(
 	return strerror( error_number );
 }
 
-os_status_t os_system_info(
-	os_system_info_t *sys_info )
-{
-	os_status_t result = OS_STATUS_FAILURE;
-	struct utsname uts_info;
-
-	if ( sys_info )
-		memset( sys_info, 0, sizeof( struct os_system_info ) );
-
-	/* call uname to get necessary information, i.e. system arch(machine)
-	 which can't be read from /etc/os-release*/
-	if ( sys_info && uname( &uts_info ) == 0 )
-	{
-		FILE *fp;
-#	ifndef __ANDROID__
-		const char *const build_info_file = "/etc/os-release";
-#	else /* __ANDROID__ */
-		const char *const build_info_file = "/system/build.prop";
-#	endif /* __ANDROID__ */
-
-		strncpy( sys_info->host_name, uts_info.nodename,
-			OS_SYSTEM_INFO_MAX_LEN );
-		strncpy( sys_info->system_name, uts_info.sysname,
-			OS_SYSTEM_INFO_MAX_LEN );
-		strncpy( sys_info->system_platform, uts_info.machine,
-			OS_SYSTEM_INFO_MAX_LEN );
-		strncpy( sys_info->system_version, uts_info.version,
-			OS_SYSTEM_INFO_MAX_LEN );
-		strncpy( sys_info->kernel_version, uts_info.release,
-			OS_SYSTEM_INFO_MAX_LEN );
-
-		/* Read "ID" and "VERSION_ID" field from
-		/etc/os-release if it exists */
-		fp = fopen( build_info_file, "r" );
-		if ( fp != NULL )
-		{
-			char *line = NULL;
-			size_t len = 0;
-#	ifndef __ANDROID__
-			const char *const id_field = "ID";
-			const char *const variant_id_field = "VARIANT_ID";
-			const char *const version_field = "VERSION_ID";
-#	else /* __ANDROID__ */
-			const char *const id_field = "ro.product.brand";
-			const char *const variant_id_field = "ro.build.flavor";
-			const char *const version_field = "ro.build.version.release";
-#	endif /* __ANDROID__ */
-			while ( getline( &line, &len, fp ) != -1 )
-			{
-				/* Remove special characters in the field to
-				adapt to different distribution */
-				const char *id = NULL;
-				const char *value = NULL;
-				char *pos = line;
-				while ( *pos != '\0' && len > 0u )
-				{
-					if( *pos == '\t' || *pos == '\n' || *pos == '"' )
-						memmove( pos, pos + 1u, len - 1u );
-					else
-					{
-						if ( !id )
-							id = pos;
-						else if ( !value && *pos == '=' )
-						{
-							*pos = '\0';
-							value = pos + 1u;
-						}
-						++pos;
-					}
-					--len;
-				}
-
-				if ( value )
-				{
-					if ( strcmp( id, id_field ) == 0 )
-#	ifndef __ANDROID__
-						strncpy( sys_info->system_name,
-							value,
-							OS_SYSTEM_INFO_MAX_LEN );
-#	else /* __ANDROID__ */
-						strncpy( sys_info->system_name,
-							"Android",
-							OS_SYSTEM_INFO_MAX_LEN );
-#	endif /* __ANDROID__ */
-					else if ( strcmp( id, version_field ) == 0 )
-						strncpy( sys_info->system_version,
-							value,
-							OS_SYSTEM_INFO_MAX_LEN );
-					else if ( strcmp( id, variant_id_field ) == 0 )
-						strncpy( sys_info->system_release,
-							value,
-							OS_SYSTEM_INFO_MAX_LEN );
-				}
-			}
-
-			if ( line )
-				free( line );
-			fclose( fp );
-		}
-		if ( strncmp( sys_info->system_name, "wrlinux",
-			OS_SYSTEM_INFO_MAX_LEN ) == 0 )
-			strncpy( sys_info->vendor_name, "Wind River",
-				OS_SYSTEM_INFO_MAX_LEN );
-		else
-		{
-			strncpy( sys_info->vendor_name, sys_info->system_name,
-				OS_SYSTEM_INFO_MAX_LEN );
-		}
-		result = OS_STATUS_SUCCESS;
-	}
-	return result;
-}
-
 #if defined(OSAL_WRAP) && OSAL_WRAP
 os_uint32_t os_system_pid( void )
 {
 	return (os_uint32_t)getpid();
 }
 #endif /* if defined(OSAL_WRAP) && OSAL_WRAP */
-
-os_status_t os_system_run(
-	const char *command,
-	int *exit_status,
-	os_file_t pipe_files[2u] )
-{
-	size_t i;
-	const int output_fd[2u] = { STDOUT_FILENO, STDERR_FILENO };
-	int command_output_fd[2u] = { -1, -1 };
-	os_status_t result = OS_STATUS_NOT_EXECUTABLE;
-	os_timestamp_t start_time;
-	pid_t pid;
-
-	os_time( &start_time, NULL );
-
-	for ( i = 0u; i < 2u; ++i )
-		if( pipe_files[i] != NULL )
-			command_output_fd[i] = fileno( pipe_files[i] );
-
-	/* set a default exit status */
-	if ( exit_status )
-		*exit_status = -1;
-
-	pid = fork();
-	if ( pid != -1 )
-	{
-		if ( pid == 0 )
-		{
-			/* Create a new session for the child process.
-			 */
-			pid_t sid = setsid();
-			if ( sid < 0 )
-				exit( errno );
-			/* redirect child stdout/stderr to the pipe */
-			for ( i = 0u; i < 2u; ++i )
-				dup2( command_output_fd[i], output_fd[i] );
-
-			execl( OS_COMMAND_SH, command, (char *)NULL );
-
-			/* Process failed to be replaced, return failure */
-			exit( errno );
-		}
-
-		for ( i = 0u; i < 2u; ++i )
-			close( command_output_fd[i] );
-
-		result = OS_STATUS_INVOKED;
-	}
-	return result;
-}
-
-os_status_t os_system_run_wait(
-	const char *command,
-	int *exit_status,
-	char *out_buf[2u],
-	size_t out_len[2u],
-	os_millisecond_t max_time_out )
-{
-	int command_output_fd[2u][2u] =
-		{ { -1, -1 }, { -1, -1 } };
-	size_t i;
-	const int output_fd[2u] = { STDOUT_FILENO, STDERR_FILENO };
-	os_status_t result = OS_STATUS_SUCCESS;
-	os_timestamp_t start_time;
-	int system_result = -1;
-	os_millisecond_t time_elapsed;
-
-	os_time( &start_time, NULL );
-
-	/* set a default exit status */
-	if ( exit_status )
-		*exit_status = -1;
-
-	/* capture the stdout & stderr of the command and send it back
-	 * as the response */
-	for ( i = 0u; i < 2u && result == OS_STATUS_SUCCESS; ++i )
-		if ( pipe( command_output_fd[i] ) != 0 )
-			result = OS_STATUS_IO_ERROR;
-
-	if ( result == OS_STATUS_SUCCESS )
-	{
-		const pid_t pid = fork();
-		result = OS_STATUS_NOT_EXECUTABLE;
-		if ( pid != -1 )
-		{
-			if ( pid == 0 )
-			{
-				/* Create a new session for the child process.
-				 */
-				pid_t sid = setsid();
-				if ( sid < 0 )
-					exit( errno );
-				/* redirect child stdout/stderr to the pipe */
-				for ( i = 0u; i < 2u; ++i )
-				{
-					dup2( command_output_fd[i][1], output_fd[i] );
-					close( command_output_fd[i][0] );
-				}
-
-				execl( OS_COMMAND_SH, command, (char *)NULL );
-
-				/* Process failed to be replaced, return failure */
-				exit( errno );
-			}
-
-			for ( i = 0u; i < 2u; ++i )
-				close( command_output_fd[i][1] );
-
-			errno = 0;
-			do {
-				waitpid( pid, &system_result, WNOHANG );
-				os_time_elapsed( &start_time, &time_elapsed );
-				os_time_sleep( LOOP_WAIT_TIME, OS_FALSE );
-			} while ( ( errno != ECHILD ) &&
-				( !WIFEXITED( system_result ) ) &&
-				( !WIFSIGNALED( system_result ) ) &&
-				( max_time_out == 0u || time_elapsed < max_time_out ) );
-
-			if ( ( errno != ECHILD ) &&
-				!WIFEXITED( system_result ) &&
-				!WIFSIGNALED( system_result ) )
-			{
-				kill( pid, SIGTERM );
-				waitpid( pid, &system_result, WNOHANG );
-				result = OS_STATUS_TIMED_OUT;
-			}
-			else
-				result = OS_STATUS_SUCCESS;
-
-			fflush( stdout );
-			fflush( stderr );
-
-			for ( i = 0u; i < 2u; ++i )
-			{
-				if ( out_buf[i] && out_len[i] > 0u )
-				{
-					out_buf[i][0] = '\0';
-					/* if we are able to read from pipe */
-					if ( command_output_fd[i][0] != -1 )
-					{
-						const ssize_t output_size =
-							read( command_output_fd[i][0],
-							out_buf[i], out_len[i] - 1u );
-						if ( output_size >= 0 )
-							out_buf[i][ output_size ] = '\0';
-					}
-				}
-			}
-
-			if ( WIFEXITED( system_result ) )
-				system_result = WEXITSTATUS( system_result );
-			else if ( WIFSIGNALED( system_result ) )
-				system_result = WTERMSIG( system_result );
-			else
-				system_result = WIFEXITED( system_result );
-			if ( exit_status )
-				*exit_status = system_result;
-		}
-	}
-	return result;
-}
-
-os_status_t os_system_shutdown(
-	os_bool_t reboot , unsigned int delay)
-{
-	char cmd[ PATH_MAX ];
-	os_file_t out_files[2] = { NULL, NULL };
-
-	if ( reboot == OS_FALSE )
-		os_snprintf( cmd, PATH_MAX, "%s %d", OS_SHUTDOWN_CMD, delay );
-	else
-		os_snprintf( cmd, PATH_MAX, "%s %d", OS_REBOOT_CMD, delay );
-
-	return os_system_run( cmd, NULL, out_files );
-}
 
 os_bool_t os_terminal_vt100_support(
 	os_file_t stream
@@ -2619,14 +2059,30 @@ os_status_t os_thread_condition_wait(
 os_status_t os_thread_create(
 	os_thread_t *thread,
 	os_thread_main_t main,
-	void *arg )
+	void *arg,
+	size_t stack_size )
 {
 	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( main )
 	{
+		pthread_attr_t attr;
+		pthread_attr_t *pattr = NULL;
+
+		/* initialize attributes */
+		if ( pthread_attr_init( &attr ) == 0 )
+		{
+			pattr = &attr;
+			if ( stack_size > 0 )
+				pthread_attr_setstacksize( &attr, (size_t)stack_size );
+		}
+
 		result = OS_STATUS_FAILURE;
-		if ( pthread_create( thread, NULL, main, arg ) == 0 )
+		if ( pthread_create( thread, pattr, main, arg ) == 0 )
 			result = OS_STATUS_SUCCESS;
+
+		/* it's safe to destory, pthread_attr structure after using */
+		if ( pattr )
+			pthread_attr_destroy( pattr );
 	}
 	return result;
 }
@@ -2706,84 +2162,6 @@ os_status_t os_thread_mutex_destroy(
 	{
 		result = OS_STATUS_FAILURE;
 		if ( pthread_mutex_destroy( lock ) == 0 )
-			result = OS_STATUS_SUCCESS;
-	}
-	return result;
-}
-
-os_status_t os_thread_rwlock_create(
-	os_thread_rwlock_t *lock )
-{
-	os_status_t result = OS_STATUS_BAD_PARAMETER;
-	if ( lock )
-	{
-		result = OS_STATUS_FAILURE;
-		if ( pthread_rwlock_init( lock, NULL ) == 0 )
-			result = OS_STATUS_SUCCESS;
-	}
-	return result;
-}
-
-os_status_t os_thread_rwlock_read_lock(
-	os_thread_rwlock_t *lock )
-{
-	os_status_t result = OS_STATUS_BAD_PARAMETER;
-	if ( lock )
-	{
-		result = OS_STATUS_FAILURE;
-		if ( pthread_rwlock_rdlock( lock ) == 0 )
-			result = OS_STATUS_SUCCESS;
-	}
-	return result;
-}
-
-os_status_t os_thread_rwlock_read_unlock(
-	os_thread_rwlock_t *lock )
-{
-	os_status_t result = OS_STATUS_BAD_PARAMETER;
-	if ( lock )
-	{
-		result = OS_STATUS_FAILURE;
-		if ( pthread_rwlock_unlock( lock ) == 0 )
-			result = OS_STATUS_SUCCESS;
-	}
-	return result;
-}
-
-os_status_t os_thread_rwlock_write_lock(
-	os_thread_rwlock_t *lock )
-{
-	os_status_t result = OS_STATUS_BAD_PARAMETER;
-	if ( lock )
-	{
-		result = OS_STATUS_FAILURE;
-		if ( pthread_rwlock_wrlock( lock ) == 0 )
-			result = OS_STATUS_SUCCESS;
-	}
-	return result;
-}
-
-os_status_t os_thread_rwlock_write_unlock(
-	os_thread_rwlock_t *lock )
-{
-	os_status_t result = OS_STATUS_BAD_PARAMETER;
-	if ( lock )
-	{
-		result = OS_STATUS_FAILURE;
-		if ( pthread_rwlock_unlock( lock ) == 0 )
-			result = OS_STATUS_SUCCESS;
-	}
-	return result;
-}
-
-os_status_t os_thread_rwlock_destroy(
-	os_thread_rwlock_t *lock )
-{
-	os_status_t result = OS_STATUS_BAD_PARAMETER;
-	if ( lock )
-	{
-		result = OS_STATUS_FAILURE;
-		if ( pthread_rwlock_destroy( lock ) == 0 )
 			result = OS_STATUS_SUCCESS;
 	}
 	return result;

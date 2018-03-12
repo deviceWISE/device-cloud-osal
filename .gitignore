@@ -12,7 +12,7 @@ DerivedData/
 Doxyfile
 footer.html
 install_manifest.txt
-Makefile
+/Makefile
 os.h
 out/
 test-case-count.py

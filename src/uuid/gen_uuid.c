@@ -573,6 +573,7 @@ void uuid_generate_random(uuid_t out)
 	__uuid_generate_random(out, &num);
 }
 
+#if !defined(__VXWORKS__)
 /*
  * Check whether good random source (/dev/random or /dev/urandom)
  * is available.
@@ -583,6 +584,7 @@ static int have_random_source(void)
 
 	return (!stat("/dev/random", &s) || !stat("/dev/urandom", &s));
 }
+#endif /* else if !defined(__VXWORKS__) */
 
 
 /*
@@ -593,8 +595,10 @@ static int have_random_source(void)
  */
 void uuid_generate(uuid_t out)
 {
+#if !defined(__VXWORKS__)
 	if (have_random_source())
 		uuid_generate_random(out);
 	else
+#endif /* else if !defined(__VXWORKS__) */
 		uuid_generate_time(out);
 }

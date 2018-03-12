@@ -1665,6 +1665,12 @@ OS_API os_status_t os_system_info(
  *
  * @param[in]      command             command string to be run
  * @param[out]     exit_status         return code of the executable (optional)
+ * @param[in]      privileged          run command in a privileged mode (or as
+ *                                     a super user (i.e. "root" on linux,
+ *                                     "system" in windows, or as a "kernel"
+ *                                     task on vxworks)
+ * @param[in]      priority            process priority (0 to inherit)
+ * @param[in]      stack_size          process stack size (0 to inherit)
  * @param[in]      pipe_files          files/pipes to write 'standard out' &
  *                                     'standard error' to
  *
@@ -1674,6 +1680,9 @@ OS_API os_status_t os_system_info(
 OS_API os_status_t os_system_run(
 	const char *command,
 	int *exit_status,
+	os_bool_t privileged,
+	int priority,
+	size_t stack_size,
 	os_file_t pipe_files[2u] );
 
 /**
@@ -1681,6 +1690,12 @@ OS_API os_status_t os_system_run(
  *
  * @param[in]      command             command string to be run
  * @param[out]     exit_status         return code of the executable (optional)
+ * @param[in]      privileged          run command in a privileged mode (or as
+ *                                     a super user (i.e. "root" on linux,
+ *                                     "system" in windows, or as a "kernel"
+ *                                     task on vxworks)
+ * @param[in]      priority            process priority (0 to inherit)
+ * @param[in]      stack_size          process stack size (0 to inherit)
  * @param[out]     out_buf             pointer to buffers to write
  *                                     'standard out' & 'standard error' to
  * @param[in,out]  out_len             size of buffers for 'standard out' and
@@ -1695,6 +1710,9 @@ OS_API os_status_t os_system_run(
 OS_API os_status_t os_system_run_wait(
 	const char *command,
 	int *exit_status,
+	os_bool_t privileged,
+	int priority,
+	size_t stack_size,
 	char *out_buf[2u],
 	size_t out_len[2u],
 	os_millisecond_t max_time_out );
