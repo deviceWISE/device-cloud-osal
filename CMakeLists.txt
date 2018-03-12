@@ -11,26 +11,32 @@
 # under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES
 # OR CONDITIONS OF ANY KIND, either express or implied.
 #
+
+set( CMAKE_MODULE_PATH           "${CMAKE_SOURCE_DIR}/build-sys/cmake" "${CMAKE_MODULE_PATH}" )
 cmake_minimum_required( VERSION 2.8.8 )
 project( "osal" )
 
-### Definitions ###
-set( PACKAGE_NAME                "Operating System Abstraction Library" )
-set( PACKAGE_VERSION             "0.9.0" )
-set( PACKAGE_DESCRIPTION_SUMMARY "Operating System Abstraction Library" )
-set( PACKAGE_VENDOR              "Wind River Systems" )
+### Project Version ###
+include( VersionSupport )
+string( REGEX REPLACE "20([0-9][0-9])" "\\1" PACKAGE_VERSION "${PROJECT_COMMIT_DATE}" )
+string( REPLACE "-" "." PACKAGE_VERSION "${PACKAGE_VERSION}" )
+version_split( PACKAGE_VERSION "${PACKAGE_VERSION}" )
 
-set( PROJECT_VERSION             "${PACKAGE_VERSION}" )
-set( PROJECT_VENDOR              "${PACKAGE_VENDOR}" )
-set( CMAKE_MODULE_PATH           "${CMAKE_SOURCE_DIR}/build-sys/cmake" "${CMAKE_MODULE_PATH}" )
+### Definitions ###
+set( PACKAGE_NAME                      "Operating System Abstraction Library" )
+set( PACKAGE_DESCRIPTION_SUMMARY       "Operating System Abstraction Library" )
+set( PACKAGE_VENDOR                    "Wind River Systems" )
+
+set( PROJECT_VERSION                   "${PACKAGE_VERSION}" )
+set( PROJECT_VENDOR                    "${PACKAGE_VENDOR}" )
 
 ### General Build Config ###
 include( BuildSupport )
 include( DefineCompilerFlags )
 
-set( TARGET                      "${PACKAGE_NAME_SHORT}" )
-set( TARGET_STATIC_SUFFIX        "-static" )
-set( TARGET_SHARED_SUFFIX        "-shared" )
+set( TARGET                            "${PACKAGE_NAME_SHORT}" )
+set( TARGET_STATIC_SUFFIX              "-static" )
+set( TARGET_SHARED_SUFFIX              "-shared" )
 
 ### Output Directories ###
 set( CMAKE_ARCHIVE_OUTPUT_DIRECTORY    "${CMAKE_BINARY_DIR}/out" )
