@@ -2,7 +2,7 @@
  * @file
  * @brief source file defining functions for mac osx systems
  *
- * @copyright Copyright (C) 2017 Wind River Systems, Inc. All Rights Reserved.
+ * @copyright Copyright (C) 2017-2018 Wind River Systems, Inc. All Rights Reserved.
  *
  * @license Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -85,4 +85,3 @@ os_status_t os_service_restart(
 {
 	return OS_STATUS_NOT_SUPPORTED;
 }
-

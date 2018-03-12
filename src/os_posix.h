@@ -17,7 +17,6 @@
 
 #if !OSAL_WRAP
 #include <ctype.h> /* for: tolower, toupper */
-#include <dlfcn.h> /* for: dlclose, dlopen dlsym */
 #include <errno.h> /* for: errno */
 #include <stdlib.h> /* for: calloc, free, malloc, realloc, strtod, strtol, strtoul */
 #include <string.h> /* for: strchr, strcmp, strlen, strncmp, strncpy, strpbrk, strrchr, strstr, memcpy, memmove, memset */
@@ -71,10 +70,14 @@ typedef pthread_cond_t os_thread_condition_t;
  */
 typedef pthread_mutex_t os_thread_mutex_t;
 
+#if defined(__VXWORKS__)
 /**
  * @brief Thread read/write lock
  */
+typedef SEM_ID os_thread_rwlock_t;
+#else /* defined(__VXWORKS__) */
 typedef pthread_rwlock_t os_thread_rwlock_t;
+#endif /* else if defined(__VXWORKS__) */
 #endif /* if OSAL_THREAD_SUPPORT */
 
 /** @brief type representing a UUID for an operating system */
@@ -981,6 +984,7 @@ OS_API os_status_t os_thread_condition_timed_wait(
  * @param[in,out]  thread              newly created thread object
  * @param[in]      main                main method to call for the thread
  * @param[in]      arg                 user specific data
+ * @param[in]      stack_size          size of stack to use (0 = default)
  *
  * @retval OS_STATUS_BAD_PARAMETER     invalid parameter passed to function
  * @retval OS_STATUS_FAILURE           function failed
@@ -989,7 +993,8 @@ OS_API os_status_t os_thread_condition_timed_wait(
 OS_API os_status_t os_thread_create(
 	os_thread_t *thread,
 	os_thread_main_t main,
-	void *arg
+	void *arg,
+	size_t stack_size
 );
 
 /**

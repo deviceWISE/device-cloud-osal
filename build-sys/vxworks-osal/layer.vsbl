@@ -1,0 +1,29 @@
+/* layer.vsbl file for operating system abstraction layer */
+/**
+ * Copyright (C) 2018 Wind River Systems, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at:
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+ * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ */
+Layer DEVICE_CLOUD_OSAL
+    {
+    SYNOPSIS          Operating system abstraction layer
+    HELP              This provides an operating system abstraction layer.
+    VERSION           1.0.0.0
+    VENDOR            Wind River
+    FEATURE           HDC
+    PARENT            HDC_3_0_0_0
+    FEATURE_REQUIRES  {HDC HDC3} \
+                      {UNIX UNIX_KERNEL_LIB}
+    SUBSCRIBE         UNIX
+    OPTIONAL          YES
+    DEFAULT           NO
+    DOC_BUILD         NO
+    }

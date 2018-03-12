@@ -32,7 +32,9 @@
  * %End-Header%
  */
 
+#if !defined(_WRS_KERNEL)
 #include <inttypes.h>
+#endif /* !defined(_WRS_KERNEL) */
 #include <sys/types.h>
 
 #include "uuid.h"
