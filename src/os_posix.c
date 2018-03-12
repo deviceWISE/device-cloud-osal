@@ -1681,7 +1681,7 @@ os_status_t os_socket_read(
 	const os_socket_t *socket,
 	void *buf,
 	size_t len,
-	size_t* bytes_read,
+	size_t *bytes_read,
 	os_millisecond_t max_time_out )
 {
 	os_status_t result = OS_STATUS_BAD_PARAMETER;
@@ -1705,14 +1705,14 @@ os_status_t os_socket_read(
 			retval = read( socket->fd, buf, len );
 			if ( retval > 0 )
 			{
-				if ( bytes_read)
+				if ( bytes_read )
 					*bytes_read = (size_t)retval;
 				result = OS_STATUS_SUCCESS;
 			}
-			else if ( bytes_read == 0 )
-				result = OS_STATUS_TRY_AGAIN;
 			else if ( errno == ETIMEDOUT )
 				result = OS_STATUS_TIMED_OUT;
+			else if ( retval == 0 )
+				result = OS_STATUS_TRY_AGAIN;
 		}
 	}
 	return result;
