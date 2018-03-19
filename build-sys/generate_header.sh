@@ -15,15 +15,25 @@
 
 # Project variables
 PROJECT_VENDOR="Wind River Systems"
-PROJECT_VERSION="0.9.0"
-PROJECT_VERSION_MAJOR="0"
-PROJECT_VERSION_MINOR="9"
-PROJECT_VERSION_PATCH="0"
-PROJECT_VERSION_TWEAK="0"
 PROJECT_START_YEAR="2017"
 
 INPUT_FILE=src/os.h.in
 INPUT_SYMBOL=@OS_FUNCTION_DEF@
+
+# Generate version
+GIT_PATH=`which git`
+GIT_SHA_CMD="log -1 --format=%H"
+GIT_DATE_CMD="log -1 --format=%cd --date=short"
+if [ -n "${GIT_PATH}" ]; then
+	export PROJECT_GIT_SHA=`${GIT_PATH} -C "${SRC_DIR}" ${GIT_SHA_CMD} 2>/dev/null`
+	export PROJECT_COMMIT_DATE=`${GIT_PATH} -C "${SRC_DIR}" ${GIT_DATE_CMD} 2>/dev/null`
+fi
+
+export PROJECT_VERSION=`echo ${PROJECT_COMMIT_DATE} | sed -e "s|20\([0-9][0-9]\)|\\1|g" -e "s|-|.|g"`
+export PROJECT_VERSION_MAJOR=`echo ${PROJECT_VERSION} | awk -F'.' '{gsub(/[^0-9]+/, "", $1); gsub(/^0*/, "", $1); print match($1, /[^ ]/) ? $1 : "0"}'`
+export PROJECT_VERSION_MINOR=`echo ${PROJECT_VERSION} | awk -F'.' '{gsub(/[^0-9]+/, "", $2); gsub(/^0*/, "", $2); print match($2, /[^ ]/) ? $2 : "0"}'`
+export PROJECT_VERSION_PATCH=`echo ${PROJECT_VERSION} | awk -F'.' '{gsub(/[^0-9]+/, "", $3); gsub(/^0*/, "", $3); print match($3, /[^ ]/) ? $3 : "0"}'`
+export PROJECT_VERSION_TWEAK=`echo ${PROJECT_VERSION} | awk -F'.' '{gsub(/[^0-9]+/, "", $4); gsub(/^0*/, "", $4); print match($4, /[^ ]/) ? $4 : "0"}'`
 
 # Generate copyright
 CURRENT_YEAR=`date +"%Y"`
