@@ -40,9 +40,6 @@ extern BOOT_PARAMS sysBootParams;
 #define VX_RW_SEM_MAX_READERS (255)
 
 #if defined(_WRS_KERNEL)
-extern const char *deviceCloudBinDirGet ( void );
-extern unsigned int deviceCloudPriorityGet ( void );
-extern unsigned int deviceCloudStackSizeGet ( void );
 extern int control_main ( int argc, char* argv[] );
 extern int iot_update_main ( int argc, char* argv[] );
 #else
@@ -52,31 +49,31 @@ static char bin_dir[PATH_MAX] = "/bd0:1/bin";
 static int priority = 100;
 static int stack_size = 0x10000;
 
-void deviceCloudConfigDirSet (char *str)
+void deviceCloudConfigDirSet ( const char *str )
 {
 	if ((str != NULL) && (str != '\0'))
 		strncpy(config_dir, str, PATH_MAX);
 }
 
-void deviceCloudRuntimeDirSet (char *str)
+void deviceCloudRuntimeDirSet ( const char *str )
 {
 	if ((str != NULL) && (str != '\0'))
 		strncpy(runtime_dir, str, PATH_MAX);
 }
 
-void deviceCloudBinDirSet (char *str)
+void deviceCloudBinDirSet ( const char *str )
 {
 	if ((str != NULL) && (str != '\0'))
 		strncpy(bin_dir, str, PATH_MAX);
 }
 
-void deviceCloudPrioritySet (char *str)
+void deviceCloudPrioritySet ( const char *str )
 {
 	if ((str != NULL) && (str != '\0'))
 		priority = atoi(str);
 }
 
-void deviceCloudStackSizeSet (char *str)
+void deviceCloudStackSizeSet ( const char *str )
 {
 	if ((str != NULL) && (str != '\0'))
 		stack_size = atoi(str);
