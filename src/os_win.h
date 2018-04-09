@@ -16,10 +16,9 @@
  */
 
 /** @brief Don't support advanced Windows kernel calls */
-#define WIN32_LEAN_AND_MEAN
 #pragma warning( push, 1 )
+#	define WIN32_LEAN_AND_MEAN
 #	include <Windows.h>
-
 #	include <rpc.h>        /* for uuid functions */
 	/** @brief Universally unique id type */
 	typedef struct _GUID os_uuid_t;
