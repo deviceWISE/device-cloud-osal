@@ -274,7 +274,7 @@ typedef struct os_system_info
  * @brief Maximum path length
  */
 #ifndef PATH_MAX
-#	define PATH_MAX 0
+#	error PATH_MAX is undefined, your operating system is mis-configured or unsupported
 #endif
 
 
