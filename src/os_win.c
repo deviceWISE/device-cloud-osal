@@ -197,78 +197,116 @@ static os_status_t os_time_stamp_to_date_time(
 
 
 os_status_t os_adapters_address(
-	os_adapters_t *adapters,
-	int *family,
-	int *flags,
-	char *address,
+	os_adapter_address_t *address,
+	unsigned int *index,
+	os_address_family_t *family,
+	char *address_out,
 	size_t address_len )
 {
-	os_status_t result = OS_STATUS_FAILURE;
-	if ( adapters && adapters->current && address && address_len > 0u )
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
+	if ( address && address->cur )
 	{
-		void* ptr = NULL;
-		struct sockaddr * const addr =
-			adapters->current->Address.lpSockaddr;
-		if ( family )
-			*family = addr->sa_family;
+		const int cur_family =
+			address->cur->Address.lpSockaddr->sa_family;
 
-		if ( flags )
+		if ( index )
 		{
-			*flags = 0;
-			if ( !( adapters->adapter_current->Flags & IP_ADAPTER_NO_MULTICAST ) )
-				*flags |= IFF_MULTICAST;
-			if ( adapters->adapter_current->IfType & IF_TYPE_SOFTWARE_LOOPBACK )
-				*flags |= IFF_LOOPBACK;
+			*index = 0u;
+			if ( cur_family == AF_INET )
+				*index = address->adapter->IfIndex;
+			else if ( cur_family == AF_INET6 )
+				*index = address->adapter->Ipv6IfIndex;
 		}
 
-		if ( addr->sa_family == AF_INET6 )
-			ptr = &(((struct sockaddr_in6 *)addr)->sin6_addr);
-		else if ( addr->sa_family == AF_INET )
-			ptr = &(((struct sockaddr_in *)addr)->sin_addr);
+		if ( family )
+		{
+			*family = OS_FAMILY_UNSPEC;
+			if ( cur_family == AF_INET )
+				*family = OS_FAMILY_IPV4;
+			else if ( cur_family == AF_INET6 )
+				*family = OS_FAMILY_IPV6;
+		}
 
-		if ( ptr && inet_ntop( addr->sa_family, ptr, address, address_len ) )
+		result = OS_STATUS_NOT_FOUND;
+		if ( cur_family == AF_INET )
+		{
+			if ( address_out )
+			{
+				SOCKADDR_IN *const in =
+					(SOCKADDR_IN *)(address->cur->Address.lpSockaddr);
+				InetNtop(AF_INET, &(in->sin_addr),
+					address_out, address_len );
+			}
+			result = OS_STATUS_SUCCESS;
+		}
+		else if ( cur_family == AF_INET6 )
+		{
+			if ( address_out )
+			{
+				SOCKADDR_IN6 *const in =
+					(SOCKADDR_IN6 *)(address->cur->Address.lpSockaddr);
+				InetNtop(AF_INET6, &(in->sin6_addr),
+					address_out, address_len );
+			}
+			result = OS_STATUS_SUCCESS;
+		}
+	}
+	return result;
+}
+
+os_status_t os_adapters_address_first(
+	const os_adapter_t *adapter,
+	os_adapter_address_t *address )
+{
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
+	if ( adapter && adapter->cur )
+	{
+		address->adapter = adapter->cur;
+		address->cur = adapter->cur->FirstUnicastAddress;
+
+		result = OS_STATUS_NOT_FOUND;
+		if ( address->cur )
 			result = OS_STATUS_SUCCESS;
 	}
 	return result;
 }
 
-os_status_t os_adapters_index(
-	os_adapters_t *adapters,
-	unsigned int *index )
+os_status_t os_adapters_address_next(
+	os_adapter_address_t *address )
 {
-	os_status_t result = OS_STATUS_FAILURE;
-	if ( adapters && adapters->adapter_current && index )
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
+	if ( address && address->cur )
 	{
-		int family = AF_INET;
-		if ( adapters->current )
-		{
-			family =
-			  adapters->current->Address.lpSockaddr->sa_family;
-		}
-		if ( family == AF_INET6 )
-			*index = adapters->adapter_current->Ipv6IfIndex;
-		else
-			*index = adapters->adapter_current->IfIndex;
-		result = OS_STATUS_SUCCESS;
+		address->cur = address->cur->Next;
+
+		result = OS_STATUS_NOT_FOUND;
+		if ( address->cur )
+			result = OS_STATUS_SUCCESS;
 	}
 	return result;
 }
 
 os_status_t os_adapters_mac(
-	os_adapters_t *adapters,
+	const os_adapter_t *adapter,
 	char *mac,
 	size_t mac_len )
 {
-	os_status_t result = OS_STATUS_FAILURE;
-	if ( adapters && adapters->adapter_current &&
-		adapters->adapter_current->NoMulticast == FALSE )
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
+	if ( adapter && adapter->cur && mac )
 	{
-		unsigned char *id = adapters->adapter_current->PhysicalAddress;
-		const size_t id_len = adapters->adapter_current->PhysicalAddressLength;
+		os_bool_t good_mac = OS_FALSE;
+		unsigned char default_mac[] = { 0u, 0u, 0u, 0u, 0u, 0u };
+		unsigned char *id = default_mac;
+		size_t id_len = sizeof(default_mac);
+		size_t i;
+
+		if ( adapter->cur->PhysicalAddressLength > 0u )
+		{
+			id = adapter->cur->PhysicalAddress;
+			id_len = adapter->cur->PhysicalAddressLength;
+		}
 
 		/* loop through to produce mac address */
-		os_bool_t good_mac = OS_FALSE;
-		size_t i;
 		for ( i = 0u; i < id_len && i * 3u <= mac_len; ++i )
 		{
 			if ( id[ i ] > 0u )
@@ -276,13 +314,46 @@ os_status_t os_adapters_mac(
 			os_sprintf( &mac[ i * 3u ], "%02.2x:", id[ i ] );
 		}
 
+		/* null-terminate mac */
+		if ( i * 3u < mac_len )
+			mac_len = i * 3u;
+		mac[ mac_len - 1u ] = '\0';
+
 		/* mac contained at least 1 non-zero value */
+		result = OS_STATUS_NOT_FOUND;
 		if ( good_mac != OS_FALSE )
+			result = OS_STATUS_SUCCESS;
+	}
+	return result;
+}
+
+os_status_t os_adapters_name(
+	const os_adapter_t *adapter,
+	char *name,
+	size_t name_len )
+{
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
+	if ( adapter && adapter->cur && name && name_len > 0u )
+	{
+		/* adapter name */
+		char *tmp;
+		size_t tmp_len, fname_len = 0u;
+		ZeroMemory( name, name_len );
+		StringCbLengthW( adapter->cur->FriendlyName,
+			MAX_ADAPTER_NAME_LENGTH, &fname_len );
+		tmp_len = WideCharToMultiByte( CP_UTF8, 0,
+			adapter->cur->FriendlyName, fname_len,
+			NULL, 0u, NULL, NULL );
+		tmp = (char *)HeapAlloc( GetProcessHeap(), 0,
+			sizeof( char ) * ( tmp_len + 1u ) );
+		if ( tmp )
 		{
-			/* null-terminate mac */
-			if ( i * 3u < mac_len )
-				mac_len = i * 3u;
-			mac[ mac_len - 1u ] = '\0';
+			WideCharToMultiByte( CP_UTF8, 0,
+				adapter->cur->FriendlyName, fname_len,
+				tmp, tmp_len + 1u, NULL, NULL );
+			tmp[tmp_len] = '\0';
+			StringCchCopy( name, name_len, tmp );
+			HeapFree( GetProcessHeap(), 0, tmp );
 			result = OS_STATUS_SUCCESS;
 		}
 	}
@@ -290,85 +361,42 @@ os_status_t os_adapters_mac(
 }
 
 os_status_t os_adapters_next(
-	os_adapters_t *adapters )
+	os_adapter_t *adapter )
 {
-	os_status_t result = OS_STATUS_FAILURE;
-	if ( adapters && adapters->adapter_current )
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
+	if ( adapter && adapter->cur )
 	{
-		if ( adapters->current )
-			adapters->current = adapters->current->Next;
-		if ( adapters->current )
-			result = OS_STATUS_SUCCESS;
-		else
-		{
-			adapters->adapter_current = adapters->adapter_current->Next;
-			while( adapters->adapter_current && !adapters->current )
-			{
-				adapters->current = adapters->adapter_current->FirstUnicastAddress;
-				if ( !adapters->current )
-					adapters->adapter_current = adapters->adapter_current->Next;
-			}
+		result = OS_STATUS_NOT_FOUND;
+		adapter->cur = adapter->cur->Next;
 
-			if ( adapters->adapter_current && adapters->current )
-				result = OS_STATUS_SUCCESS;
-		}
+		if ( adapter->cur )
+			result = OS_STATUS_SUCCESS;
 	}
 	return result;
 }
 
 os_status_t os_adapters_obtain(
-	os_adapters_t **adapters )
+	os_adapter_t *adapter )
 {
 	os_status_t result = OS_STATUS_BAD_PARAMETER;
-	if ( adapters )
+	if ( adapter )
 	{
-		ULONG error_code;
-		os_adapters_t *p_adapters;
-		ULONG size = 0u;
-
-		result = OS_STATUS_NO_MEMORY;
-		*adapters = (os_adapters_t *)HeapAlloc( GetProcessHeap(), 0,
-			sizeof( os_adapters_t ) );
-		p_adapters = *adapters;
-		if ( p_adapters )
+		ULONG buf_len = 0u;
+		const ULONG family = AF_UNSPEC;
+		const ULONG flags = GAA_FLAG_SKIP_ANYCAST |
+			GAA_FLAG_SKIP_MULTICAST | GAA_FLAG_SKIP_DNS_SERVER;
+		if ( GetAdaptersAddresses( family, flags,
+			NULL, NULL, &buf_len ) == ERROR_BUFFER_OVERFLOW )
 		{
-			result = OS_STATUS_FAILURE;
-			ZeroMemory( p_adapters, sizeof( os_adapters_t ) );
-			do
+			IP_ADAPTER_ADDRESSES *aa =
+				HeapAlloc( GetProcessHeap(), 0, buf_len );
+			result = OS_STATUS_NO_MEMORY;
+			if ( aa &&  GetAdaptersAddresses( family, flags,
+				NULL, aa, &buf_len ) == NO_ERROR )
 			{
-				p_adapters->adapter_first = (IP_ADAPTER_ADDRESSES *)
-					HeapAlloc( GetProcessHeap(), 0, size );
-				error_code = GetAdaptersAddresses( AF_UNSPEC,
-					GAA_FLAG_SKIP_MULTICAST,
-					NULL, p_adapters->adapter_first, &size );
-				if ( error_code == ERROR_BUFFER_OVERFLOW )
-				{
-					HeapFree( GetProcessHeap(), 0,
-						p_adapters->adapter_first );
-					HeapFree( GetProcessHeap(), 0,
-						p_adapters );
-				}
-			} while ( error_code == ERROR_BUFFER_OVERFLOW );
-
-			if ( error_code == ERROR_SUCCESS )
-			{
-				p_adapters->adapter_current = p_adapters->adapter_first;
-				while( p_adapters->adapter_current && !p_adapters->current )
-				{
-					p_adapters->current = p_adapters->adapter_current->FirstUnicastAddress;
-					if ( !p_adapters->current )
-						p_adapters->adapter_current = p_adapters->adapter_current->Next;
-				}
-
-				if ( p_adapters->current )
-					result = OS_STATUS_SUCCESS;
-				else
-				{
-					HeapFree( GetProcessHeap(), 0,
-						p_adapters->adapter_first );
-					HeapFree( GetProcessHeap(), 0,
-						p_adapters );
-				}
+				adapter->first = aa;
+				adapter->cur = adapter->first;
+				result = OS_STATUS_SUCCESS;
 			}
 		}
 	}
@@ -376,14 +404,12 @@ os_status_t os_adapters_obtain(
 }
 
 os_status_t os_adapters_release(
-	os_adapters_t *adapters )
+	os_adapter_t *adapter )
 {
 	os_status_t result = OS_STATUS_BAD_PARAMETER;
-	if ( adapters )
+	if ( adapter && adapter->first )
 	{
-		if ( adapters->adapter_first )
-			HeapFree( GetProcessHeap(), 0, adapters->adapter_first );
-		HeapFree( GetProcessHeap(), 0, adapters );
+		HeapFree( GetProcessHeap(), 0, adapter->first );
 		result = OS_STATUS_SUCCESS;
 	}
 	return result;
@@ -2602,8 +2628,7 @@ os_status_t os_socket_accept(
 
 os_status_t os_socket_bind(
 	const os_socket_t *socket,
-	int queue_size
-)
+	int queue_size )
 {
 	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( socket )

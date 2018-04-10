@@ -44,12 +44,21 @@
 #include <termios.h>     /* for terminal input */
 #endif /* _WRS_KERNEL */
 
-#if defined(__linux__) || defined (_WRS_KERNEL)
-#	include <sys/ioctl.h> /* for ioctl */
-#	ifndef ETHER_ADDR_LEN
-		/** @brief Ethernet (mac) address length */
-#		define ETHER_ADDR_LEN 6u
-#	endif
+#if defined( __linux__ )
+#	include <linux/if_packet.h> /* for sockaddr_ll */
+#else
+#	include <net/if_dl.h>       /* for LLADDR definition */
+#endif /* if defined( __linux__ ) */
+#include <arpa/inet.h>      /* for inet_ntop */
+#include <ifaddrs.h>        /* for getifaddrs, freeifaddrs */
+#include <net/if.h>         /* for if_nametoindex */
+#include <netinet/in.h>     /* for AF_LINK (apple) */
+#include <sys/ioctl.h>      /* for ioctl */
+#include <sys/socket.h>     /* for AF_LINK (freebsd) */
+#include <sys/types.h>      /* for u_char, u_short (freebsd) */
+#ifndef ETHER_ADDR_LEN
+	/** @brief Ethernet (mac) address length */
+#	define ETHER_ADDR_LEN 6u
 #endif
 
 /* compiler flags to remove */
@@ -90,191 +99,277 @@ static int os_clock_realtime( struct timespec *ts );
 #endif /* if defined(OSAL_THREAD_SUPPORT) && OSAL_THREAD_SUPPORT */
 
 os_status_t os_adapters_address(
-	os_adapters_t *adapters,
-	int *family,
-	int *flags,
-	char *address,
+	os_adapter_address_t *address,
+	unsigned int *index,
+	os_address_family_t *family,
+	char *address_out,
 	size_t address_len )
 {
-	os_status_t result = OS_STATUS_FAILURE;
-	if ( adapters && adapters->current && address && address_len > 0u )
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
+	if ( address && address->cur && address->cur->ifa_addr )
 	{
-		void* ptr = NULL;
-		struct sockaddr * const addr = adapters->current->ifa_addr;
-		if ( family )
-			*family = addr->sa_family;
-		if ( flags )
-			*flags = (int)adapters->current->ifa_flags;
-		if ( addr->sa_family == AF_INET6 )
+		/* return address */
+		struct ifaddrs *const ifa = address->cur;
+		const int cur_family = ifa->ifa_addr->sa_family;
+
+		result = OS_STATUS_NOT_FOUND;
+		if ( index )
 		{
-			/* cast to void* removes erroneous warning in clang */
-			void *const addr_ptr = addr;
-			ptr = &(((struct sockaddr_in6 *)addr_ptr)->sin6_addr);
-		}
-		else if ( addr->sa_family == AF_INET )
-		{
-			/* cast to void* removes erroneous warning in clang */
-			void *const addr_ptr = addr;
-			ptr = &(((struct sockaddr_in *)addr_ptr)->sin_addr);
+#if defined( SIOCGIFINDEX )
+			const int socket_fd =
+				socket( AF_INET, SOCK_DGRAM, 0 );
+			if ( socket_fd != OS_SOCKET_INVALID )
+			{
+				struct ifreq ifr;
+				memset( &ifr, 0, sizeof( struct ifreq ) );
+				strncpy( ifr.ifr_name, ifa->ifa_name,
+					IFNAMSIZ - 1u );
+				if ( ioctl( socket_fd, SIOCGIFINDEX, &ifr ) != -1 )
+					*index = (unsigned int)ifr.ifr_ifindex;
+				close( socket_fd );
+			}
+#else /* if defined( SIOCGIFINDEX ) */
+			const unsigned int idx =
+				if_nametoindex( ifa->ifa_name );
+			if ( idx > 0u )
+				*index = idx;
+#endif /* else if defined( SIOCGIFINDEX ) */
 		}
 
-		if ( ptr && inet_ntop( addr->sa_family, ptr, address, (socklen_t)address_len ) )
+		if ( family )
+		{
+			*family = OS_FAMILY_UNSPEC;
+			if ( cur_family == AF_INET )
+				*family = OS_FAMILY_IPV4;
+			else if ( cur_family == AF_INET6 )
+				*family = OS_FAMILY_IPV6;
+		}
+
+		/* obtain address */
+		if ( cur_family == AF_INET )
+		{
 			result = OS_STATUS_SUCCESS;
+			if ( address_out )
+			{
+				const struct sockaddr_in *const in =
+					(const struct sockaddr_in *)(const void *)ifa->ifa_addr;
+				inet_ntop( cur_family, &(in->sin_addr),
+					address_out, (socklen_t)address_len );
+			}
+		}
+		else if ( cur_family == AF_INET6 )
+		{
+			result = OS_STATUS_SUCCESS;
+			if ( address_out )
+			{
+				const struct sockaddr_in6 *const in =
+					(const struct sockaddr_in6 *)(const void *)ifa->ifa_addr;
+				inet_ntop( cur_family, &(in->sin6_addr),
+					address_out, (socklen_t)address_len );
+			}
+		}
 	}
 	return result;
 }
 
-os_status_t os_adapters_index(
-	os_adapters_t *adapters,
-	unsigned int *index )
+os_status_t os_adapters_address_first(
+	const os_adapter_t *adapter,
+	os_adapter_address_t *address )
 {
-	os_status_t result = OS_STATUS_FAILURE;
-	if ( adapters && adapters->current && index )
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
+	if ( adapter && adapter->cur && address )
 	{
-#if defined( SIOCGIFINDEX )
-		const int socket_fd =
-			socket( AF_INET, SOCK_DGRAM, 0 );
-		if ( socket_fd != OS_SOCKET_INVALID )
+		struct ifaddrs *ifa;
+
+		/* find first network layer layer for the interface */
+		result = OS_STATUS_NOT_FOUND;
+		address->cur = NULL;
+		for ( ifa = adapter->first; !address->cur &&
+			ifa != NULL; ifa = ifa->ifa_next )
 		{
-			struct ifreq ifr;
-			memset( &ifr, 0, sizeof( struct ifreq ) );
-			strncpy( ifr.ifr_name, adapters->current->ifa_name,
-				IFNAMSIZ - 1u );
-			if ( ioctl( socket_fd, SIOCGIFINDEX, &ifr ) != -1 )
+			if ( ifa->ifa_addr )
 			{
-				*index = (unsigned int)ifr.ifr_ifindex;
-				result = OS_STATUS_SUCCESS;
+				const int family = ifa->ifa_addr->sa_family;
+				if ( ( family == AF_INET || family == AF_INET6 ) &&
+				     os_strcmp( adapter->cur->ifa_name,
+					ifa->ifa_name ) == 0 )
+				{
+					address->cur = ifa;
+					result = OS_STATUS_SUCCESS;
+				}
 			}
-			close( socket_fd );
 		}
-#else
-		unsigned int idx = if_nametoindex( adapters->current->ifa_name );
-		if ( idx > 0 )
+	}
+	return result;
+}
+
+os_status_t os_adapters_address_next(
+	os_adapter_address_t *address )
+{
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
+	if ( address && address->cur )
+	{
+		struct ifaddrs *ifa, *ifa_cur;
+
+		/* find first network layer layer for the interface */
+		result = OS_STATUS_NOT_FOUND;
+		ifa_cur = address->cur;
+		ifa = ifa_cur->ifa_next;
+		address->cur = NULL;
+		for ( ; !address->cur && ifa != NULL; ifa = ifa->ifa_next )
 		{
-			*index = idx;
-			result = OS_STATUS_SUCCESS;
+			if ( ifa->ifa_addr )
+			{
+				const int family = ifa->ifa_addr->sa_family;
+				if ( ( family == AF_INET || family == AF_INET6 ) &&
+				     os_strcmp( ifa_cur->ifa_name,
+					ifa->ifa_name ) == 0 )
+				{
+					address->cur = ifa;
+					result = OS_STATUS_SUCCESS;
+				}
+			}
 		}
-#endif
 	}
 	return result;
 }
 
 os_status_t os_adapters_mac(
-	os_adapters_t *adapters,
+	const os_adapter_t *adapter,
 	char *mac,
 	size_t mac_len )
 {
 	os_status_t result = OS_STATUS_BAD_PARAMETER;
-	if ( adapters && adapters->current && mac && mac_len > 0u )
+	if ( adapter && adapter->cur )
 	{
-#if defined(__linux__) || defined (_WRS_KERNEL)
-		struct ifreq ifr;
-		const int socket_fd =
-			socket( adapters->current->ifa_addr->sa_family,
-				SOCK_DGRAM, 0 );
-		result = OS_STATUS_FAILURE;
-		if ( socket_fd != OS_SOCKET_INVALID )
-		{
-			memset( &ifr, 0, sizeof( struct ifreq ) );
-			strncpy( ifr.ifr_name, adapters->current->ifa_name,
-				IFNAMSIZ - 1u );
-			if ( ioctl( socket_fd, SIOCGIFHWADDR, &ifr ) == 0 )
-			{
-				unsigned char *id =
-#ifndef _WRS_KERNEL
-					(unsigned char *)( ifr.ifr_hwaddr.sa_data );
-#else
-					(unsigned char *)( ifr.ifr_addr.sa_data );
-#endif
-				const size_t id_len = ETHER_ADDR_LEN;
-#else /*  defined(__linux__) || defined (_WRS_KERNEL) */
-		{
-			if ( ( adapters->current->ifa_addr->sa_family == AF_LINK ) &&
-				adapters->current->ifa_addr &&
-				((struct sockaddr_dl *)(void*)
-					(adapters->current->ifa_addr))->sdl_alen > 0 )
-			{
-				struct sockaddr_dl *const sdl =
-					(struct sockaddr_dl *)(void*)adapters->current->ifa_addr;
-				unsigned char *id = (unsigned char *)LLADDR( sdl );
-				const size_t id_len = sdl->sdl_alen;
-#endif /*  defined(__linux__) || defined (_WRS_KERNEL) */
-				/* loop through to produce mac address */
-				os_bool_t good_mac = OS_FALSE;
-				size_t i;
-				for ( i = 0u; i < id_len && i * 3u < mac_len; ++i )
-				{
-					if ( id[ i ] > 0u )
-						good_mac = OS_TRUE;
-					snprintf( &mac[ i * 3u ], 4, "%2.2x:", id[ i ] );
-				}
+		const unsigned char *id;
+		unsigned int i;
+		const unsigned int id_len = ETHER_ADDR_LEN;
+		os_bool_t good_mac = OS_FALSE;
 
-				/* null-terminate mac */
-				if ( i > 0u && i * 3u < mac_len )
-					mac_len = (i * 3u);
-				mac[ mac_len - 1u ] = '\0';
+#if defined( __linux__ )
+		const struct sockaddr_ll *s = (const struct sockaddr_ll *)
+			(const void *)adapter->cur->ifa_addr;
+		id = (const unsigned char *)(s->sll_addr);
+#else /* if defined( __linux__ ) */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-qual"
+		id = (const unsigned char *)
+			LLADDR((const struct sockaddr_dl*)(const void*)adapter->cur->ifa_addr);
+#pragma GCC diagnostic pop
+#endif /* else if defined( __linux__ ) */
 
-				/* mac contained at least 1 non-zero value */
-				if ( good_mac != OS_FALSE )
-					result = OS_STATUS_SUCCESS;
-			}
-#if defined( __linux__ ) || defined ( _WRS_KERNEL )
-			close( socket_fd );
-#endif
+		result = OS_STATUS_NOT_FOUND;
+		/* loop through to produce mac address */
+		for ( i = 0u; i < id_len && i * 3u < mac_len; ++i )
+		{
+			if ( id[ i ] > 0u )
+				good_mac = OS_TRUE;
+			snprintf( &mac[ i * 3u ], 4, "%2.2x:", id[ i ] );
 		}
+
+		/* null-terminate mac */
+		if ( i > 0u && i * 3u < mac_len )
+			mac_len = (i * 3u);
+
+		if ( mac_len > 0u )
+			mac[ mac_len - 1u ] = '\0';
+
+		/* mac contained at least 1 non-zero value */
+		if ( good_mac != OS_FALSE )
+			result = OS_STATUS_SUCCESS;
 	}
 	return result;
 }
 
 os_status_t os_adapters_next(
-	os_adapters_t *adapters )
+	os_adapter_t *adapter )
 {
-	os_status_t result = OS_STATUS_FAILURE;
-	if ( adapters )
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
+	if ( adapter && adapter->cur )
 	{
-		if ( adapters->current )
+		struct ifaddrs *ifa;
+
+		/* find next data-layer (physical) link */
+		result = OS_STATUS_NOT_FOUND;
+		ifa = adapter->cur;
+		adapter->cur = NULL;
+		for ( ifa = ifa->ifa_next; !adapter->cur &&
+			ifa != NULL; ifa = ifa->ifa_next )
 		{
-			adapters->current = adapters->current->ifa_next;
-			if ( adapters->current )
+#if defined(__linux__)
+			if (ifa->ifa_addr->sa_family == AF_PACKET)
+#else /* if defined(__linux__) */
+			if (ifa->ifa_addr->sa_family == AF_LINK)
+#endif
+			{
+				adapter->cur = ifa;
 				result = OS_STATUS_SUCCESS;
+			}
 		}
 	}
 	return result;
 }
 
-os_status_t os_adapters_obtain(
-	os_adapters_t **adapters )
+os_status_t os_adapters_name(
+	const os_adapter_t *adapter,
+	char *name,
+	size_t name_len )
 {
 	os_status_t result = OS_STATUS_BAD_PARAMETER;
-	if ( adapters )
+	if ( adapter && adapter->cur )
 	{
-		os_adapters_t *const adptrs = *adapters =
-			(os_adapters_t*)malloc( sizeof( os_adapters_t ) );
-		result = OS_STATUS_NO_MEMORY;
-		if ( adptrs )
+		if ( adapter->cur->ifa_name )
+			os_strncpy( name, adapter->cur->ifa_name, name_len );
+		else if ( name_len )
+			*name = '\0';
+		result = OS_STATUS_SUCCESS;
+	}
+	return result;
+}
+
+os_status_t os_adapters_obtain(
+	os_adapter_t *adapter )
+{
+	os_status_t result = OS_STATUS_BAD_PARAMETER;
+	if ( adapter )
+	{
+		result = OS_STATUS_FAILURE;
+		if ( getifaddrs( &adapter->first ) == 0 )
 		{
-			result = OS_STATUS_FAILURE;
-			if ( getifaddrs( &adptrs->first ) == 0 )
+			struct ifaddrs *ifa;
+
+			result = OS_STATUS_SUCCESS;
+			adapter->cur = NULL;
+
+			/* loop through all adapters finding all data-layer
+			 * (physical) links */
+			for ( ifa = adapter->first; ifa != NULL;
+				ifa = ifa->ifa_next )
 			{
-				adptrs->current = adptrs->first;
-				result = OS_STATUS_SUCCESS;
+#if defined(__linux__)
+				if (ifa->ifa_addr->sa_family == AF_PACKET)
+#else /* if defined(__linux__) */
+				if (ifa->ifa_addr->sa_family == AF_LINK)
+#endif
+				{
+					if ( !adapter->cur )
+						adapter->cur = adapter->first;
+				}
 			}
-			else
-				free( *adapters );
 		}
 	}
 	return result;
 }
 
 os_status_t os_adapters_release(
-	os_adapters_t *adapters )
+	os_adapter_t *adapter )
 {
 	os_status_t result = OS_STATUS_BAD_PARAMETER;
-	if ( adapters )
+	if ( adapter )
 	{
-		if ( adapters->first )
-			freeifaddrs( adapters->first );
-		free( adapters );
+		if ( adapter->first )
+			freeifaddrs( adapter->first );
 		result = OS_STATUS_SUCCESS;
 	}
 	return result;

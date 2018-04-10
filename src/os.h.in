@@ -236,6 +236,20 @@ typedef struct
 /** @brief maximum length for a field in system info structure */
 #define OS_SYSTEM_INFO_MAX_LEN 64u
 
+/** @brief Enumeration holding types of address families */
+enum os_address_family
+{
+	OS_FAMILY_UNSPEC = 0,      /**< unspecified */
+	OS_FAMILY_IPV4,            /**< IPv4 address */
+	OS_FAMILY_IPV6             /**< IPv6 address */
+};
+
+typedef enum os_address_family os_address_family_t;
+/** @brief Type for a network adapter */
+typedef struct os_adapter os_adapter_t;
+/** @brief Type for an address of a network adapter */
+typedef struct os_adapter_address os_adapter_address_t;
+
 /** @brief Type for a list of adapters */
 typedef struct os_adapters os_adapters_t;
 
@@ -277,93 +291,132 @@ typedef struct os_system_info
 #	error PATH_MAX is undefined, your operating system is mis-configured or unsupported
 #endif
 
-
-/* adapter information (for obtaining MAC addresses) */
+/* adapter address information */
 /**
  * @brief Get general information of the current adapter in the the list
  *
- * @param[in,out]  adapters            adapter list to retrieve information from
- * @param[out]     family              family the adapter belongs to
- * @param[out]     flags               flags set on the adapter
- * @param[out]     address             buffer to fill with the address
+ * @param[in,out]  address             adapter address to retrieve information
+ * @param[out]     index               index of the adapter (optional)
+ * @param[out]     family              family the adapter belongs to (optional)
+ * @param[out]     address_out         buffer to fill with the address (optional)
  * @param[in]      address_len         size of the address buffer
  *
  * @retval OS_STATUS_BAD_PARAMETER     invalid parameter passed to the function
- * @retval OS_STATUS_FAILURE           system error
  * @retval OS_STATUS_SUCCESS           on success
+ * @retval OS_STATUS_NOT_FOUND         at end of list
  *
  * @see os_adapters_next
  * @see os_adapters_obtain
  * @see os_adapters_release
+ * @see os_adapters_address_first
+ * @see os_adapters_address_next
  */
 OS_API os_status_t os_adapters_address(
-	os_adapters_t *adapters,
-	int *family,
-	int *flags,
-	char *address,
+	os_adapter_address_t *address,
+	unsigned int *index,
+	os_address_family_t *family,
+	char *address_out,
 	size_t address_len
 );
 
 /**
- * @brief Get the index of the current adapter in the the list
+ * @brief Returns a pointer to the first address for a network adapter
  *
- * @param[in,out]  adapters            adapter list to retrieve information from
- * @param[out]     index               index of the adapter
+ * @param[in]      adapter             adapter to get first address for
+ * @param[out]     address             address for the adapter
  *
  * @retval OS_STATUS_BAD_PARAMETER     invalid parameter passed to the function
- * @retval OS_STATUS_FAILURE           system error
  * @retval OS_STATUS_SUCCESS           on success
+ * @retval OS_STATUS_NOT_FOUND         no addresses associated with adapter 
  *
- * @see os_adapters_next
- * @see os_adapters_obtain
- * @see os_adapters_release
+ * @see os_adapters_address
+ * @see os_adapters_address_next
  */
-OS_API os_status_t os_adapters_index(
-	os_adapters_t *adapters,
-	unsigned int *index
+OS_API os_status_t os_adapters_address_first(
+	const os_adapter_t *adapter,
+	os_adapter_address_t *address
 );
 
 /**
+ * @brief Returns a pointer to the next address for a network adapter
+ *
+ * @param[in,out]  address             in: current address; out: next address
+ *
+ * @retval OS_STATUS_BAD_PARAMETER     invalid parameter passed to the function
+ * @retval OS_STATUS_SUCCESS           on success
+ * @retval OS_STATUS_NOT_FOUND         no more addresses associated with adapter
+ *
+ * @see os_adapters_address
+ * @see os_adapters_address_first
+ */
+OS_API os_status_t os_adapters_address_next(
+	os_adapter_address_t *address
+);
+
+/* adapter information */
+/**
  * @brief Get the mac address of the current adapter in the list
  *
- * @param[in,out]  adapters            adapter list to retrieve information from
+ * @param[in,out]  adapter             adapter list to retrieve information from
  * @param[out]     mac                 buffer to fill with the mac address
  * @param[in]      mac_len             size of the buffer
  *
  * @retval OS_STATUS_BAD_PARAMETER     invalid parameter passed to the function
- * @retval OS_STATUS_FAILURE           system error
+ * @retval OS_STATUS_NOT_FOUND         no valid mac address found
  * @retval OS_STATUS_SUCCESS           on success
  *
+ * @see os_adapters_name
  * @see os_adapters_next
  * @see os_adapters_obtain
  * @see os_adapters_release
  */
 OS_API os_status_t os_adapters_mac(
-	os_adapters_t *adapters,
+	const os_adapter_t *adapter,
 	char *mac,
 	size_t mac_len
 );
 
 /**
- * @brief Moves to the next adapter in the list
+ * @brief Get the name of the current adapter in the list
  *
- * @param[in,out]  adapters            adapter list to iterate
+ * @param[in,out]  adapter             adapter list to retrieve information from
+ * @param[out]     name                buffer to fill with the name
+ * @param[in]      name_len            size of the buffer
  *
  * @retval OS_STATUS_BAD_PARAMETER     invalid parameter passed to the function
- * @retval OS_STATUS_FAILURE           system error
+ * @retval OS_STATUS_SUCCESS           on success
+ *
+ * @see os_adapters_mac
+ * @see os_adapters_next
+ * @see os_adapters_obtain
+ * @see os_adapters_release
+ */
+OS_API os_status_t os_adapters_name(
+	const os_adapter_t *adapter,
+	char *name,
+	size_t name_len
+);
+
+/**
+ * @brief Moves to the next adapter in the list
+ *
+ * @param[in,out]  adapter             adapter list to iterate
+ *
+ * @retval OS_STATUS_BAD_PARAMETER     invalid parameter passed to the function
+ * @retval OS_STATUS_NOT_FOUND         no more network adapters
  * @retval OS_STATUS_SUCCESS           on success
  *
  * @see os_adapters_obtain
  * @see os_adapters_release
  */
 OS_API os_status_t os_adapters_next(
-	os_adapters_t *adapters
+	os_adapter_t *adapter
 );
 
 /**
  * @brief Obtains the list of adapters connected to the system
  *
- * @param[out]     adapters            list of adapters
+ * @param[in,out]  adapter             list of adapters
  *
  * @retval OS_STATUS_BAD_PARAMETER     invalid parameter passed to the function
  * @retval OS_STATUS_FAILURE           system error
@@ -374,23 +427,22 @@ OS_API os_status_t os_adapters_next(
  * @see os_adapters_release
  */
 OS_API os_status_t os_adapters_obtain(
-	os_adapters_t **adapters
+	os_adapter_t *adapter
 );
 
 /**
  * @brief Release memory allocated for the adapters
  *
- * @param[in,out]  adapters            adapter list to release
+ * @param[in,out]  adapter             adapter list to release
  *
  * @retval OS_STATUS_BAD_PARAMETER     invalid parameter passed to the function
- * @retval OS_STATUS_FAILURE           system error
  * @retval OS_STATUS_SUCCESS           on success
  *
  * @see os_adapters_next
  * @see os_adapters_obtain
  */
 OS_API os_status_t os_adapters_release(
-	os_adapters_t *adapters
+	os_adapter_t *adapter
 );
 
 /* character testing support */

@@ -34,6 +34,19 @@
 #include <stdio.h> /* for: FILE *, feof, fgets, fread, fputs, fwrite, fprintf, printf, snprintf, vfprintf */
 #include <signal.h> /* for SIGINT, ... */
 
+/** @brief Structure representing a network adapter address */
+struct os_adapter_address
+{
+	struct ifaddrs *cur;        /**< current address */
+};
+
+/** @brief Structure representing a network adapter */
+struct os_adapter
+{
+	struct ifaddrs *first;      /**< first network adapter */
+	struct ifaddrs *cur;        /**< current network adapter */
+};
+
 /**
  * @brief Handle to an open file
  */
