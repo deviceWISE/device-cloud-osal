@@ -19,6 +19,9 @@
 #pragma warning( push, 1 )
 #	define WIN32_LEAN_AND_MEAN
 #	include <Windows.h>
+#	include <Winsock2.h>       /* for socket functions and structures */
+#	include <ws2tcpip.h>       /* for SOCKETADDR_IN6 structure */
+#	include <Iphlpapi.h>       /* for GetAdaptersAddresses */
 #	include <rpc.h>        /* for uuid functions */
 	/** @brief Universally unique id type */
 	typedef struct _GUID os_uuid_t;
@@ -48,6 +51,20 @@
 #endif
 /** @brief Socket port type */
 typedef USHORT in_port_t;
+
+/** @brief Structure representing a network adapter address */
+struct os_adapter_address
+{
+	IP_ADAPTER_ADDRESSES *adapter; /**< adapter */
+	IP_ADAPTER_UNICAST_ADDRESS *cur; /**< current address */
+};
+
+/** @brief Structure representing a network adapter */
+struct os_adapter
+{
+	IP_ADAPTER_ADDRESSES *first; /**< first network adapter */
+	IP_ADAPTER_ADDRESSES *cur;   /**< current network adapter */
+};
 
 /**
  * @brief Directory seperator character

@@ -13,6 +13,7 @@
 #
 
 set( TESTS
+	"adapters"
 	"env"
 	"time"
 )
@@ -22,6 +23,10 @@ add_definitions( "-DOSAL_STATIC=1" )
 set( OS_LIB ${TARGET}${TARGET_STATIC_SUFFIX} )
 
 include_directories( "${CMAKE_BINARY_DIR}/out" )
+
+# adapters test
+set( TEST_ADAPTERS_SRCS "adapters_test.c" )
+set( TEST_ADAPTERS_LIBS ${OS_LIB} )
 
 # env test
 set( TEST_ENV_SRCS "env_test.c" )
