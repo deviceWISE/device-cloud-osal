@@ -53,9 +53,33 @@
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdisabled-macro-expansion"
 
-#if defined(__VXWORKS__)
+#if !defined(__VXWORKS__)
+#include <sys/resource.h> /* for process priority support */
+#include <sys/stat.h>    /* for struct filestat, stat */
+#include <sys/wait.h>    /* for waitpid */
+/**
+ * @brief Base shell command for executing external processes with
+ */
+#define OS_COMMAND_SH                  "/bin/sh", "sh", "-c"
+/**
+ * @def OS_COMMAND_PREFIX
+ * @brief Prefix to run the command in privileged mode
+ *
+ * @note on ANDROID, the "sudo" command is not installed.  So don't prepend
+ * the string, even in priviledged mode.
+ */
+#if defined( __unix__ ) && !defined( __ANDROID__ )
+#	define OS_COMMAND_PREFIX       "sudo "
+#else
+#	define OS_COMMAND_PREFIX       ""
+#endif /* defined( __unix__ ) && !defined( __ANDROID__ ) */
+/**
+ * @brief Time in milliseconds to wait between retrying an operation
+ */
+#define LOOP_WAIT_TIME                 100u
+#else /* if !defined(__VXWORKS__) */
 typedef u_short in_port_t;
-#endif /* if defined(__VXWORKS__) */
+#endif /* else if !defined(__VXWORKS__) */
 
 #if defined(OSAL_THREAD_SUPPORT) && OSAL_THREAD_SUPPORT
 /**
@@ -426,7 +450,6 @@ os_status_t os_directory_create(
 		const char *path,
 		os_millisecond_t timeout )
 {
-#define CREATE_WAIT_TIME_MS  100u
 	os_status_t result;
 	os_timestamp_t start_time;
 	os_millisecond_t time_elapsed = 0u;
@@ -437,7 +460,7 @@ os_status_t os_directory_create(
 		if ( result != OS_STATUS_SUCCESS )
 		{
 			os_time_elapsed( &start_time, &time_elapsed );
-			os_time_sleep( CREATE_WAIT_TIME_MS, OS_TRUE );
+			os_time_sleep( LOOP_WAIT_TIME, OS_TRUE );
 		}
 	} while ( result != OS_STATUS_SUCCESS &&
 		( timeout == 0u || time_elapsed < timeout ) );
@@ -1843,6 +1866,210 @@ os_uint32_t os_system_pid( void )
 	return (os_uint32_t)getpid();
 }
 #endif /* if defined(OSAL_WRAP) && OSAL_WRAP */
+
+#if !defined(__VXWORKS__)
+os_status_t os_system_run(
+	os_system_run_args_t *args )
+{
+	size_t i;
+	const int output_fd[2u] = { STDOUT_FILENO, STDERR_FILENO };
+	int command_output_fd[2u][2u] =
+		{ { -1, -1 }, { -1, -1 } };
+	os_status_t result = OS_STATUS_SUCCESS;
+	os_timestamp_t start_time;
+
+	if ( !args || (!args->cmd && !args->fptr) )
+		return OS_STATUS_BAD_PARAMETER;
+
+	/* set a default exit status */
+	args->return_code = -1;
+
+	os_time( &start_time, NULL );
+
+	/* capture the stdout & stderr of the command and send it back
+	 * as the response (if this is a waiting process call) */
+	for ( i = 0u; i < 2u && result == OS_STATUS_SUCCESS; ++i )
+	{
+		/* if either the output pipes are set or we need a return code,
+		 * then we block */
+		if ( args->block == OS_FALSE )
+		{
+			if ( i == 0u && args->opts.nonblock.std_out != OS_FILE_INVALID )
+				command_output_fd[i][0] =
+					fileno( args->opts.nonblock.std_out );
+			else if ( i == 1u && args->opts.nonblock.std_err != OS_FILE_INVALID )
+				command_output_fd[i][0] =
+					fileno( args->opts.nonblock.std_err );
+		}
+		else
+		{
+			if ( pipe( command_output_fd[i] ) != 0 )
+				result = OS_STATUS_IO_ERROR;
+		}
+	}
+
+	if ( result == OS_STATUS_SUCCESS )
+	{
+		const pid_t pid = fork();
+		result = OS_STATUS_NOT_EXECUTABLE;
+		if ( pid != -1 )
+		{
+			/* pid == 0 for child... */
+			args->return_code = 0; /* success */
+			if ( pid == 0 )
+			{
+				/* Create a new session for the child process.
+				 */
+				pid_t sid = setsid();
+				if ( sid < 0 )
+					exit( errno );
+
+				/* redirect child stdout/stderr to the pipe */
+				for ( i = 0u; i < 2u; ++i )
+				{
+					dup2( command_output_fd[i][1], output_fd[i] );
+					close( command_output_fd[i][0] );
+				}
+
+				/* set priority */
+				if ( args->priority != 0 )
+				{
+					int cur_priority = 0;
+					cur_priority = getpriority(
+						PRIO_PROCESS, (id_t)sid );
+					args->priority += cur_priority;
+					if ( args->priority < -20 )
+						args->priority = -20;
+					else if ( args->priority > 20 )
+						args->priority = 20;
+					setpriority( PRIO_PROCESS,
+						(id_t)sid, args->priority );
+				}
+
+				/* set stack size */
+				if ( args->stack_size > 0u )
+				{
+					struct rlimit lim;
+					lim.rlim_cur = args->stack_size;
+					lim.rlim_max = args->stack_size;
+					setrlimit( RLIMIT_STACK, &lim );
+				}
+
+				if ( args->fptr )
+				{
+					int argc = 0;
+					char **argv;
+					size_t cmd_len = 0u;
+					int rc;
+
+					if ( args->cmd )
+						cmd_len = strlen( args->cmd );
+
+					argv = malloc( sizeof(char *) * 1u );
+					argv[argc++] = malloc(cmd_len + 1u);
+					if ( args->cmd )
+						strncpy( argv[0],
+							args->cmd, cmd_len );
+					argv[0][cmd_len] = '\0';
+
+					rc = args->fptr( argc, argv );
+					free( argv[0] );
+					free( argv );
+					exit( rc );
+				}
+				else
+				{
+					if ( args->privileged == OS_FALSE )
+						execl( OS_COMMAND_SH, args->cmd,
+							(char *)NULL );
+					else
+						execl( OS_COMMAND_SH, OS_COMMAND_PREFIX,
+							args->cmd, (char *)NULL );
+
+					/* Process failed to be replaced, return failure */
+					exit( errno );
+				}
+			}
+
+			for ( i = 0u; i < 2u; ++i )
+				close( command_output_fd[i][1] );
+
+			result = OS_STATUS_INVOKED;
+			if ( args->block != OS_FALSE )
+			{
+				int system_result = -1;
+				os_millisecond_t time_elapsed;
+				errno = 0;
+				do {
+					waitpid( pid, &system_result, WNOHANG );
+					os_time_elapsed( &start_time, &time_elapsed );
+					os_time_sleep( LOOP_WAIT_TIME, OS_FALSE );
+				} while ( ( errno != ECHILD ) &&
+					( !WIFEXITED( system_result ) ) &&
+					( !WIFSIGNALED( system_result ) ) &&
+					( args->opts.block.max_wait_time == 0u ||
+						time_elapsed < args->opts.block.max_wait_time) );
+
+				if ( ( errno != ECHILD ) &&
+					!WIFEXITED( system_result ) &&
+					!WIFSIGNALED( system_result ) )
+				{
+					kill( pid, SIGTERM );
+					waitpid( pid, &system_result, WNOHANG );
+					result = OS_STATUS_TIMED_OUT;
+					/* MacOSX waitpid will sometimes return
+					 * 255 here instead of -1.  Explicitly
+					 * set it to -1 for consistency across
+					 * platforms. */
+					system_result = -1;
+				}
+				else
+					result = OS_STATUS_SUCCESS;
+
+				fflush( stdout );
+				fflush( stderr );
+
+				for ( i = 0u; i < 2u; ++i )
+				{
+					char *buf = args->opts.block.std_out.buf;
+					size_t buf_len = args->opts.block.std_out.len;
+					if ( i != 0u )
+					{
+						buf = args->opts.block.std_err.buf;
+						buf_len = args->opts.block.std_err.len;
+					}
+					if ( buf && buf_len > 0u )
+					{
+						buf[0] = '\0';
+						/* if we are able to read from pipe */
+						if ( command_output_fd[i][0] != -1 )
+						{
+							const ssize_t output_size =
+								read( command_output_fd[i][0],
+								buf, buf_len - 1u );
+							if ( output_size >= 0 )
+								buf[ output_size ] = '\0';
+						}
+					}
+				}
+
+				if ( result != OS_STATUS_TIMED_OUT )
+				{
+					if ( WIFEXITED( system_result ) )
+						system_result = WEXITSTATUS( system_result );
+					else if ( WIFSIGNALED( system_result ) )
+						system_result = WTERMSIG( system_result );
+					else
+						system_result = WIFEXITED( system_result );
+				}
+
+				args->return_code = system_result;
+			}
+		}
+	}
+	return result;
+}
+#endif /* if !defined(__VXWORKS__) */
 
 os_bool_t os_terminal_vt100_support(
 	os_file_t stream

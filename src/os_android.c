@@ -2,7 +2,7 @@
  * @file
  * @brief Android OS adaptation layer
  *
- * @copyright Copyright (C) 2017 Wind River Systems, Inc. All Rights Reserved.
+ * @copyright Copyright (C) 2017-2018 Wind River Systems, Inc. All Rights Reserved.
  *
  * @license Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,29 +24,33 @@ os_status_t os_service_restart(
 	os_millisecond_t timeout
 )
 {
+	os_system_run_args_t args = OS_SYSTEM_RUN_ARGS_INIT;
 	os_status_t result;
-	int exit_status;
 	char service_cmd[ 256u ];
 	char stdout_buf[COMMAND_OUTPUT_MAX_LEN] = "\0";
 	char stderr_buf[COMMAND_OUTPUT_MAX_LEN] = "\0";
-	char *out_buf[2u] = { stdout_buf, stderr_buf };
-	size_t out_len[2u] = { COMMAND_OUTPUT_MAX_LEN, COMMAND_OUTPUT_MAX_LEN };
 
 	if ( !exe )
 		exe = id;
 
 	snprintf( service_cmd, 255u, "ps | grep %s", exe );
 	service_cmd[ 255u ] = '\0';
-	result = os_system_run_wait( service_cmd, &exit_status,
-		OS_TRUE, 0, 0u, out_buf, out_len, timeout );
+	args.cmd = service_cmd;
+	args.max_wait_time = timeout;
+	args.block = OS_TRUE;
+	args.out.blocking.buf[0u] = stdout_buf;
+	args.out.blocking.buf[1u] = stderr_buf;
+	args.out.blocking.len[0u] = COMMAND_OUTPUT_MAX_LEN;
+	args.out.blocking.len[1u] = COMMAND_OUTPUT_MAX_LEN;
+
+	result = os_system_run( &args );
 	if ( result == OS_STATUS_SUCCESS )
 	{
-		if ( exit_status != 0 )
+		if ( args.return_code != 0 )
 		{
 			snprintf( service_cmd, 255u, "start %s", id );
 			service_cmd[ 255u ] = '\0';
-			result = os_system_run_wait( service_cmd, &exit_status,
-				OS_TRUE, 0, 0u, out_buf, out_len, timeout );
+			result = os_system_run( &args );
 		}
 		else
 		{
@@ -91,14 +95,12 @@ os_status_t os_service_restart(
 				 */
 				snprintf( service_cmd, 255u, "kill -9 %s", pid );
 				service_cmd[ 255u ] = '\0';
-				result = os_system_run_wait(
-					service_cmd, &exit_status,
-					OS_TRUE, 0, 0u, out_buf, out_len, timeout );
+				result = os_system_run( &args );
 			}
 		}
 	}
 
-	if ( result == OS_STATUS_SUCCESS && exit_status != 0 )
+	if ( result == OS_STATUS_SUCCESS && args.return_code != 0 )
 		result = OS_STATUS_FAILURE;
 	return result;
 }
