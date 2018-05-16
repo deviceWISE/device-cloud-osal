@@ -3298,129 +3298,16 @@ os_uint32_t os_system_pid( void )
 }
 
 os_status_t os_system_run(
-	const char *command,
-	int *exit_status,
-	os_bool_t UNUSED(privileged),
-	int priority,
-	size_t UNUSED(stack_size),
-	os_file_t pipe_files[2u] )
+	os_system_run_args_t *args )
 {
-	os_status_t result = OS_STATUS_NOT_EXECUTABLE;
-	SECURITY_ATTRIBUTES secure_attr;
-	os_timestamp_t start_time;
-	DWORD cmd_result = -1;
-	PROCESS_INFORMATION proc_info;
-	STARTUPINFO start_info;
-	/* do not inheritHandles, so that the new process can run separately */
-	BOOL inheritHandles = FALSE;
-	char comspec_path[PATH_MAX + 1u];
-	char command_with_comspec[PATH_MAX + 1u];
-
-	os_time( &start_time, NULL );
-
-	ZeroMemory( &secure_attr, sizeof( SECURITY_ATTRIBUTES ) );
-	secure_attr.nLength = sizeof( SECURITY_ATTRIBUTES );
-	secure_attr.bInheritHandle = TRUE;
-	secure_attr.lpSecurityDescriptor = NULL;
-
-	if ( exit_status )
-		*exit_status = -1;
-
-	/* create process */
-	ZeroMemory( &proc_info, sizeof( PROCESS_INFORMATION ) );
-	ZeroMemory( &start_info, sizeof( STARTUPINFO ) );
-	start_info.cb = sizeof( STARTUPINFO );
-
-	/* in order to pipe the stdout/stderr from the new
-	 * process back to the parent process, the
-	 * CreateProcess's bInheritHandles need to be TRUE.
-	 * If the parent is killed, the child process will be
-	 * terminated prematurely.
-	 *
-	 * We test this by checking if either output buffer
-	 * contains a destination to write too
-	 */
-	inheritHandles = TRUE;
-	start_info.hStdError = pipe_files[1];
-	start_info.hStdOutput = pipe_files[0];
-	start_info.hStdInput = NULL;
-	start_info.dwFlags |= STARTF_USESTDHANDLES;
-
-	/* add script prefix.  if the command to
-	  *be run is dos internal
-	 * it needs to be loaded from cmd.exe */
-	os_env_get( "COMSPEC", comspec_path, PATH_MAX );
-	if (comspec_path[0] != '\0')
-		os_snprintf( command_with_comspec,
-			PATH_MAX,
-			"\"%s\" /C \"%s\"",
-			comspec_path,
-			command
-			);
-	else
-		os_strncpy( command_with_comspec,
-			command,
-			PATH_MAX );
-
-	/* determine process priority */
-	if ( priority != 0 )
-	{
-		/* list of priorities high-to-low */
-		const DWORD priorities[] = {
-			REALTIME_PRIORITY_CLASS,
-			HIGH_PRIORITY_CLASS,
-			ABOVE_NORMAL_PRIORITY_CLASS,
-			NORMAL_PRIORITY_CLASS,
-			BELOW_NORMAL_PRIORITY_CLASS,
-			IDLE_PRIORITY_CLASS };
-
-		/* note this is not "const" to avoid undefined const
-		 * initialization ordering in C standard */
-		int i, i_max = sizeof(priorities)/sizeof(DWORD);
-
-		const DWORD cur_priority =
-			GetPriorityClass(GetCurrentProcess());
-
-		/* find match */
-		for ( i = 0; i < i_max &&
-			priorities[i] != cur_priority; ++i)
-
-		/* bounds check */
-		if (i + priority < 0) i = 0;
-		else if (i + priority > i_max) i = i_max;
-		else i += priority;
-
-		priority = priorities[i];
-	}
-
-	if (CreateProcess(NULL, (LPTSTR)command_with_comspec, NULL, NULL,
-		inheritHandles, DETACHED_PROCESS | priority, NULL, NULL,
-		&start_info, &proc_info) != 0)
-	{
-		result = OS_STATUS_INVOKED;
-
-		CloseHandle( proc_info.hProcess );
-		CloseHandle( proc_info.hThread );
-	}
-	return result;
-}
-
-os_status_t os_system_run_wait(
-	const char *command,
-	int *exit_status,
-	os_bool_t UNUSED(privileged),
-	int priority,
-	size_t UNUSED(stack_size),
-	char *out_buf[2u],
-	size_t out_len[2u],
-	os_millisecond_t max_time_out )
-{
-	HANDLE child_read[2u];
-	HANDLE child_write[2u];
-	size_t i;
 	os_status_t result = OS_STATUS_SUCCESS;
 	SECURITY_ATTRIBUTES secure_attr;
 	os_timestamp_t start_time;
+	HANDLE child_read[2u];
+	HANDLE child_write[2u];
+
+	if ( !args || (!args->cmd && !args->fptr) )
+		return OS_STATUS_BAD_PARAMETER;
 
 	os_time( &start_time, NULL );
 
@@ -3429,20 +3316,35 @@ os_status_t os_system_run_wait(
 	secure_attr.bInheritHandle = TRUE;
 	secure_attr.lpSecurityDescriptor = NULL;
 
-	if ( exit_status )
-		*exit_status = -1;
+	args->return_code = -1;
 
-	for ( i = 0u; i < 2u && result == OS_STATUS_SUCCESS; ++i )
-		if ( ! CreatePipe( &child_read[i], &child_write[i], &secure_attr, 0 ) ||
-			! SetHandleInformation( child_read[i], HANDLE_FLAG_INHERIT, 0 ) )
-			result = OS_STATUS_IO_ERROR;
+	if ( args->block != OS_FALSE )
+	{
+		unsigned int i;
+		/*
+		 * create pipes to read 'standard error' & 'standard out' from
+		 * child process
+		 */
+		for ( i = 0u; i < 2u && result == OS_STATUS_SUCCESS; ++i )
+			if ( ! CreatePipe( &child_read[i], &child_write[i],
+				&secure_attr, 0 ) ||
+			     ! SetHandleInformation( child_read[i],
+				HANDLE_FLAG_INHERIT, 0 ) )
+				result = OS_STATUS_IO_ERROR;
+	}
+	else
+	{
+		child_write[1] = args->opts.nonblock.std_err;
+		child_write[0] = args->opts.nonblock.std_out;
+	}
 
 	if ( result == OS_STATUS_SUCCESS )
 	{
 		DWORD cmd_result = -1;
 		PROCESS_INFORMATION proc_info;
 		STARTUPINFO start_info;
-		/* do not inheritHandles, so that the new process can run separately */
+		/* do not inheritHandles, so that the new process can run
+		 * separately */
 		BOOL inheritHandles = FALSE;
 		char comspec_path[ PATH_MAX + 1u ];
 		char command_with_comspec[ PATH_MAX + 1u ];
@@ -3469,24 +3371,18 @@ os_status_t os_system_run_wait(
 
 		result = OS_STATUS_NOT_EXECUTABLE;
 
-		/* add script prefix.  if the command to
-		  *be run is dos internal
-		 * it needs to be loaded from cmd.exe */
+		/* add script prefix, and run the command as a MS-DOS internal
+		 * command prompt.  Path to the prompt is obtains from the
+		 * COMSPEC environment variable. */
 		os_env_get( "COMSPEC", comspec_path, PATH_MAX );
 		if (comspec_path[0] != '\0')
-			os_snprintf( command_with_comspec,
-				PATH_MAX,
-				"\"%s\" /C \"%s\"",
-				comspec_path,
-				command
-				);
+			os_snprintf( command_with_comspec, PATH_MAX,
+				"\"%s\" /C \"%s\"", comspec_path, args->cmd );
 		else
-			os_strncpy( command_with_comspec,
-				command,
-				PATH_MAX );
+			os_strncpy( command_with_comspec, args->cmd, PATH_MAX );
 
 		/* determine process priority */
-		if ( priority != 0 )
+		if ( args->priority != 0 )
 		{
 			/* list of priorities high-to-low */
 			const DWORD priorities[] = {
@@ -3509,58 +3405,83 @@ os_status_t os_system_run_wait(
 				priorities[i] != cur_priority; ++i)
 
 			/* bounds check */
-			if (i + priority < 0) i = 0;
-			else if (i + priority > i_max) i = i_max;
-			else i += priority;
+			if (i + args->priority < 0) i = 0;
+			else if (i + args->priority > i_max) i = i_max;
+			else i += args->priority;
 
-			priority = priorities[i];
+			args->priority = priorities[i];
 		}
 
-		if (CreateProcess(NULL, (LPTSTR)command_with_comspec, NULL,
-			NULL, inheritHandles, DETACHED_PROCESS | priority,
+		if (args->fptr)
+			result = OS_STATUS_NOT_SUPPORTED;
+		else if ( CreateProcessA(NULL, command_with_comspec, NULL,
+			NULL, inheritHandles, DETACHED_PROCESS | args->priority,
 			NULL, NULL, &start_info, &proc_info) != 0)
 		{
-			os_millisecond_t time_elapsed;
-			cmd_result = STILL_ACTIVE;
-			do {
+			if ( args->block != OS_FALSE )
+			{
+				os_millisecond_t time_elapsed;
+				cmd_result = STILL_ACTIVE;
+				do {
+					GetExitCodeProcess( proc_info.hProcess,
+						&cmd_result );
+					os_time_elapsed( &start_time, &time_elapsed );
+					os_time_sleep( LOOP_WAIT_TIME, OS_FALSE );
+				} while ( cmd_result == STILL_ACTIVE &&
+					( args->opts.block.max_wait_time == 0 ||
+					  time_elapsed < args->opts.block.max_wait_time ) );
+
+				if ( cmd_result == STILL_ACTIVE )
+				{
+					TerminateProcess( proc_info.hProcess, -1 );
+					result = OS_STATUS_TIMED_OUT;
+				}
+				else
+					result = OS_STATUS_SUCCESS;
+
 				GetExitCodeProcess( proc_info.hProcess,
 					&cmd_result );
-				os_time_elapsed( &start_time, &time_elapsed );
-				os_time_sleep( LOOP_WAIT_TIME, OS_FALSE );
-			} while ( cmd_result == STILL_ACTIVE &&
-				( max_time_out == 0 || time_elapsed < max_time_out ) );
-
-			if ( cmd_result == STILL_ACTIVE )
-			{
-				TerminateProcess( proc_info.hProcess, -1 );
-				result = OS_STATUS_TIMED_OUT;
 			}
 			else
-				result = OS_STATUS_SUCCESS;
-			GetExitCodeProcess( proc_info.hProcess,
-				&cmd_result );
+			{
+				result = OS_STATUS_INVOKED;
+				cmd_result = 0;
+			}
 
 			CloseHandle( proc_info.hProcess );
 			CloseHandle( proc_info.hThread );
 		}
 
-		CloseHandle( child_write[0] );
-		CloseHandle( child_write[1] );
-		/* read stdout and stderr output */
-		for ( i = 0u; i < 2u; ++i )
+		if ( args->block != OS_FALSE )
 		{
-			if ( out_buf[i] && out_len[i] > 1u )
+			unsigned int i;
+			CloseHandle( child_write[0] );
+			CloseHandle( child_write[1] );
+
+			/* read stdout and stderr output */
+			for ( i = 0u; i < 2u; ++i )
 			{
-				DWORD amount_read = 0;
-				out_buf[i][0] = '\0';
-				ReadFile( child_read[i], out_buf[i],
-					out_len[i] - 1u, &amount_read, NULL );
-				if ( amount_read >= 0 )
-					out_buf[i][amount_read] = '\0';
+				char *buf = args->opts.block.std_out.buf;
+				size_t buf_len = args->opts.block.std_out.len;
+				if ( i != 0u )
+				{
+					buf = args->opts.block.std_err.buf;
+					buf_len = args->opts.block.std_err.len;
+				}
+				if ( buf && buf_len > 0u )
+				{
+					DWORD amount_read = 0;
+					buf[0] = '\0';
+					ReadFile( child_read[i],
+						buf, buf_len - 1u,
+						&amount_read, NULL );
+					if ( amount_read >= 0 )
+						buf[amount_read] = '\0';
+				}
 			}
 		}
-		if ( exit_status )
-			*exit_status = cmd_result;
+
+		args->return_code = cmd_result;
 	}
 	return result;
 }
@@ -3569,7 +3490,8 @@ os_status_t os_system_shutdown(
 	os_bool_t reboot, unsigned int delay )
 {
 	char cmd[ PATH_MAX ];
-	os_file_t pipes[2] = { NULL, NULL };
+	os_system_run_args_t args = OS_SYSTEM_RUN_ARGS_INIT;
+
 	if ( reboot == OS_FALSE )
 		os_snprintf( cmd, PATH_MAX, "%s %d", "shutdown /s /t ",
 			delay * SECONDS_IN_MINUTE );
@@ -3577,7 +3499,9 @@ os_status_t os_system_shutdown(
 		os_snprintf( cmd, PATH_MAX, "%s %d", "shutdown /r /t ",
 			delay * SECONDS_IN_MINUTE );
 
-	return os_system_run( cmd, NULL, OS_TRUE, 0, 0u, pipes );
+	args.cmd = cmd;
+	args.privileged = OS_TRUE;
+	return os_system_run( &args );
 }
 
 os_bool_t os_terminal_vt100_support(

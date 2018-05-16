@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2015-2017 Wind River Systems, Inc. All Rights Reserved.
+# Copyright (C) 2015-2018 Wind River Systems, Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -64,7 +64,7 @@ if ( CMOCKA_FOUND AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/test" )
 		if ( MSVC )
 			get_filename_component( CMOCKA_LIB_DIR
 				"${CMOCKA_LIBRARY}" DIRECTORY )
-			find_file( CMOCKA_DLL "cmocka.dll"
+			find_file( CMOCKA_DLL "${CMAKE_SHARED_LIBRARY_PREFIX}cmocka${CMAKE_SHARED_LIBRARY_SUFFIX}"
 				HINTS "${CMOCKA_LIB_DIR}"
 				      "{CMOCKA_LIB_DIR}/../bin"
 				NO_DEFAULT_PATH
@@ -73,7 +73,7 @@ if ( CMOCKA_FOUND AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/test" )
 				add_custom_command( TARGET "integration-tests"
 					COMMAND ${CMAKE_COMMAND} -E copy_if_different
 						"${CMOCKA_DLL}"
-						"${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/cmocka.dll"
+						"${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${CMAKE_CFG_INTDIR}/${CMAKE_SHARED_LIBRARY_PREFIX}cmocka${CMAKE_SHARED_LIBRARY_SUFFIX}"
 				)
 			endif( CMOCKA_DLL )
 		endif( MSVC )

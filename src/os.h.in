@@ -282,6 +282,115 @@ typedef struct os_system_info
 
 @OS_FUNCTION_DEF@
 
+/** @brief structure for arguments to pass to the @p os_system_run command */
+typedef struct
+{
+	/**
+	 * @brief whether or not to block the parent process to wait for a
+	 *        result
+	 */
+	os_bool_t block;
+
+	/**
+	 * @brief command string to be run
+	 *
+	 * @note one and only one of @p cmd or @p fptr must be defined
+	 */
+	const char *cmd;
+
+	/**
+	 * @brief function pointer to start execution at
+	 *
+	 * @note one and only one of @p cmd or @p fptr must be defined
+	 *
+	 * @note starting a new process by a function pointer isn't supported
+	 *       on every operating system
+	 */
+	int (*fptr)(int argc, char *argv[]);
+
+	/**
+	 * @brief union for output values for blocking and non-blocking
+	 */
+	union opts
+	{
+		/**
+		 * @brief structure containing output buffer for blocking calls
+		 */
+		struct block
+		{
+			/**
+			 * @brief 'standard out' storage buffer information
+			 */
+			struct std_out
+			{
+				/** @brief location to store 'standard out' */
+				char *buf;
+				/** @brief size of 'standard out' buffer */
+				size_t len;
+			} std_out;
+
+			/**
+			 * @brief 'standard error' storage buffer information
+			 */
+			struct std_err
+			{
+				/** @brief location to store 'standard error' */
+				char *buf;
+				/** @brief size of 'standard error' buffer */
+				size_t len;
+			} std_err;
+
+			/**
+			 * @brief maximum amount of time to wait in
+			 *        millisecondds for a process to complete
+			 *        (0 for indefinite)
+			 */
+			os_millisecond_t max_wait_time;
+		} block;
+
+		struct nonblock
+		{
+			/**
+			 * @brief pipe to write 'standard out' when not blocking
+			 */
+			os_file_t std_out;
+			/**
+			 * @brief pipe to write 'standard error' when not
+			 *        blocking
+			 */
+			os_file_t std_err;
+		} nonblock;
+	} opts;
+
+	/**
+	 * @brief process priority (0 to inherit)
+	 */
+	int priority;
+
+	/**
+	 * @brief run command in a privileged mode
+	 *
+	 * Creates the new process as a super user (i.e. "root"
+	 * on linux, "system" in windows, or as a "kernel" task on vxworks)
+	 */
+	os_bool_t privileged;
+
+	/**
+	 * @brief obtain the return code of the process (optional)
+	 */
+	int return_code;
+
+	/**
+	 * @brief process stack size (0 to inherit)
+	 */
+	size_t stack_size;
+
+} os_system_run_args_t;
+
+#define OS_SYSTEM_RUN_ARGS_INIT \
+	{ OS_FALSE, NULL, NULL, { { { NULL, 0u }, { NULL, 0u }, 0u } }, \
+	  0, OS_FALSE, -1, 0u }
+
 /* if there is no file system */
 /**
  * @def PATH_MAX
@@ -1695,59 +1804,16 @@ OS_API os_status_t os_system_info(
 /**
  * @brief run an executable on the operating system asynchronously
  *
- * @param[in]      command             command string to be run
- * @param[out]     exit_status         return code of the executable (optional)
- * @param[in]      privileged          run command in a privileged mode (or as
- *                                     a super user (i.e. "root" on linux,
- *                                     "system" in windows, or as a "kernel"
- *                                     task on vxworks)
- * @param[in]      priority            process priority (0 to inherit)
- * @param[in]      stack_size          process stack size (0 to inherit)
- * @param[in]      pipe_files          files/pipes to write 'standard out' &
- *                                     'standard error' to
+ * @param[in,out]  args                system run arguments
  *
+ * @retval OS_STATUS_BAD_PARAMETER     invalid parameter value passed
  * @retval OS_STATUS_INVOKED           command triggered as a background process
- * @retval OS_STATUS_NOT_EXECUTABLE    the path provided can not be executed
- */
-OS_API os_status_t os_system_run(
-	const char *command,
-	int *exit_status,
-	os_bool_t privileged,
-	int priority,
-	size_t stack_size,
-	os_file_t pipe_files[2u] );
-
-/**
- * @brief run an executable on the operating system and wait for it to complete
- *
- * @param[in]      command             command string to be run
- * @param[out]     exit_status         return code of the executable (optional)
- * @param[in]      privileged          run command in a privileged mode (or as
- *                                     a super user (i.e. "root" on linux,
- *                                     "system" in windows, or as a "kernel"
- *                                     task on vxworks)
- * @param[in]      priority            process priority (0 to inherit)
- * @param[in]      stack_size          process stack size (0 to inherit)
- * @param[out]     out_buf             pointer to buffers to write
- *                                     'standard out' & 'standard error' to
- * @param[in,out]  out_len             size of buffers for 'standard out' and
- *                                     'standard error'
- * @param[in]      max_time_out        maximum amount of time to wait
- *
- * @retval OS_STATUS_IO_ERROR          failed to setup error & output capture io
  * @retval OS_STATUS_NOT_EXECUTABLE    the path provided can not be executed
  * @retval OS_STATUS_SUCCESS           on success
  * @retval OS_STATUS_TIMED_OUT         time out exceeded
  */
-OS_API os_status_t os_system_run_wait(
-	const char *command,
-	int *exit_status,
-	os_bool_t privileged,
-	int priority,
-	size_t stack_size,
-	char *out_buf[2u],
-	size_t out_len[2u],
-	os_millisecond_t max_time_out );
+OS_API os_status_t os_system_run(
+	os_system_run_args_t *args );
 
 /**
  * @brief Shutdown or reboot the device
@@ -1760,7 +1826,8 @@ OS_API os_status_t os_system_run_wait(
  * @retval OS_STATUS_NOT_EXECUTABLE    shutdown failed to be triggered
  */
 OS_API os_status_t os_system_shutdown(
-	os_bool_t reboot, unsigned int delay
+	os_bool_t reboot,
+	unsigned int delay
 );
 
 /**

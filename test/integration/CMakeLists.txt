@@ -15,6 +15,7 @@
 set( TESTS
 	"adapters"
 	"env"
+	"run"
 	"time"
 )
 
@@ -24,15 +25,19 @@ set( OS_LIB ${TARGET}${TARGET_STATIC_SUFFIX} )
 
 include_directories( "${CMAKE_BINARY_DIR}/out" )
 
-# adapters test
+# adapter tests
 set( TEST_ADAPTERS_SRCS "adapters_test.c" )
 set( TEST_ADAPTERS_LIBS ${OS_LIB} )
 
-# env test
+# env tests
 set( TEST_ENV_SRCS "env_test.c" )
 set( TEST_ENV_LIBS ${OS_LIB} )
 
-# time test
+# system run tests
+set( TEST_RUN_SRCS "run_test.c" )
+set( TEST_RUN_LIBS ${OS_LIB} )
+
+# time tests
 set( TEST_TIME_SRCS "time_test.c" )
 set( TEST_TIME_LIBS ${OS_LIB} )
 

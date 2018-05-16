@@ -25,32 +25,15 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>      /* for close */
-#include <sys/resource.h> /* for process priority support */
-#include <sys/stat.h>    /* for struct filestat, stat */
+#include <sys/stat.h>    /* for stat */
 #include <sys/statvfs.h> /* for struct statvfs */
-#include <sys/wait.h>    /* for waitpid */
 #include <sys/utsname.h> /* for struct utsname */
+#include <sys/wait.h>    /* for waitpid */
 #include <termios.h>     /* for terminal input */
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdisabled-macro-expansion"
 
-/**
- * @brief Base shell command for executing external processes with
- */
-#define OS_COMMAND_SH                  "/bin/sh", "sh", "-c"
-/**
- * @def OS_COMMAND_PREFIX
- * @brief Prefix to run the command in privileged mode
- *
- * @note on ANDROID, the "sudo" command is not installed.  So don't prepend
- * the string, even in priviledged mode.
- */
-#if defined( __unix__ ) && !defined( __ANDROID__ )
-#	define OS_COMMAND_PREFIX       "sudo"
-#else
-#	define OS_COMMAND_PREFIX       ""
-#endif /* defined( __unix__ ) && !defined( __ANDROID__ ) */
 /**
  * @brief Operating system reboot command
  */
@@ -59,10 +42,6 @@
  * @brief Operating system shutdown command
  */
 #define OS_SHUTDOWN_CMD                "/sbin/shutdown -h"
-/**
- * @brief Time in milliseconds to wait between retrying an operation
- */
-#define LOOP_WAIT_TIME 100u
 
 #define OS_SERVICE_START_CMD           "systemctl start %s"
 #define OS_SERVICE_STATUS_CMD          "systemctl status %s"
@@ -375,16 +354,19 @@ os_status_t os_service_start(
 	os_millisecond_t timeout
 )
 {
+	os_system_run_args_t args = OS_SYSTEM_RUN_ARGS_INIT;
 	os_status_t result;
-	int exit_status;
-	char *out_buf[2u] = { NULL, NULL };
-	size_t out_len[2u] = { 0u, 0u };
 	char service_cmd[ 256u ];
+
 	snprintf( service_cmd, 255u, OS_SERVICE_START_CMD, id );
 	service_cmd[ 255u ] = '\0';
-	result = os_system_run_wait( service_cmd, &exit_status, OS_TRUE,
-		0, 0u, out_buf, out_len, timeout );
-	if ( result == OS_STATUS_SUCCESS && exit_status != 0 )
+
+	args.cmd = service_cmd;
+	args.privileged = OS_TRUE;
+	args.block = OS_TRUE;
+	args.opts.block.max_wait_time = timeout;
+	result = os_system_run( &args );
+	if ( result == OS_STATUS_SUCCESS && args.return_code != 0 )
 		result = OS_STATUS_FAILURE;
 	return result;
 }
@@ -395,10 +377,8 @@ os_status_t os_service_stop(
 	os_millisecond_t timeout
 )
 {
+	os_system_run_args_t args = OS_SYSTEM_RUN_ARGS_INIT;
 	os_status_t result;
-	int exit_status;
-	char *out_buf[2u] = { NULL, NULL };
-	size_t out_len[2u] = { 0u, 0u };
 	char service_cmd[ 256u ];
 
 	if ( !exe )
@@ -411,17 +391,19 @@ os_status_t os_service_stop(
 	snprintf( service_cmd, 255u, OS_SERVICE_STATUS_CMD, exe );
 #endif /* else if !defined(__ANDROID__) */
 	service_cmd[ 255u ] = '\0';
-	result = os_system_run_wait( service_cmd, &exit_status, OS_TRUE,
-		0, 0u, out_buf, out_len, timeout );
-	if ( result == OS_STATUS_SUCCESS && exit_status != 0 )
+	args.cmd = service_cmd;
+	args.block = OS_TRUE;
+	args.privileged = OS_TRUE;
+	args.opts.block.max_wait_time = timeout;
+	result = os_system_run( &args );
+	if ( result == OS_STATUS_SUCCESS && args.return_code != 0 )
 		result = OS_STATUS_NOT_FOUND;
 	if ( result != OS_STATUS_NOT_FOUND )
 	{
 		snprintf( service_cmd, 255u, OS_SERVICE_STOP_CMD, id );
 		service_cmd[ 255u ] = '\0';
-		result = os_system_run_wait( service_cmd, &exit_status,
-			OS_TRUE, 0, 0u, out_buf, out_len, timeout );
-		if ( result == OS_STATUS_SUCCESS && exit_status != 0 )
+		result = os_system_run( &args );
+		if ( result == OS_STATUS_SUCCESS && args.return_code != 0 )
 			result = OS_STATUS_FAILURE;
 	}
 	return result;
@@ -445,21 +427,22 @@ os_status_t os_service_query(
 	for ( i = 0u; result == OS_STATUS_SUCCESS &&
 		i < sizeof( status_cmds ) / sizeof( const char * ); ++i )
 	{
-		int exit_status = 0;
-		char *out_buf[2u] = { NULL, NULL };
-		size_t out_len[2u] = { 0u, 0u };
+		os_system_run_args_t args = OS_SYSTEM_RUN_ARGS_INIT;
 		char service_cmd[ 256u ];
+
 		snprintf( service_cmd, 255u, operation_cmd,
 			status_cmds[i], id );
 		service_cmd[ 255u ] = '\0';
-		result = os_system_run_wait( service_cmd, &exit_status,
-			OS_FALSE, 0, 0u, out_buf, out_len, timeout );
+		args.cmd = service_cmd;
+		args.block = OS_TRUE;
+		args.opts.block.max_wait_time = timeout;
+		result = os_system_run( &args );
 #if !defined(__ANDROID__)
 		if ( result == OS_STATUS_SUCCESS )
 		{
 			/* is-failed returns 0 if it's failed */
-			if ( ( exit_status != 0 && i != 2u ) ||
-			     ( exit_status == 0 && i == 2u ) )
+			if ( ( args.return_code != 0 && i != 2u ) ||
+			     ( args.return_code == 0 && i == 2u ) )
 				result = OS_STATUS_FAILURE;
 		}
 
@@ -471,7 +454,7 @@ os_status_t os_service_query(
 				result = OS_STATUS_NOT_INITIALIZED;
 		}
 #else /* if !defined(__ANDROID__) */
-		if ( result != OS_STATUS_SUCCESS || exit_status != 0 )
+		if ( result != OS_STATUS_SUCCESS || args.return_code != 0 )
 			result = OS_STATUS_NOT_INITIALIZED;
 #endif /* else if !defined(__ANDROID__) */
 	}
@@ -485,18 +468,19 @@ os_status_t os_service_restart(
 	os_millisecond_t timeout
 )
 {
+	os_system_run_args_t args = OS_SYSTEM_RUN_ARGS_INIT;
 	os_status_t result;
-	int exit_status;
 	char service_cmd[ 256u ];
-	
-	char *out_buf[2u] = { NULL, NULL };
-	size_t out_len[2u] = { 0u, 0u };
+
 	snprintf( service_cmd, 255u, "systemctl restart %s", id );
 	service_cmd[ 255u ] = '\0';
-	result = os_system_run_wait( service_cmd, &exit_status, OS_TRUE, 0, 0u,
-		out_buf, out_len, timeout );
+	args.cmd = service_cmd;
+	args.block = OS_TRUE;
+	args.privileged = OS_TRUE;
+	args.opts.block.max_wait_time = timeout;
 
-	if ( result == OS_STATUS_SUCCESS && exit_status != 0 )
+	result = os_system_run( &args );
+	if ( result == OS_STATUS_SUCCESS && args.return_code != 0 )
 		result = OS_STATUS_FAILURE;
 	return result;
 }
@@ -637,238 +621,19 @@ os_status_t os_system_info(
 	return result;
 }
 
-os_status_t os_system_run(
-	const char *command,
-	int *exit_status,
-	os_bool_t privileged,
-	int priority,
-	size_t stack_size,
-	os_file_t pipe_files[2u] )
-{
-	size_t i;
-	const int output_fd[2u] = { STDOUT_FILENO, STDERR_FILENO };
-	int command_output_fd[2u] = { -1, -1 };
-	os_status_t result = OS_STATUS_NOT_EXECUTABLE;
-	os_timestamp_t start_time;
-	pid_t pid;
-
-	os_time( &start_time, NULL );
-
-	for ( i = 0u; i < 2u; ++i )
-		if( pipe_files[i] != NULL )
-			command_output_fd[i] = fileno( pipe_files[i] );
-
-	/* set a default exit status */
-	if ( exit_status )
-		*exit_status = -1;
-
-	pid = fork();
-	if ( pid != -1 )
-	{
-		/* pid = 0, for child... child_process_id returned to parent */
-		if ( pid == 0 )
-		{
-			/* Create a new session for the child process.
-			 */
-			pid_t sid = setsid();
-			if ( sid < 0 )
-				exit( errno );
-			/* redirect child stdout/stderr to the pipe */
-			for ( i = 0u; i < 2u; ++i )
-				dup2( command_output_fd[i], output_fd[i] );
-
-			/* set priority */
-			if ( priority != 0 )
-			{
-				int cur_priority = 0;
-				cur_priority = getpriority( PRIO_PROCESS, (id_t)sid );
-				priority += cur_priority;
-				if ( priority < -20 )
-					priority = -20;
-				else if ( priority > 20 )
-					priority = 20;
-				setpriority( PRIO_PROCESS, (id_t)sid, priority );
-			}
-
-			/* set stack size */
-			if ( stack_size > 0 )
-			{
-				struct rlimit lim;
-				lim.rlim_cur = stack_size;
-				lim.rlim_max = stack_size;
-				setrlimit(RLIMIT_STACK, &lim);
-			}
-
-			if ( privileged == OS_FALSE )
-				execl( OS_COMMAND_SH, command, (char *)NULL );
-			else
-				execl( OS_COMMAND_SH, OS_COMMAND_PREFIX,
-					command, (char *)NULL );
-
-			/* Process failed to be replaced, return failure */
-			exit( errno );
-		}
-
-		for ( i = 0u; i < 2u; ++i )
-			close( command_output_fd[i] );
-
-		result = OS_STATUS_INVOKED;
-	}
-	return result;
-}
-
-os_status_t os_system_run_wait(
-	const char *command,
-	int *exit_status,
-	os_bool_t privileged,
-	int priority,
-	size_t stack_size,
-	char *out_buf[2u],
-	size_t out_len[2u],
-	os_millisecond_t max_time_out )
-{
-	int command_output_fd[2u][2u] =
-		{ { -1, -1 }, { -1, -1 } };
-	size_t i;
-	const int output_fd[2u] = { STDOUT_FILENO, STDERR_FILENO };
-	os_status_t result = OS_STATUS_SUCCESS;
-	os_timestamp_t start_time;
-	int system_result = -1;
-	os_millisecond_t time_elapsed;
-
-	os_time( &start_time, NULL );
-
-	/* set a default exit status */
-	if ( exit_status )
-		*exit_status = -1;
-
-	/* capture the stdout & stderr of the command and send it back
-	 * as the response */
-	for ( i = 0u; i < 2u && result == OS_STATUS_SUCCESS; ++i )
-		if ( pipe( command_output_fd[i] ) != 0 )
-			result = OS_STATUS_IO_ERROR;
-
-	if ( result == OS_STATUS_SUCCESS )
-	{
-		const pid_t pid = fork();
-		result = OS_STATUS_NOT_EXECUTABLE;
-		if ( pid != -1 )
-		{
-			if ( pid == 0 )
-			{
-				/* Create a new session for the child process.
-				 */
-				pid_t sid = setsid();
-				if ( sid < 0 )
-					exit( errno );
-				/* redirect child stdout/stderr to the pipe */
-				for ( i = 0u; i < 2u; ++i )
-				{
-					dup2( command_output_fd[i][1], output_fd[i] );
-					close( command_output_fd[i][0] );
-				}
-
-				/* set priority */
-				if ( priority != 0 )
-				{
-					int cur_priority = 0;
-					cur_priority = getpriority( PRIO_PROCESS, (id_t)sid );
-					priority += cur_priority;
-					if ( priority < -20 )
-						priority = -20;
-					else if ( priority > 20 )
-						priority = 20;
-					setpriority( PRIO_PROCESS, (id_t)sid, priority );
-				}
-
-				/* set stack size */
-				if ( stack_size > 0)
-				{
-					struct rlimit lim;
-					lim.rlim_cur = stack_size;
-					lim.rlim_max = stack_size;
-					setrlimit(RLIMIT_STACK, &lim);
-				}
-
-				if ( privileged == OS_FALSE )
-					execl( OS_COMMAND_SH, command, (char *)NULL );
-				else
-					execl( OS_COMMAND_SH, OS_COMMAND_PREFIX,
-						command, (char *)NULL );
-
-				/* Process failed to be replaced, return failure */
-				exit( errno );
-			}
-
-			for ( i = 0u; i < 2u; ++i )
-				close( command_output_fd[i][1] );
-
-			errno = 0;
-			do {
-				waitpid( pid, &system_result, WNOHANG );
-				os_time_elapsed( &start_time, &time_elapsed );
-				os_time_sleep( LOOP_WAIT_TIME, OS_FALSE );
-			} while ( ( errno != ECHILD ) &&
-				( !WIFEXITED( system_result ) ) &&
-				( !WIFSIGNALED( system_result ) ) &&
-				( max_time_out == 0u || time_elapsed < max_time_out ) );
-
-			if ( ( errno != ECHILD ) &&
-				!WIFEXITED( system_result ) &&
-				!WIFSIGNALED( system_result ) )
-			{
-				kill( pid, SIGTERM );
-				waitpid( pid, &system_result, WNOHANG );
-				result = OS_STATUS_TIMED_OUT;
-			}
-			else
-				result = OS_STATUS_SUCCESS;
-
-			fflush( stdout );
-			fflush( stderr );
-
-			for ( i = 0u; i < 2u; ++i )
-			{
-				if ( out_buf[i] && out_len[i] > 0u )
-				{
-					out_buf[i][0] = '\0';
-					/* if we are able to read from pipe */
-					if ( command_output_fd[i][0] != -1 )
-					{
-						const ssize_t output_size =
-							read( command_output_fd[i][0],
-							out_buf[i], out_len[i] - 1u );
-						if ( output_size >= 0 )
-							out_buf[i][ output_size ] = '\0';
-					}
-				}
-			}
-
-			if ( WIFEXITED( system_result ) )
-				system_result = WEXITSTATUS( system_result );
-			else if ( WIFSIGNALED( system_result ) )
-				system_result = WTERMSIG( system_result );
-			else
-				system_result = WIFEXITED( system_result );
-			if ( exit_status )
-				*exit_status = system_result;
-		}
-	}
-	return result;
-}
-
 os_status_t os_system_shutdown(
-	os_bool_t reboot, unsigned int delay)
+	os_bool_t reboot, unsigned int delay )
 {
+	os_system_run_args_t args = OS_SYSTEM_RUN_ARGS_INIT;
 	char cmd[ PATH_MAX ];
-	os_file_t out_files[2] = { NULL, NULL };
 
 	if ( reboot == OS_FALSE )
 		os_snprintf( cmd, PATH_MAX, "%s %d", OS_SHUTDOWN_CMD, delay );
 	else
 		os_snprintf( cmd, PATH_MAX, "%s %d", OS_REBOOT_CMD, delay );
 
-	return os_system_run( cmd, NULL, OS_FALSE, 0, 0u, out_files );
+	args.cmd = cmd;
+	return os_system_run( &args );
 }
 
 
