@@ -23,6 +23,7 @@ osal_c_includes := \
 
 osal_src_files := \
     src/os_android.c \
+    src/os_linux.c \
     src/os_posix.c \
     src/os.c
 
