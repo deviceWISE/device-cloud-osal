@@ -121,7 +121,7 @@ os_status_t os_system_info(
 		strncpy( sys_info->vendor_name, "Wind River Systems", OS_SYSTEM_INFO_MAX_LEN );
 		strncpy( sys_info->system_name, RUNTIME_NAME, OS_SYSTEM_INFO_MAX_LEN );
 		strncpy( sys_info->system_version, VXWORKS_VERSION, OS_SYSTEM_INFO_MAX_LEN );
-		strncpy( sys_info->system_release, _WRS_CONFIG_CORE_KERNEL_VERSION, OS_SYSTEM_INFO_MAX_LEN );
+		strncpy( sys_info->system_release, _WRS_CONFIG_CORE_VERSION, OS_SYSTEM_INFO_MAX_LEN );
 		strncpy( sys_info->system_platform, sysModel(), OS_SYSTEM_INFO_MAX_LEN );
 #if defined(_WRS_KERNEL)
 		strncpy( sys_info->host_name, sysBootParams.targetName, OS_SYSTEM_INFO_MAX_LEN );

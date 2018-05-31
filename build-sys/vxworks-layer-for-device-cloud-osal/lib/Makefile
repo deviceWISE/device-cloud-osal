@@ -1,6 +1,6 @@
 # Makefile - VxWorks 7 Layer Makefile
 #
-# Copyright (c) 2017 Wind River Systems, Inc.
+# Copyright (c) 2017-2018 Wind River Systems, Inc.
 #
 # The right to copy, distribute, modify, or otherwise make use
 # of this software may be licensed only pursuant to the terms
@@ -8,12 +8,13 @@
 #
 # Modification history
 # --------------------
+# 31may18,yat  updated version to 3.0.0.1
 # 05oct17,yat  created
 
 include $(WIND_KRNL_MK)/defs.ver.mk
 
 PKG_NAME := device_cloud_osal_repo
-PKG_URL = https://github.com/Wind-River/device-cloud-osal.git $(PKG_NAME); cd $(PKG_NAME) && git checkout vxworks_layer && git checkout -b vxworks && git reset HEAD --hard
+PKG_URL = https://github.com/Wind-River/device-cloud-osal.git $(PKG_NAME); cd $(PKG_NAME) && git checkout vxworks_layer_SR0600 && git checkout -b vxworks && git reset HEAD --hard
 PKG_FILE_TYPE = git
 
 PKG_BUILD_TARGETS := src
