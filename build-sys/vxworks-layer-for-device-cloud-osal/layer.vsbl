@@ -10,7 +10,7 @@
 /*
 Modification history
 --------------------
-31may18,yat  updated version to 3.0.0.1
+31may18,yat  updated version to 3.0.0.10
 05oct17,yat  created
 */
 
@@ -18,13 +18,13 @@ Layer DEVICE_CLOUD_OSAL
     {
     SYNOPSIS          Device Cloud operating system abstraction layer
     HELP              This layer provides the Device Cloud operating system abstraction layer.
-    VERSION           3.0.0.1
+    VERSION           3.0.0.10
     VENDOR            Wind River
     FEATURE           HDC
-    PARENT            HDC_3_0_0_1
-    LAYER_REQUIRES    UNIX
-    FEATURE_REQUIRES  {HDC HDC3001}
-    SUBSCRIBE         UNIX
+    PARENT            HDC_3_0_0_10
+    LAYER_REQUIRES    UTILS
+    FEATURE_REQUIRES  {HDC HDC30010}
+    SUBSCRIBE         UTILS
     OPTIONAL          YES
     DEFAULT           NO
     DOC_BUILD         NO
