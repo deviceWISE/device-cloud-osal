@@ -854,6 +854,17 @@ os_status_t os_file_delete(
 	return result;
 }
 
+os_bool_t os_file_eof(
+	os_file_t stream )
+{
+	os_bool_t result = OS_FALSE;
+	LARGE_INTEGER pos, size;
+	if ( SetFilePointerEx( stream, 0, &pos, FILE_CURRENT ) &&
+	     GetFileSizeEx( stream, &size ) && (pos.QuadPart >= size.QuadPart) )
+		result = OS_TRUE;
+	return result;
+}
+
 os_bool_t os_file_exists(
 	const char *file_path )
 {

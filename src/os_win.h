@@ -467,6 +467,18 @@ OS_API int os_vsnprintf(
 );
 
 /**
+ * @brief check if at end-of-file
+ *
+ * @param[in]      stream              stream to write to
+ *
+ * @retval         OS_FALSE            end of file bit not set
+ * @retval         OS_TRUE             end of file bit is set
+ */
+OS_API os_bool_t os_file_eof(
+	os_file_t stream
+);
+
+/**
  * @brief Read bytes from a file into a char array
  *
  * @note Stops when encountering max read, EOF, or null terminator
