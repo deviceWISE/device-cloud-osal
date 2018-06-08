@@ -858,8 +858,9 @@ os_bool_t os_file_eof(
 	os_file_t stream )
 {
 	os_bool_t result = OS_FALSE;
-	LARGE_INTEGER pos, size;
-	if ( SetFilePointerEx( stream, 0, &pos, FILE_CURRENT ) &&
+	LARGE_INTEGER move, pos, size;
+	move.QuadPart = (LONGLONG)0ll;
+	if ( SetFilePointerEx( stream, move, &pos, FILE_CURRENT ) &&
 	     GetFileSizeEx( stream, &size ) && (pos.QuadPart >= size.QuadPart) )
 		result = OS_TRUE;
 	return result;
