@@ -294,6 +294,19 @@ OS_API void *os_realloc(
 );
 
 /**
+ * @brief Locate the first occurance of a character in a string
+ *
+ * @param[in]      s                   string to be searched
+ * @param[in]      c                   character to search for as an int
+ *
+ * @retval         !NULL               pointer to last occurance of c in s
+ * @retval         NULL                c was not found in s
+ */
+OS_API char *os_strchr(
+	const char *s,
+	char c );
+
+/**
  * @brief Compares two strings
  *
  * @param[in]      s1                  first string to compare
