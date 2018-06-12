@@ -26,7 +26,6 @@
 #include <rtpLib.h>
 #include <wait.h>
 #include <version.h>
-#include <vxWorks.h>
 
 #if defined(_WRS_KERNEL)
 #include <sysLib.h>
