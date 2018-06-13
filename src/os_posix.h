@@ -32,6 +32,7 @@
 #include <limits.h> /* for: PATH_MAX definition */
 #include <stdio.h> /* for: FILE *, feof, fgets, fread, fputs, fwrite, fprintf, printf, snprintf, vfprintf */
 #include <signal.h> /* for SIGINT, ... */
+#include <sys/socket.h>  /* for AF_INET, SOCK_STREAM, SOCK_DGRAM definition */
 
 /** @brief Structure representing a network adapter address */
 struct os_adapter_address
