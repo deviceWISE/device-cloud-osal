@@ -16,7 +16,23 @@
  */
 
 #include <os.h>
+#include <float.h> /* for DBL_EPSILON */
 #include "test_support.h"
+
+static void _assert_float_equal( const double a, const double b,
+	const char *const file, const int line )
+{
+#define PRECISION (DBL_EPSILON)
+	if ( !(((a) - PRECISION <= (b)) && ((a) + PRECISION >= (b))) )
+	{
+		/* error message */
+		char err_msg[64u];
+		sprintf( err_msg, "%.12f == %.12f", a, b );
+		_assert_true( 0, err_msg, file, line );
+	}
+}
+
+#define assert_float_equal(a, b) _assert_float_equal( a, b, __FILE__, __LINE__ )
 
 static void test_atoi( void **state )
 {
@@ -37,6 +53,32 @@ static void test_atoi( void **state )
 	assert_int_equal( os_atoi( "-1234567890.0" ), -1234567890 );
 	assert_int_equal( os_atoi( "1.56789" ), 1 );
 	assert_int_equal( os_atoi( "1234567890.43234" ), 1234567890 );
+}
+
+static void test_atof( void **state )
+{
+	/* zero */
+	assert_float_equal( os_atof( NULL ), 0.0 );
+	assert_float_equal( os_atof( "0" ), 0.0 );
+	assert_float_equal( os_atof( "abcdefghi" ), 0.0 );
+	assert_float_equal( os_atof( "abcd-10efghi" ), 0.0 );
+
+	/* negative numbers */
+	assert_float_equal( os_atof( "-1.0" ), -1.0 );
+	assert_float_equal( os_atof( "-1234567890" ), -1234567890.0 );
+	assert_float_equal( os_atof( "1.0" ), 1.0 );
+	assert_float_equal( os_atof( "1234567890" ), 1234567890.0 );
+
+	/* positive numbers */
+	assert_float_equal( os_atof( "-1.1234" ), -1.1234 );
+	assert_float_equal( os_atof( "-1234567890.0" ), -1234567890.0 );
+	assert_float_equal( os_atof( "1.56789" ), 1.56789 );
+	assert_float_equal( os_atof( "1234567890.25" ), 1234567890.25 );
+
+	/* strange values */
+	assert_float_equal( os_atof( "-1..1234" ), -1.0 );
+	assert_float_equal( os_atof( "-1.12.34" ), -1.12 );
+	assert_float_equal( os_atof( "--1.12" ), 0.0 );
 }
 
 static void test_char_isalnum_false( void **state )
@@ -84,6 +126,7 @@ int main( int argc, char *argv[] )
 	int result;
 	const struct CMUnitTest tests[] = {
 		cmocka_unit_test( test_atoi ),
+		cmocka_unit_test( test_atof ),
 		cmocka_unit_test( test_char_isalnum_false ),
 		cmocka_unit_test( test_char_isalnum_true ),
 		cmocka_unit_test( test_char_isxdigit_false ),

@@ -354,6 +354,14 @@ int os_atoi( const char *str )
 	return result;
 }
 
+double os_atof( const char *str )
+{
+	double result = 0.0;
+	if ( str )
+		result = atof( str );
+	return result;
+}
+
 /* character testing support */
 os_bool_t os_char_isalnum(
 	char c )

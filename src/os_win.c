@@ -1191,6 +1191,41 @@ int os_atoi( const char *str )
 	return result * multiplier;
 }
 
+double os_atof( const char *str )
+{
+	double r = 0, f = 1;
+	if ( str )
+	{
+		int dec = 0;
+		/* handle negative */
+		if ( *str == '-')
+		{
+			++str;
+			f = -1;
+		}
+
+		for ( ; *str; ++str )
+		{
+			const char c = *str;
+			if ( c == '.')
+			{
+				if ( dec )
+					break;
+				dec = 1;
+			}
+			else if (c >= '0' && c <= '9')
+			{
+				if ( dec )
+					f /= 10.0;
+				r = r * 10.0 + (double)(c - '0');
+			}
+			else
+				break;
+		}
+	}
+	return r * f;
+}
+
 char *os_strchr(
 	const char *s,
 	char c )
@@ -1666,6 +1701,18 @@ int os_vsnprintf(
 		result = str_end - str;
 	return result;
 }
+
+int os_sscanf(
+	const char *str,
+	const char *format,
+	... )
+{
+	va_list args;
+	va_start( args, format );
+	return vsscanf( str, format, args );
+	va_end( args );
+}
+
 
 os_bool_t os_flush( os_file_t stream )
 {

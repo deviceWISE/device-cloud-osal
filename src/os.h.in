@@ -894,8 +894,24 @@ OS_API os_status_t os_make_path(
  * @param[in]      str                 string to convert
  *
  * @return an integer value of the string converted (0 is the default)
+ *
+ * @see os_atof
  */
 OS_API int os_atoi(
+	const char *str
+);
+
+/**
+ * @brief Convert a string to an double-precision floating-point number
+ *
+ * @param[in]      str                 string to convert
+ *
+ * @return a double floating-point number of the string converted
+ *         (0.0 is the default)
+ *
+ * @see os_atoi
+ */
+OS_API double os_atof(
 	const char *str
 );
 
