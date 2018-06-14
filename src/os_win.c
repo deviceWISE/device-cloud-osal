@@ -1702,18 +1702,6 @@ int os_vsnprintf(
 	return result;
 }
 
-int os_sscanf(
-	const char *str,
-	const char *format,
-	... )
-{
-	va_list args;
-	va_start( args, format );
-	return vsscanf( str, format, args );
-	va_end( args );
-}
-
-
 os_bool_t os_flush( os_file_t stream )
 {
 	os_bool_t result = OS_FALSE;
