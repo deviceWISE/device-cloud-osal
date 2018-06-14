@@ -889,19 +889,6 @@ OS_API os_status_t os_make_path(
 
 /* string functions */
 /**
- * @brief Convert a string to an integer
- *
- * @param[in]      str                 string to convert
- *
- * @return an integer value of the string converted (0 is the default)
- *
- * @see os_atof
- */
-OS_API int os_atoi(
-	const char *str
-);
-
-/**
  * @brief Convert a string to an double-precision floating-point number
  *
  * @param[in]      str                 string to convert
@@ -910,8 +897,37 @@ OS_API int os_atoi(
  *         (0.0 is the default)
  *
  * @see os_atoi
+ * @see os_atol
  */
 OS_API double os_atof(
+	const char *str
+);
+
+/**
+ * @brief Convert a string to an integer
+ *
+ * @param[in]      str                 string to convert
+ *
+ * @return an integer value of the string converted (0 is the default)
+ *
+ * @see os_atof
+ * @see os_atol
+ */
+OS_API int os_atoi(
+	const char *str
+);
+
+/**
+ * @brief Convert a string to a long integer
+ *
+ * @param[in]      str                 string to convert
+ *
+ * @return a long integer value of the string converted (0 is the default)
+ *
+ * @see os_atoi
+ * @see os_atof
+ */
+OS_API long int os_atol(
 	const char *str
 );
 

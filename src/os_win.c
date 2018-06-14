@@ -1170,60 +1170,66 @@ os_lib_handle os_library_open(
 }
 #endif /* if OSAL_WRAP */
 
+double os_atof( const char *str )
+{
+	double result = 0.0, frac = 1.0;
+	if ( str )
+	{
+		char ch;
+		int dec = 0;
+		/* handle negative */
+		if ( *str == '-')
+		{
+			frac = -1.0;
+			++str;
+		}
+
+		ch = *str;
+		while ( ( ch >= '0' && ch <= '9' ) || ( ch == '.' && !dec ) )
+		{
+			if ( ch == '.')
+				dec = 1;
+			else
+			{
+				if ( dec )
+					frac /= 10.0;
+				result = result * 10.0 + (double)(ch - '0');
+			}
+			++str;
+			ch = *str;
+		}
+	}
+	return result * frac;
+}
+
 int os_atoi( const char *str )
 {
-	int result = 0;
+	return (int)os_atol( str );
+}
+
+long int os_atol( const char *str )
+{
+	long int result = 0l;
 	int multiplier = 1;
 
 	if ( str )
 	{
+		char ch;
 		if ( *str == '-' )
 		{
 			multiplier = -1;
 			++str;
 		}
-		while ( *str && *str != '\0' && *str >= '0' && *str <= '9' )
+
+		ch = *str;
+		while ( ch >= '0' && ch <= '9' )
 		{
-			result = (result * 10) + ( *str - '0' );
+			result = ( result * 10 ) + ( ch - '0' );
 			++str;
+			ch = *str;
 		}
 	}
 	return result * multiplier;
-}
-
-double os_atof( const char *str )
-{
-	double r = 0, f = 1;
-	if ( str )
-	{
-		int dec = 0;
-		/* handle negative */
-		if ( *str == '-')
-		{
-			++str;
-			f = -1;
-		}
-
-		for ( ; *str; ++str )
-		{
-			const char c = *str;
-			if ( c == '.')
-			{
-				if ( dec )
-					break;
-				dec = 1;
-			}
-			else if (c >= '0' && c <= '9')
-			{
-				if ( dec )
-					f /= 10.0;
-				r = r * 10.0 + (double)(c - '0');
-			}
-			else
-				break;
-		}
-	}
-	return r * f;
 }
 
 char *os_strchr(

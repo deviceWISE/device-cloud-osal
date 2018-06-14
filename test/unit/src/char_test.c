@@ -34,27 +34,6 @@ static void _assert_float_equal( const double a, const double b,
 
 #define assert_float_equal(a, b) _assert_float_equal( a, b, __FILE__, __LINE__ )
 
-static void test_atoi( void **state )
-{
-	/* zero */
-	assert_int_equal( os_atoi( NULL ), 0 );
-	assert_int_equal( os_atoi( "0" ), 0 );
-	assert_int_equal( os_atoi( "abcdefghi" ), 0 );
-	assert_int_equal( os_atoi( "abcd-10efghi" ), 0 );
-
-	/* negative numbers */
-	assert_int_equal( os_atoi( "-1" ), -1 );
-	assert_int_equal( os_atoi( "-1234567890" ), -1234567890 );
-	assert_int_equal( os_atoi( "1" ), 1 );
-	assert_int_equal( os_atoi( "1234567890" ), 1234567890 );
-
-	/* positive numbers */
-	assert_int_equal( os_atoi( "-1.1234" ), -1 );
-	assert_int_equal( os_atoi( "-1234567890.0" ), -1234567890 );
-	assert_int_equal( os_atoi( "1.56789" ), 1 );
-	assert_int_equal( os_atoi( "1234567890.43234" ), 1234567890 );
-}
-
 static void test_atof( void **state )
 {
 	/* zero */
@@ -79,6 +58,48 @@ static void test_atof( void **state )
 	assert_float_equal( os_atof( "-1..1234" ), -1.0 );
 	assert_float_equal( os_atof( "-1.12.34" ), -1.12 );
 	assert_float_equal( os_atof( "--1.12" ), 0.0 );
+}
+
+static void test_atoi( void **state )
+{
+	/* zero */
+	assert_int_equal( os_atoi( NULL ), 0 );
+	assert_int_equal( os_atoi( "0" ), 0 );
+	assert_int_equal( os_atoi( "abcdefghi" ), 0 );
+	assert_int_equal( os_atoi( "abcd-10efghi" ), 0 );
+
+	/* negative numbers */
+	assert_int_equal( os_atoi( "-1" ), -1 );
+	assert_int_equal( os_atoi( "-1234567890" ), -1234567890 );
+	assert_int_equal( os_atoi( "1" ), 1 );
+	assert_int_equal( os_atoi( "1234567890" ), 1234567890 );
+
+	/* positive numbers */
+	assert_int_equal( os_atoi( "-1.1234" ), -1 );
+	assert_int_equal( os_atoi( "-1234567890.0" ), -1234567890 );
+	assert_int_equal( os_atoi( "1.56789" ), 1 );
+	assert_int_equal( os_atoi( "1234567890.43234" ), 1234567890 );
+}
+
+static void test_atol( void **state )
+{
+	/* zero */
+	assert_int_equal( os_atol( NULL ), 0 );
+	assert_int_equal( os_atol( "0" ), 0 );
+	assert_int_equal( os_atol( "abcdefghi" ), 0 );
+	assert_int_equal( os_atol( "abcd-10efghi" ), 0 );
+
+	/* negative numbers */
+	assert_int_equal( os_atol( "-1" ), -1 );
+	assert_int_equal( os_atol( "-1234567890" ), -1234567890 );
+	assert_int_equal( os_atol( "1" ), 1 );
+	assert_int_equal( os_atol( "1234567890" ), 1234567890 );
+
+	/* positive numbers */
+	assert_int_equal( os_atol( "-1.1234" ), -1 );
+	assert_int_equal( os_atol( "-1234567890.0" ), -1234567890 );
+	assert_int_equal( os_atol( "1.56789" ), 1 );
+	assert_int_equal( os_atol( "1234567890.43234" ), 1234567890 );
 }
 
 static void test_char_isalnum_false( void **state )
@@ -125,8 +146,9 @@ int main( int argc, char *argv[] )
 {
 	int result;
 	const struct CMUnitTest tests[] = {
-		cmocka_unit_test( test_atoi ),
 		cmocka_unit_test( test_atof ),
+		cmocka_unit_test( test_atoi ),
+		cmocka_unit_test( test_atol ),
 		cmocka_unit_test( test_char_isalnum_false ),
 		cmocka_unit_test( test_char_isalnum_true ),
 		cmocka_unit_test( test_char_isxdigit_false ),

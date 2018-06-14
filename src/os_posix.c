@@ -346,6 +346,14 @@ os_status_t os_adapters_release(
 	return result;
 }
 
+double os_atof( const char *str )
+{
+	double result = 0.0;
+	if ( str )
+		result = atof( str );
+	return result;
+}
+
 int os_atoi( const char *str )
 {
 	int result = 0;
@@ -354,11 +362,11 @@ int os_atoi( const char *str )
 	return result;
 }
 
-double os_atof( const char *str )
+long int os_atol( const char *str )
 {
-	double result = 0.0;
+	long int result = 0l;
 	if ( str )
-		result = atof( str );
+		result = atol( str );
 	return result;
 }
 
