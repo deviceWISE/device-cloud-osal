@@ -87,6 +87,11 @@ add_library( "${TARGET}${TARGET_STATIC_SUFFIX}" STATIC
 )
 target_link_libraries( "${TARGET}${TARGET_STATIC_SUFFIX}" ${C_LIBS} )
 target_compile_definitions( "${TARGET}${TARGET_STATIC_SUFFIX}" PRIVATE OSAL_STATIC=1 )
+if ( NOT WIN32 )
+	set_target_properties( "${TARGET}${TARGET_STATIC_SUFFIX}"
+		PROPERTIES OUTPUT_NAME "${TARGET}"
+	)
+endif ( NOT WIN32 )
 
 # Shared Library
 ################
@@ -95,16 +100,20 @@ add_library( "${TARGET}${TARGET_SHARED_SUFFIX}" SHARED
 	${C_SRCS} ${CXX_SRCS}
 	${UUID_OBJECTS}
 )
+target_link_libraries( "${TARGET}${TARGET_SHARED_SUFFIX}" ${C_LIBS} )
+target_compile_definitions( "${TARGET}${TARGET_SHARED_SUFFIX}" PRIVATE OSAL_EXPORT=1 )
+set_target_properties( "${TARGET}${TARGET_SHARED_SUFFIX}"
+	PROPERTIES OUTPUT_NAME "${TARGET}"
+)
+
+# Shared Properties
+###################
 set_target_properties(
 	"${TARGET}${TARGET_STATIC_SUFFIX}" "${TARGET}${TARGET_SHARED_SUFFIX}"
 	PROPERTIES
-		OUTPUT_NAME ${TARGET}
 		SOVERSION ${PACKAGE_VERSION}
 		VERSION ${PACKAGE_VERSION}
 )
-target_link_libraries( "${TARGET}${TARGET_SHARED_SUFFIX}" ${C_LIBS} )
-target_compile_definitions( "${TARGET}${TARGET_SHARED_SUFFIX}" PRIVATE OSAL_EXPORT=1 )
-
 
 # Installation Rules
 ####################
