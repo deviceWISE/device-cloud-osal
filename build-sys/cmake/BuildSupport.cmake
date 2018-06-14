@@ -1,5 +1,5 @@
 #
-# Copyright (C) 2016 Wind River Systems, Inc. All Rights Reserved.
+# Copyright (C) 2016-2018 Wind River Systems, Inc. All Rights Reserved.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -70,6 +70,12 @@ function( VERSION_PART_FROM_LIST _out _list_name _index )
 	list( LENGTH ${_list_name} VERSION_ITEMS )
 	if( ${VERSION_ITEMS} GREATER ${_index} )
 		list( GET ${_list_name} ${_index} VERSION )
+		# strip whitespace
+		string( STRIP "${VERSION}" VERSION )
+		# strip non-numeric characters
+		string( REGEX REPLACE "[^0-9]+" "" VERSION "${VERSION}" )
+		# strip leading zeros
+		string( REGEX REPLACE "^[0]+([1-9])" "\\1" VERSION "${VERSION}" )
 	endif( ${VERSION_ITEMS} GREATER ${_index} )
 	set( "${_out}" ${VERSION} PARENT_SCOPE )
 endfunction( VERSION_PART_FROM_LIST )
