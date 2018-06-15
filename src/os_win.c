@@ -1493,7 +1493,22 @@ void *os_memmove(
 	const void *src,
 	size_t len )
 {
-	MoveMemory( dest, src, len );
+	/* note: "MoveMemory( dest, src, len )" on Windows just calls _memmove,
+	 * which can result in linker errors if the correctly library is not
+	 * provided. */
+	char *c_dest = (char *)dest;
+	const char *c_src = (const char *)src;
+	size_t i;
+	if ( src < dest )
+	{
+		for ( i = len; i > 0u; --i )
+			c_dest[i - 1u] = c_src[i - 1u];
+	}
+	else if ( src > dest )
+	{
+		for ( i = 0u; i < len; ++i )
+			c_dest[i] = c_src[i];
+	}
 	return dest;
 }
 
@@ -2673,7 +2688,7 @@ os_status_t os_socket_accept(
 			if ( result == OS_STATUS_SUCCESS )
 				*out = s;
 			else
-				free( s );
+				os_free( s );
 		}
 	}
 	return result;
