@@ -2635,7 +2635,7 @@ os_status_t os_socket_accept(
 	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( socket && out )
 	{
-		os_socket_t *s = malloc( sizeof( struct os_socket ) );
+		os_socket_t *s = os_malloc( sizeof( struct os_socket ) );
 		result = OS_STATUS_NO_MEMORY;
 		if ( s )
 		{
