@@ -40,9 +40,17 @@
  */
 #define OS_COMMAND_SH                  "/bin/sh", "sh", "-c"
 /**
+ * @def COMMAND_PREFIX
  * @brief Prefix to run the command in privileged mode
+ *
+ * @note on ANDROID, the "sudo" command is not installed.  So don't prepend
+ * the string, even in priviledged mode.
  */
-#define OS_COMMAND_PREFIX              "sudo"
+#if defined( __unix__ ) && !defined( __ANDROID__ )
+#	define COMMAND_PREFIX                      "sudo "
+#else
+#	define COMMAND_PREFIX                      ""
+#endif /* defined( __unix__ ) && !defined( __ANDROID__ ) */
 /**
  * @brief Operating system reboot command
  */
