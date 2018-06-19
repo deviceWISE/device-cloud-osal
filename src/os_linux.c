@@ -2,7 +2,7 @@
  * @file
  * @brief source file defining functions for linux systems
  *
- * @copyright Copyright (C) 2017 Wind River Systems, Inc. All Rights Reserved.
+ * @copyright Copyright (C) 2017-2018 Wind River Systems, Inc. All Rights Reserved.
  *
  * @license Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,25 +40,25 @@
  */
 #define OS_COMMAND_SH                  "/bin/sh", "sh", "-c"
 /**
- * @def COMMAND_PREFIX
+ * @def OS_COMMAND_PREFIX
  * @brief Prefix to run the command in privileged mode
  *
  * @note on ANDROID, the "sudo" command is not installed.  So don't prepend
  * the string, even in priviledged mode.
  */
 #if defined( __unix__ ) && !defined( __ANDROID__ )
-#	define COMMAND_PREFIX                      "sudo "
+#	define OS_COMMAND_PREFIX       "sudo"
 #else
-#	define COMMAND_PREFIX                      ""
+#	define OS_COMMAND_PREFIX       ""
 #endif /* defined( __unix__ ) && !defined( __ANDROID__ ) */
 /**
  * @brief Operating system reboot command
  */
-#define OS_REBOOT_CMD                  "/sbin/shutdown -r "
+#define OS_REBOOT_CMD                  "/sbin/shutdown -r"
 /**
  * @brief Operating system shutdown command
  */
-#define OS_SHUTDOWN_CMD                "/sbin/shutdown -h "
+#define OS_SHUTDOWN_CMD                "/sbin/shutdown -h"
 /**
  * @brief Time in milliseconds to wait between retrying an operation
  */
