@@ -73,13 +73,14 @@
 #else
 #	define OS_COMMAND_PREFIX       ""
 #endif /* defined( __unix__ ) && !defined( __ANDROID__ ) */
+#else /* if !defined(__VXWORKS__) */
+typedef u_short in_port_t;
+#endif /* else if !defined(__VXWORKS__) */
+
 /**
  * @brief Time in milliseconds to wait between retrying an operation
  */
 #define LOOP_WAIT_TIME                 100u
-#else /* if !defined(__VXWORKS__) */
-typedef u_short in_port_t;
-#endif /* else if !defined(__VXWORKS__) */
 
 #if defined(OSAL_THREAD_SUPPORT) && OSAL_THREAD_SUPPORT
 /**
