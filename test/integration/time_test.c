@@ -97,6 +97,7 @@ static void test_os_time_elapsed( void **state )
 	{
 		os_status_t result;
 		os_millisecond_t time_elapsed = 0u;
+		os_millisecond_t min_time = test_times[i];
 		os_timestamp_t time_stamp = 0u;
 		result = os_time( &time_stamp, NULL );
 		assert_int_equal( result, OS_STATUS_SUCCESS );
@@ -104,10 +105,13 @@ static void test_os_time_elapsed( void **state )
 		os_time_sleep( test_times[i], OS_FALSE );
 		os_time_elapsed( &time_stamp, &time_elapsed );
 
+		if ( min_time > 0u )
+			--min_time;
+
 		/* depending on clock boundry and system calls, time may be
-		 * out by as much as 5% (+ 1 millisecond) */
+		 * out by as much as 25% (+ 1 millisecond) */
 		assert_in_range( time_elapsed,
-			test_times[i],
+			min_time,
 			(os_millisecond_t)((double)test_times[i] * 1.25) + 1u );
 	}
 }
@@ -352,20 +356,20 @@ static void test_os_time_format( void **state )
 
 		for ( i = 0u; i < sizeof( tests ) / sizeof( struct symbol_result_table ); ++i )
 		{
-				char buf[ 256u ];
-				os_time_format( buf, 256u,
-					tests[i].symbol, ts, to_local_time );
-				assert_string_equal( buf, tests[i].result );
-			}
+			char buf[ 256u ];
+			os_time_format( buf, 256u,
+				tests[i].symbol, ts, to_local_time );
+			assert_string_equal( buf, tests[i].result );
 		}
 	}
+}
 
-	/* test os_time_remaining */
-	static void test_os_time_remaining( void **state )
-	{
-		unsigned int i;
-		os_status_t result;
-		const os_millisecond_t test_times[] = {
+/* test os_time_remaining */
+static void test_os_time_remaining( void **state )
+{
+	unsigned int i;
+	os_status_t result;
+	const os_millisecond_t test_times[] = {
 		0u,       /* 0 milliseconds */
 		500u,     /* 500 milliseconds */
 		1000u,    /* 1 second */
@@ -379,8 +383,14 @@ static void test_os_time_format( void **state )
 	for ( i = 0u; i < (sizeof( test_times ) / sizeof( os_millisecond_t )); ++i )
 	{
 		os_millisecond_t time_remaining = 0u;
+		os_millisecond_t min_time = test_times[i];
+		os_millisecond_t max_time = test_times[i] + 1u;
+
+		if ( min_time > 0u )
+			--min_time;
+
 		os_time_remaining( &time_stamp, test_times[i], &time_remaining );
-		assert_int_equal( time_remaining, test_times[i] );
+		assert_in_range( time_remaining, min_time, max_time );
 	}
 }
 
