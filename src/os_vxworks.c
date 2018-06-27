@@ -178,9 +178,16 @@ os_status_t os_system_info(
 			OS_SYSTEM_INFO_MAX_LEN );
 		strncpy( sys_info->system_version, VXWORKS_VERSION,
 			OS_SYSTEM_INFO_MAX_LEN );
-		strncpy( sys_info->system_release,
-			_WRS_CONFIG_CORE_KERNEL_VERSION,
-			OS_SYSTEM_INFO_MAX_LEN );
+#if defined( _WRS_CONFIG_CORE_KERNEL_VERSION )
+		if ( strlen(_WRS_CONFIG_CORE_KERNEL_VERSION) > 0)
+			strncpy( sys_info->system_release,
+				_WRS_CONFIG_CORE_KERNEL_VERSION,
+				OS_SYSTEM_INFO_MAX_LEN );
+		else
+#endif /* if defined( _WRS_CONFIG_CORE_KERNEL_VERSION ) */
+			strncpy( sys_info->system_release,
+				RUNTIME_VERSION_FULL_EXTENDED,
+				OS_SYSTEM_INFO_MAX_LEN );
 		strncpy( sys_info->system_platform, sysModel(),
 			OS_SYSTEM_INFO_MAX_LEN );
 #if defined(_WRS_KERNEL)
