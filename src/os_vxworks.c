@@ -176,13 +176,14 @@ os_status_t os_system_info(
 			OS_SYSTEM_INFO_MAX_LEN );
 		strncpy( sys_info->system_name, RUNTIME_NAME,
 			OS_SYSTEM_INFO_MAX_LEN );
-		strncpy( sys_info->system_version, VXWORKS_VERSION,
+		strncpy( sys_info->system_version,
+			RUNTIME_VERSION_FULL_EXTENDED,
 			OS_SYSTEM_INFO_MAX_LEN );
 		strncpy( sys_info->kernel_version,
 			_WRS_CONFIG_CORE_KERNEL_VERSION,
 			OS_SYSTEM_INFO_MAX_LEN );
 		strncpy( sys_info->system_release,
-			RUNTIME_VERSION_FULL_EXTENDED,
+			VXWORKS_VERSION,
 			OS_SYSTEM_INFO_MAX_LEN );
 		strncpy( sys_info->system_platform, sysModel(),
 			OS_SYSTEM_INFO_MAX_LEN );
