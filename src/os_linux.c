@@ -37,11 +37,11 @@
 /**
  * @brief Operating system reboot command
  */
-#define OS_REBOOT_CMD                  "/sbin/shutdown -r"
+#define OS_REBOOT_CMD                  "shutdown -r"
 /**
  * @brief Operating system shutdown command
  */
-#define OS_SHUTDOWN_CMD                "/sbin/shutdown -h"
+#define OS_SHUTDOWN_CMD                "shutdown -h"
 
 #define OS_SERVICE_START_CMD           "systemctl start %s"
 #define OS_SERVICE_STATUS_CMD          "systemctl status %s"
@@ -628,9 +628,9 @@ os_status_t os_system_shutdown(
 	char cmd[ PATH_MAX ];
 
 	if ( reboot == OS_FALSE )
-		os_snprintf( cmd, PATH_MAX, "%s %d", OS_SHUTDOWN_CMD, delay );
+		os_snprintf( cmd, PATH_MAX, "%s +%d", OS_SHUTDOWN_CMD, delay );
 	else
-		os_snprintf( cmd, PATH_MAX, "%s %d", OS_REBOOT_CMD, delay );
+		os_snprintf( cmd, PATH_MAX, "%s +%d", OS_REBOOT_CMD, delay );
 
 	args.cmd = cmd;
 	return os_system_run( &args );

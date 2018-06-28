@@ -31,11 +31,6 @@
 #define LOOP_WAIT_TIME 100u
 
 /**
- * @brief Seconds in one minute
- */
-#define SECONDS_IN_MINUTE 60u
-
-/**
  * @brief Array used by os_time_stamp_to_date_time
  */
 static const unsigned short DAYS[4][12] =

@@ -1822,6 +1822,7 @@ OS_API os_status_t os_system_run(
  *                                     device
  * @param[in]      delay               time delay in minutes to reboot or shutdown
  *
+ * @retval OS_STATUS_FAILURE           system failure running shutdown command
  * @retval OS_STATUS_INVOKED           shutdown triggered
  * @retval OS_STATUS_NOT_EXECUTABLE    shutdown failed to be triggered
  */
