@@ -27,18 +27,23 @@
 #include <wait.h>
 #include <version.h>
 
-#if defined(_WRS_KERNEL)
+#if defined( _WRS_KERNEL )
 #include <sysLib.h>
 #include <vsbConfig.h>
 #include <bootLib.h>
 #include <shellLib.h>
-#ifdef _WRS_CONFIG_SYS_PWR_OFF
+#if defined( _WRS_CONFIG_SYS_PWR_OFF )
 #include <powerOffLib.h>
-#endif /* _WRS_CONFIG_SYS_PWR_OFF */
+#endif /* if defined( _WRS_CONFIG_SYS_PWR_OFF ) */
 extern BOOT_PARAMS sysBootParams;
-#endif /* _WRS_KERNEL */
+#endif /* if defined( _WRS_KERNEL ) */
 
 #define VX_RW_SEM_MAX_READERS (255)
+
+/**
+ * @brief Seconds in one minute
+ */
+#define SECONDS_IN_MINUTE 60u
 
 #if defined(_WRS_KERNEL)
 extern int control_main ( int argc, char* argv[] );
@@ -294,28 +299,33 @@ os_status_t os_thread_rwlock_destroy(
 }
 #endif /* if defined(OSAL_THREAD_SUPPORT) && OSAL_THREAD_SUPPORT */
 
-#if defined(_WRS_KERNEL)
-static void os_vxworks_reboot( void )
+#if defined( _WRS_KERNEL )
+static void os_vxworks_reboot( int delay )
 {
 	/* Wait 5 seconds for messages to propagate */
-
-	sleep (5);
+	delay *= SECONDS_IN_MINUTE;
+	if ( delay < 5 )
+		delay = 5;
+	sleep( delay );
 
 	/* Force a cold reboot - We do not return */
-
 	sysToMonitor(2);
 }
 
-#if defined(_WRS_CONFIG_SYS_PWR_OFF)
-static void os_vxworks_shutdown( void )
+static void os_vxworks_shutdown( int delay )
 {
 	/* Wait 5 seconds for messages to propagate */
+	delay *= SECONDS_IN_MINUTE;
+	if ( delay < 5 )
+		delay = 5;
 
-	sleep (5);
-
+	sleep( delay );
+#if defined( _WRS_CONFIG_SYS_PWR_OFF )
 	powerOff();
+#else /* if defined( _WRS_CONFIG_SYS_PWR_OFF ) */
+	sysToMonitor(1);
+#endif /* else if defined( _WRS_CONFIG_SYS_PWR_OFF ) */
 }
-#endif /* _WRS_CONFIG_SYS_PWR_OFF */
 
 static os_status_t os_vxworks_script(
 	const char * script )
@@ -341,7 +351,7 @@ static os_status_t os_vxworks_script(
 
 	return result;
 }
-#endif /* _WRS_KERNEL */
+#endif /* if defined( _WRS_KERNEL ) */
 
 os_status_t os_system_run(
 	os_system_run_args_t *args )
@@ -522,28 +532,28 @@ os_status_t os_system_run(
 }
 
 os_status_t os_system_shutdown(
-	os_bool_t reboot, unsigned int delay)
+	os_bool_t reboot, unsigned int delay )
 {
 	os_status_t result = OS_STATUS_FAILURE;
-#if defined(_WRS_KERNEL)
+#if defined( _WRS_KERNEL )
 	if (reboot != OS_FALSE)
 	{
 		if (taskSpawn ("tReboot", 10, 0, 0x1000,
 			(FUNCPTR) os_vxworks_reboot,
-			0, 0, 0, 0, 0, 0, 0, 0, 0, 0) != TASK_ID_ERROR) {
+			(int)delay, 0, 0, 0, 0, 0, 0, 0, 0, 0) != TASK_ID_ERROR) {
 			result = OS_STATUS_SUCCESS;
 		}
 	}
-#if defined(_WRS_CONFIG_SYS_PWR_OFF)
 	else
 	{
 		if (taskSpawn ("tShutdown", 10, 0, 0x1000,
 			(FUNCPTR) os_vxworks_shutdown,
-			0, 0, 0, 0, 0, 0, 0, 0, 0, 0) != TASK_ID_ERROR) {
+			(int)delay, 0, 0, 0, 0, 0, 0, 0, 0, 0) != TASK_ID_ERROR) {
 			result = OS_STATUS_SUCCESS;
 		}
 	}
-#endif /* if defined(_WRS_CONFIG_SYS_PWR_OFF) */
-#endif /* if defined(_WRS_KERNEL) */
+#else /* if defined( _WRS_KERNEL ) */
+	result = OS_STATUS_NOT_EXECUTABLE;
+#endif /* else if defined( _WRS_KERNEL ) */
 	return result;
 }
