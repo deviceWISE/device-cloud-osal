@@ -238,12 +238,32 @@ os_status_t os_adapters_mac(
 	os_status_t result = OS_STATUS_BAD_PARAMETER;
 	if ( adapter && adapter->cur )
 	{
-		const unsigned char *id;
+		const unsigned char *id = NULL;
 		unsigned int i;
 		const unsigned int id_len = ETHER_ADDR_LEN;
 		os_bool_t good_mac = OS_FALSE;
-
-#if defined( __linux__ ) || defined(__VXWORKS__)
+#if defined( __VXWORKS__ )
+		struct ifreq ifr;
+		const int socket_fd =
+			socket( adapter->cur->ifa_addr->sa_family,
+				SOCK_DGRAM, 0 );
+		if ( socket_fd != OS_SOCKET_INVALID )
+		{
+			memset( &ifr, 0, sizeof( struct ifreq ) );
+			strncpy( ifr.ifr_name, adapter->cur->ifa_name,
+				IFNAMSIZ - 1u );
+			if ( ioctl( socket_fd, SIOCGIFHWADDR, &ifr ) == 0 )
+			{
+#if !defined( __VXWORKS__ )
+				id = (const unsigned char *)
+					(const void *)ifr.ifr_hwaddr.sa_data;
+#else /* if !defined( __VXWORKS__ ) */
+				id = (const unsigned char *)
+					(const void *)ifr.ifr_addr.sa_data;
+#endif /* else if !defined( __VXWORKS__ ) */
+			}
+		}
+#elif defined( __linux__ )
 		const struct sockaddr_ll *s = (const struct sockaddr_ll *)
 			(const void *)adapter->cur->ifa_addr;
 		id = (const unsigned char *)(s->sll_addr);
@@ -259,9 +279,13 @@ os_status_t os_adapters_mac(
 		/* loop through to produce mac address */
 		for ( i = 0u; i < id_len && i * 3u < mac_len; ++i )
 		{
-			if ( id[ i ] > 0u )
+			int m = 0;
+			if ( id && id[ i ] > 0u )
+			{
 				good_mac = OS_TRUE;
-			snprintf( &mac[ i * 3u ], 4, "%2.2x:", id[ i ] );
+				m = id[i];
+			}
+			snprintf( &mac[ i * 3u ], 4, "%2.2x:", m );
 		}
 
 		/* null-terminate mac */
@@ -274,6 +298,11 @@ os_status_t os_adapters_mac(
 		/* mac contained at least 1 non-zero value */
 		if ( good_mac != OS_FALSE )
 			result = OS_STATUS_SUCCESS;
+
+#if defined( __VXWORKS__ )
+		if ( socket_fd != OS_SOCKET_INVALID )
+			close( socket_fd );
+#endif /* if defined( __VXWORKS__ ) */
 	}
 	return result;
 }
@@ -293,11 +322,11 @@ os_status_t os_adapters_next(
 		for ( ifa = ifa->ifa_next; !adapter->cur &&
 			ifa != NULL; ifa = ifa->ifa_next )
 		{
-#if defined(__linux__)
+#if defined( __linux__ )
 			if (ifa->ifa_addr->sa_family == AF_PACKET)
-#else /* if defined(__linux__) */
+#else /* if defined( __linux__ ) */
 			if (ifa->ifa_addr->sa_family == AF_LINK)
-#endif
+#endif /* else if defined( __linux__ ) */
 			{
 				adapter->cur = ifa;
 				result = OS_STATUS_SUCCESS;
