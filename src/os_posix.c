@@ -61,6 +61,7 @@
  * @brief Base shell command for executing external processes with
  */
 #define OS_COMMAND_SH                  "/bin/sh", "sh", "-c"
+#if defined( __linux__ ) && !defined( __ANDROID__ )
 /**
  * @def OS_COMMAND_PREFIX
  * @brief Prefix to run the command in privileged mode
@@ -68,11 +69,8 @@
  * @note on ANDROID, the "sudo" command is not installed.  So don't prepend
  * the string, even in priviledged mode.
  */
-#if defined( __unix__ ) && !defined( __ANDROID__ )
-#	define OS_COMMAND_PREFIX       "sudo "
-#else
-#	define OS_COMMAND_PREFIX       ""
-#endif /* defined( __unix__ ) && !defined( __ANDROID__ ) */
+#	define OS_COMMAND_PREFIX       "sudo"
+#endif /* defined( __linux__ ) && !defined( __ANDROID__ ) */
 #else /* if !defined(__VXWORKS__) */
 typedef u_short in_port_t;
 #endif /* else if !defined(__VXWORKS__) */
@@ -2013,8 +2011,24 @@ os_status_t os_system_run(
 						execl( OS_COMMAND_SH, args->cmd,
 							(char *)NULL );
 					else
-						execl( OS_COMMAND_SH, OS_COMMAND_PREFIX,
-							args->cmd, (char *)NULL );
+					{
+						char cmd[PATH_MAX];
+#if defined( OS_COMMAND_PREFIX )
+						snprintf( cmd,
+							sizeof(cmd),
+							"%s %s",
+							OS_COMMAND_PREFIX,
+							args->cmd );
+#else /* if defined( OS_COMMAND_PREFIX ) */
+						snprintf( cmd,
+							sizeof(cmd),
+							"%s",
+							args->cmd );
+#endif /* else if defined( OS_COMMAND_PREFIX ) */
+						cmd[sizeof(cmd) - 1u] = '\0';
+						execl( OS_COMMAND_SH, cmd,
+							(char *)NULL );
+					}
 
 					/* Process failed to be replaced, return failure */
 					exit( errno );
@@ -2091,6 +2105,7 @@ os_status_t os_system_run(
 						system_result = WTERMSIG( system_result );
 					else
 						system_result = WIFEXITED( system_result );
+
 				}
 
 				args->return_code = system_result;
