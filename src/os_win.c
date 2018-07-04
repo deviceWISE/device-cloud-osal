@@ -3489,10 +3489,10 @@ os_status_t os_system_shutdown(
 
 	if ( reboot == OS_FALSE )
 		os_snprintf( cmd, PATH_MAX, "%s %d", "shutdown /s /t ",
-			delay * SECONDS_IN_MINUTE );
+			delay * OS_SECONDS_IN_MINUTE );
 	else
 		os_snprintf( cmd, PATH_MAX, "%s %d", "shutdown /r /t ",
-			delay * SECONDS_IN_MINUTE );
+			delay * OS_SECONDS_IN_MINUTE );
 
 	args.cmd = cmd;
 	args.privileged = OS_TRUE;

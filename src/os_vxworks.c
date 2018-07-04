@@ -40,11 +40,6 @@ extern BOOT_PARAMS sysBootParams;
 
 #define VX_RW_SEM_MAX_READERS (255)
 
-/**
- * @brief Seconds in one minute
- */
-#define SECONDS_IN_MINUTE 60u
-
 #if defined(_WRS_KERNEL)
 extern int control_main ( int argc, char* argv[] );
 extern int iot_update_main ( int argc, char* argv[] );
@@ -303,7 +298,7 @@ os_status_t os_thread_rwlock_destroy(
 static void os_vxworks_reboot( int delay )
 {
 	/* Wait 5 seconds for messages to propagate */
-	delay *= SECONDS_IN_MINUTE;
+	delay *= OS_SECONDS_IN_MINUTE;
 	if ( delay < 5 )
 		delay = 5;
 	sleep( delay );
@@ -315,7 +310,7 @@ static void os_vxworks_reboot( int delay )
 static void os_vxworks_shutdown( int delay )
 {
 	/* Wait 5 seconds for messages to propagate */
-	delay *= SECONDS_IN_MINUTE;
+	delay *= OS_SECONDS_IN_MINUTE;
 	if ( delay < 5 )
 		delay = 5;
 
