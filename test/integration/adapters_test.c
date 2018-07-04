@@ -365,10 +365,10 @@ static void print_adapters( struct adapter *adapter )
 			for ( i = 0u; i < adapter->mac_len; ++i )
 			{
 				if ( i > 0u )
-					printf( ":" );
-				printf("%02x", adapter->mac[i] & 0xff);
+					os_printf( ":" );
+				os_printf("%02x", adapter->mac[i] & 0xff);
 			}
-			printf("\n");
+			os_printf("\n");
 		}
 
 		while ( ip )
