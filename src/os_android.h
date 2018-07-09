@@ -2,7 +2,7 @@
  * @file
  * @brief
  *
- * @copyright Copyright (C) 2017 Wind River Systems, Inc. All Rights Reserved.
+ * @copyright Copyright (C) 2017-2018 Wind River Systems, Inc. All Rights Reserved.
  *
  * @license Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,13 +38,6 @@
 #define OS_COMMAND_SH            "/system/bin/sh", "sh", "-c"
 
 #define COMMAND_OUTPUT_MAX_LEN   128u
-
-/**
- * @def DIRECTORY_CREATE_MAX_TIMEOUT
- * @brief Amount of time in milliseconds to wait for a directory to be
- *        created
- */
-#define DIRECTORY_CREATE_MAX_TIMEOUT 3000000u
 
 #endif /* ifndef OS_ANDROID_H */
 

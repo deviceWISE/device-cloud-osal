@@ -36,12 +36,12 @@ os_status_t os_service_restart(
 	snprintf( service_cmd, 255u, "ps | grep %s", exe );
 	service_cmd[ 255u ] = '\0';
 	args.cmd = service_cmd;
-	args.max_wait_time = timeout;
 	args.block = OS_TRUE;
-	args.out.blocking.buf[0u] = stdout_buf;
-	args.out.blocking.buf[1u] = stderr_buf;
-	args.out.blocking.len[0u] = COMMAND_OUTPUT_MAX_LEN;
-	args.out.blocking.len[1u] = COMMAND_OUTPUT_MAX_LEN;
+	args.opts.block.max_wait_time = timeout;
+	args.opts.block.std_out.buf = stdout_buf;
+	args.opts.block.std_out.len = COMMAND_OUTPUT_MAX_LEN;
+	args.opts.block.std_err.buf = stderr_buf;
+	args.opts.block.std_err.len = COMMAND_OUTPUT_MAX_LEN;
 
 	result = os_system_run( &args );
 	if ( result == OS_STATUS_SUCCESS )
