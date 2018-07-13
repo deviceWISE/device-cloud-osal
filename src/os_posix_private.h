@@ -45,7 +45,6 @@
 #include <fcntl.h>      /* for open, O_WRONLY, O_CREAT, O_EXCL, S_IRUSR,
                           S_IWUSR, S_IRGRP, S_IROTH */
 #include <limits.h>     /* for PATH_MAX */
-#include <netdb.h>      /* for struct addrinfo */
 #include <pthread.h>    /* for threading support */
 #include <signal.h>     /* for siginfo_t */
 #include <sys/socket.h> /* for struct addrinfo */

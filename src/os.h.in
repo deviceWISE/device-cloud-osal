@@ -1472,7 +1472,6 @@ OS_API os_status_t os_service_query(
 	os_millisecond_t max_time_out
 );
 
-/* socket functions */
 /**
  * @brief Get the IP address that a host resolves to
  *
@@ -1486,7 +1485,7 @@ OS_API os_status_t os_service_query(
  * @retval 0       on success
  * @retval !0      on failure (see getaddrinfo() return codes)
  */
- OS_API int os_get_host_address(
+OS_API int os_get_host_address(
 	const char *host,
 	const char *service,
 	char *address,
@@ -1494,6 +1493,7 @@ OS_API os_status_t os_service_query(
 	int family
 );
 
+/* socket functions */
 /**
  * @brief Accepts an incoming connection
  *

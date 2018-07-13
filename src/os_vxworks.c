@@ -97,6 +97,38 @@ os_status_t os_process_cleanup( void )
 	return OS_STATUS_FAILURE;
 }
 
+/* service entry (servent) functions */
+os_service_entry_t *os_service_entry_by_name(
+	const char *name,
+	const char *proto )
+{
+	return NULL;
+}
+
+os_service_entry_t *os_service_entry_by_port(
+	int port,
+	const char *proto )
+{
+	return NULL;
+}
+
+void os_service_entry_close( void )
+{
+	/* nothing to do on VxWorks */
+}
+
+os_service_entry_t *os_service_entry_get( void )
+{
+	return NULL;
+}
+
+void os_service_entry_open(
+	int stayopen )
+{
+	/* nothing to do on VxWorks */
+	(void)stayopen;
+}
+
 /* service functions */
 os_status_t os_service_run(
 	const char *id,

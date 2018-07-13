@@ -157,6 +157,11 @@ typedef HANDLE os_file_t;
 typedef HMODULE os_lib_handle;
 
 /**
+ * @brief type represent a service entry
+ */
+typedef struct servent os_service_entry_t;
+
+/**
  * @brief Handle to a thread
  */
 typedef HANDLE os_thread_t;
@@ -771,6 +776,80 @@ OS_API void os_memzero(
 );
 #endif
 
+/* service entry (servent) functions */
+/**
+ * @brief Finds a service entry by service name
+ *
+ * @note This is equivilent to the @p getservbyname POSIX function
+ *
+ * @note This function will open the service entry database if required
+ *
+ * @param[in]      name                service name to search for
+ * @param[in]      proto               protocol to search for (optional)
+ *
+ * @return a pointer to the service entry if found.  NULL otherwise
+ *
+ * @see os_service_entry_by_port
+ * @see os_service_entry_close
+ */
+OS_API os_service_entry_t *os_service_entry_by_name(
+	const char *name,
+	const char *proto );
+
+/**
+ * @brief Finds a service entry by port
+ *
+ * @note This is equivilent to the @p getservbyport POSIX function
+ *
+ * @note This function will open the service entry database if required
+ *
+ * @param[in]      port                service port to search for
+ * @param[in]      proto               protocol to search for (optional)
+ *
+ * @return a pointer to the service entry if found.  NULL otherwise
+ *
+ * @see os_service_entry_by_name
+ * @see os_service_entry_close
+ */
+OS_API os_service_entry_t *os_service_entry_by_port(
+	int port,
+	const char *proto );
+
+/**
+ * @brief Closes the service entry database if open
+ *
+ * @note This is equivilent to the @p endservent POSIX function
+ *
+ * @see os_service_entry_get
+ * @see os_service_entry_open
+ */
+OS_API void os_service_entry_close( void );
+
+/**
+ * @brief Retrieves the next service entry from the database
+ *
+ * @note This is equivilent to the @p getservent POSIX function
+ *
+ * @return the next entry in the service database
+ *
+ * @see os_service_entry_open
+ * @see os_service_entry_close
+ */
+OS_API os_service_entry_t *os_service_entry_get( void );
+
+/**
+ * @brief Opens the service entry database
+ *
+ * @note This is equivilent to the @p setservent POSIX function
+ *
+ * @param[in]      stayopen            whether to keep the database open
+ *
+ * @see os_service_entry_get
+ * @see os_service_entry_close
+ */
+OS_API void os_service_entry_open(
+	int stayopen );
+
 /**
  * @brief Returns the operating system code for the last system error
  *        encountered
@@ -1051,3 +1130,4 @@ OS_API os_status_t os_thread_condition_wait(
 );
 #endif
 #endif /* if OSAL_THREAD_SUPPORT */
+

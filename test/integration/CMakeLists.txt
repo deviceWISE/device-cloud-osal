@@ -16,6 +16,7 @@ set( TESTS
 	"adapters"
 	"env"
 	"run"
+	"service_entry"
 	"time"
 )
 
@@ -36,6 +37,10 @@ set( TEST_ENV_LIBS ${OS_LIB} )
 # system run tests
 set( TEST_RUN_SRCS "run_test.c" )
 set( TEST_RUN_LIBS ${OS_LIB} )
+
+# service entry tests
+set( TEST_SERVICE_ENTRY_SRCS "service_entry_test.c" )
+set( TEST_SERVICE_ENTRY_LIBS ${OS_LIB} )
 
 # time tests
 set( TEST_TIME_SRCS "time_test.c" )

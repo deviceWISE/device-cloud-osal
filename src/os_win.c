@@ -71,6 +71,18 @@ struct win_version_info
 };
 
 /**
+ * @brief Global structure for holding the service entry database file
+ */
+struct service_database
+{
+	size_t count;          /**< @brief Number of entries */
+	struct servent *first; /**< @brief First entry */
+	struct servent *cur;   /**< @brief Current entry */
+	BOOL keep_open;        /**< @brief whether to keep the database open */
+};
+static struct service_database SERV_DB = { 0u, NULL, NULL };
+
+/**
  * @brief Structure relating version numbers to Windows name
  *
  * @note This must be listed with the latest Windows release first
@@ -1264,8 +1276,7 @@ size_t os_strlen(
 char *os_strncat(
 	char *s1,
 	const char *s2,
-	size_t count
-	)
+	size_t count )
 {
 	size_t i, j;
 	for (i = 0; s1[i] != '\0'; i++)
@@ -1279,8 +1290,7 @@ char *os_strncat(
 int os_strncmp(
 	const char *s1,
 	const char *s2,
-	size_t len
-)
+	size_t len )
 {
 	size_t i = 0u;
 	while( ( *s1 ) && ( *s1 == *s2 ) && ( i < len ) )
@@ -2599,7 +2609,6 @@ os_status_t os_service_restart(
 	return result;
 }
 
-/* socket functions */
 int os_get_host_address(
 	const char *host,
 	const char *service,
@@ -2637,6 +2646,358 @@ int os_get_host_address(
 	return result;
 }
 
+/* service entry (servent) functions */
+os_service_entry_t *os_service_entry_by_name(
+	const char *name,
+	const char *proto )
+{
+	os_service_entry_t *result = NULL;
+
+	/* open database if required */
+	if ( !SERV_DB.first )
+		os_service_entry_open( 0 );
+
+	if ( SERV_DB.first && name )
+	{
+		size_t i = 0u;
+		BOOL found_match = FALSE;
+
+		os_service_entry_t *tmp = SERV_DB.first;
+		while ( found_match == FALSE && i < SERV_DB.count )
+		{
+			size_t j = 0u;
+			BOOL name_match = (BOOL)(os_strcmp( name, tmp->s_name ) == 0);
+
+			/* check aliases for match */
+			while ( name_match == FALSE && tmp->s_aliases && tmp->s_aliases[j] )
+			{
+				name_match = (BOOL)(os_strcmp( name, tmp->s_aliases[j] ) == 0);
+				++j;
+			}
+
+			if ( name_match != FALSE )
+			{
+				if ( !proto || os_strcmp( proto, tmp->s_proto ) == 0 )
+					found_match = TRUE;
+			}
+
+			if ( found_match == FALSE )
+			{
+				++tmp;
+				++i;
+			}
+		}
+
+		if ( found_match != FALSE )
+		{
+			SERV_DB.cur = tmp;
+			result = tmp;
+		}
+	}
+
+	/* close, if not set to keep database open */
+	if ( !result && SERV_DB.keep_open == FALSE )
+		os_service_entry_close();
+
+	return result;
+}
+
+os_service_entry_t *os_service_entry_by_port(
+	int port,
+	const char *proto )
+{
+	os_service_entry_t *result = NULL;
+
+	/* open database if required */
+	if ( !SERV_DB.first )
+		os_service_entry_open( 0 );
+
+	if ( SERV_DB.first )
+	{
+		size_t i = 0u;
+		BOOL found_match = FALSE;
+
+		os_service_entry_t *tmp = SERV_DB.first;
+		while ( found_match == FALSE && i < SERV_DB.count )
+		{
+			if ( tmp->s_port == port )
+			{
+				if ( !proto || os_strcmp( proto, tmp->s_proto ) == 0 )
+					found_match = TRUE;
+			}
+
+			if ( found_match == FALSE )
+			{
+				++tmp;
+				++i;
+			}
+		}
+
+		if ( found_match != FALSE )
+		{
+			SERV_DB.cur = tmp;
+			result = tmp;
+		}
+	}
+
+	/* close, if not set to keep database open */
+	if ( !result && SERV_DB.keep_open == FALSE )
+		os_service_entry_close();
+
+	return result;
+}
+
+void os_service_entry_close( void )
+{
+	if ( SERV_DB.first )
+	{
+		size_t i;
+		for ( i = 0u; i < SERV_DB.count; ++i )
+		{
+			if ( SERV_DB.first[i].s_name )
+			{
+				HeapFree( GetProcessHeap(), 0,
+					SERV_DB.first[i].s_name );
+			}
+		}
+		HeapFree( GetProcessHeap(), 0, SERV_DB.first );
+
+		/* zeroize database */
+		ZeroMemory( &SERV_DB, sizeof( struct service_database ) );
+	}
+}
+
+os_service_entry_t *os_service_entry_get( void )
+{
+	os_service_entry_t *result = NULL;
+
+	/* open database if required */
+	if ( !SERV_DB.first )
+		os_service_entry_open( 0 );
+
+	/* get next entry */
+	if ( SERV_DB.first )
+	{
+		if ( !SERV_DB.cur )
+			SERV_DB.cur = SERV_DB.first;
+		else
+		{
+			++SERV_DB.cur;
+			if ( (const char *)SERV_DB.cur ==
+				((const char *)SERV_DB.first +
+				  ((sizeof(struct servent) * SERV_DB.count))) )
+				SERV_DB.cur = NULL;
+		}
+		result = SERV_DB.cur;
+	}
+
+	/* close, if not set to keep database open */
+	if ( !result && SERV_DB.keep_open == FALSE )
+		os_service_entry_close();
+
+	return result;
+}
+
+void os_service_entry_open(
+	int stayopen )
+{
+	HANDLE serv_file = INVALID_HANDLE_VALUE;
+	DWORD str_len;
+	LPCTSTR file_in =
+		"%SystemRoot%\\System32\\drivers\\etc\\services";
+	str_len = ExpandEnvironmentStrings( file_in, NULL, 0u );
+	if ( str_len > 0u )
+	{
+		LPSTR file_out = HeapAlloc( GetProcessHeap(), 0,
+			(str_len + 1u) * sizeof(TCHAR) );
+		if ( file_out )
+		{
+			ExpandEnvironmentStrings( file_in, file_out,
+				str_len + 1u );
+			serv_file = CreateFile( file_out, GENERIC_READ,
+				FILE_SHARE_READ, NULL, OPEN_EXISTING,
+				FILE_ATTRIBUTE_NORMAL, NULL );
+			HeapFree( GetProcessHeap(), 0, file_out );
+		}
+	}
+
+	/* parse service database */
+	if ( serv_file )
+	{
+		char buf[1024u];
+		struct servent *s = NULL;
+		size_t scnt = 0u;
+		DWORD bytes_read = 0u, line_start = 0u;
+		BOOL ignore = FALSE;
+
+		while ( ReadFile( serv_file, buf, sizeof(buf),
+			&bytes_read, NULL ) && bytes_read > 0u )
+		{
+			DWORD buf_pos = 0;
+			while ( buf_pos < bytes_read )
+			{
+				const char c = buf[buf_pos];
+				if ( ignore == FALSE )
+				{
+					if ( c == '#' )
+						ignore = TRUE;
+
+					if (((c == '#' || c == '\n' || c == '\r')
+						&& (buf_pos - line_start) > 0))
+					{
+						DWORD name_start = line_start;
+						DWORD name_end;
+						DWORD proto_start;
+						DWORD proto_end;
+						DWORD alias_start;
+						unsigned short port = 0u;
+						unsigned int alias_count = 0u;
+
+						/* skip non alpha characters */
+						while (line_start < buf_pos &&
+							!isgraph(buf[line_start]))
+							++line_start;
+
+						/* name contains only alpha characters */
+						name_start = line_start;
+						while (line_start < buf_pos &&
+							isgraph(buf[line_start]))
+							++line_start;
+						name_end = line_start + 1u;
+
+						/* skip non numeric characters */
+						while (line_start < buf_pos &&
+							!isdigit(buf[line_start] ))
+							++line_start;
+
+						/* obtain port */
+						while (line_start < buf_pos &&
+							isdigit(buf[line_start]))
+						{
+							port = (port * 10u) + (unsigned short)(buf[line_start] - '0');
+							++line_start;
+						}
+
+						/* skip non alpha characters */
+						while (line_start < buf_pos &&
+							!isalpha(buf[line_start]))
+							++line_start;
+
+						/* obtain protocol */
+						proto_start = line_start;
+						while (line_start < buf_pos &&
+							isgraph(buf[line_start]))
+							++line_start;
+						proto_end = line_start + 1u;
+
+						/* find any aliases */
+						while (line_start < buf_pos &&
+							isspace(buf[line_start]))
+							++line_start;
+						alias_start = line_start;
+
+						while (line_start < buf_pos)
+						{
+							++alias_count;
+							while (line_start < buf_pos &&
+								!isspace(buf[line_start]))
+								++line_start;
+							while (line_start < buf_pos &&
+								isspace(buf[line_start]))
+								++line_start;
+						}
+
+						if ( port > 0u && name_end > name_start )
+						{
+							if ( s )
+								s = (struct servent *)HeapReAlloc(
+									GetProcessHeap(), HEAP_ZERO_MEMORY, s,
+									sizeof( struct servent ) * (scnt + 1u));
+							else
+								s = (struct servent *)HeapAlloc(
+									GetProcessHeap(), HEAP_ZERO_MEMORY,
+									sizeof( struct servent ) * (scnt + 1u));
+							if ( s )
+							{
+								unsigned int i;
+								char *str;
+								s[scnt].s_name = HeapAlloc(
+									GetProcessHeap(), 0,
+									(sizeof(char) * ((name_end - name_start + 1u) + (proto_end - proto_start + 1u))) +
+									(sizeof(char*) * (alias_count + 1u)) + (sizeof(char) * (buf_pos - alias_start)));
+								StringCchCopyA( s[scnt].s_name,
+									name_end - name_start,
+									&buf[name_start] );
+								s[scnt].s_proto = (char *)s[scnt].s_name + (name_end - name_start + 1u);
+								StringCchCopyA( s[scnt].s_proto,
+									proto_end - proto_start,
+									&buf[proto_start] );
+								s[scnt].s_port = htons(port);
+
+								/* handle aliases */
+								s[scnt].s_aliases = (char **)((char*)s[scnt].s_proto + (proto_end - proto_start + 1u));
+								str = (char*)s[scnt].s_aliases + (sizeof(char*) * (alias_count + 1u));
+								for ( i = 0u; i < alias_count; ++i )
+								{
+									DWORD alias_end = alias_start;
+									DWORD str_len;
+
+									/* determine end of alias name */
+									while (alias_end < buf_pos &&
+										isgraph(buf[alias_end]))
+										++alias_end;
+									str_len = alias_end - alias_start;
+
+									/* save alias to buffer */
+									s[scnt].s_aliases[i] = str;
+									StringCchCopyA( s[scnt].s_aliases[i],
+										str_len + 1u, &buf[alias_start] );
+
+									/* go to next aliases */
+									str += str_len + 1u;
+									alias_start += str_len + 1u;
+									while (alias_start < buf_pos &&
+										!isgraph(buf[alias_start]))
+										++alias_start;
+								}
+								s[scnt].s_aliases[i] = NULL;
+								++scnt;
+							}
+						}
+					}
+				}
+				else if ( c == '\n' || c == '\r' )
+					ignore = FALSE;
+
+				/* go to next character */
+				++buf_pos;
+				if ( c == '\n' || c == '\r' )
+					line_start = buf_pos;
+			}
+
+			/* we can't fit an entire line in the buffer */
+			if ( line_start == 0 )
+				break;
+
+			/* in middle of line move buffer up */
+			if ( buf_pos == bytes_read )
+			{
+				MoveMemory( &buf[0], &buf[line_start],
+					buf_pos - line_start );
+				line_start = 0;
+			}
+		}
+		CloseHandle( serv_file );
+
+		/* save database */
+		SERV_DB.count = scnt;
+		SERV_DB.first = s;
+		SERV_DB.cur = NULL;
+		SERV_DB.keep_open = (BOOL)stayopen;
+	}
+}
+
+/* socket functions */
 os_status_t os_socket_accept(
 	const os_socket_t *socket,
 	os_socket_t **out,
