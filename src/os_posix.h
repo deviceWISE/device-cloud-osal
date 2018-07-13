@@ -33,6 +33,7 @@
 #include <stdio.h> /* for: FILE *, feof, fgets, fread, fputs, fwrite, fprintf, printf, snprintf, vfprintf */
 #include <signal.h> /* for SIGINT, ... */
 #include <sys/socket.h>  /* for AF_INET, SOCK_STREAM, SOCK_DGRAM definition */
+#include <netdb.h>  /* for: (service entry) servent functions */
 
 /** @brief Structure representing a network adapter address */
 struct os_adapter_address
@@ -56,6 +57,11 @@ typedef FILE *os_file_t;
  * @brief Handle to an open shared library
  */
 typedef void *os_lib_handle;
+
+/**
+ * @brief type represent a service entry
+ */
+typedef struct servent os_service_entry_t;
 
 #if OSAL_THREAD_SUPPORT
 /**
@@ -81,7 +87,9 @@ typedef pthread_rwlock_t os_thread_rwlock_t;
 #endif /* else if defined(__VXWORKS__) */
 #endif /* if OSAL_THREAD_SUPPORT */
 
-/** @brief type representing a UUID for an operating system */
+/**
+ * @brief type representing a UUID for an operating system
+ */
 typedef char os_uuid_t[16u];
 
 /**
@@ -137,14 +145,17 @@ typedef char os_uuid_t[16u];
  * @brief Symbol to use when thread linking
  */
 #define OS_THREAD_LINK
+
 /**
  * @brief Return type for a thread main function
  */
 #define OS_THREAD_RETURN               void*
+
 /**
  * @brief Symbol to correct declare a thread on all platforms
  */
 #define OS_THREAD_DECL OS_THREAD_RETURN OS_THREAD_LINK
+
 /**
  * @brief Type defining the starting point for a thread
  */
@@ -829,6 +840,100 @@ OS_API void *os_realloc(
 ) __attribute__((malloc));
 #endif
 
+/* service entry (servent) functions */
+/**
+ * @brief Finds a service entry by service name
+ *
+ * @note This is equivilent to the @p getservbyname POSIX function
+ *
+ * @note This function will open the service entry database if required
+ *
+ * @param[in]      name                service name to search for
+ * @param[in]      proto               protocol to search for (optional)
+ *
+ * @return a pointer to the service entry if found.  NULL otherwise
+ *
+ * @see os_service_entry_by_port
+ * @see os_service_entry_close
+ */
+#if !defined( __VXWORKS__ ) && !OSAL_WRAP
+#define os_service_entry_by_name(name,proto)     (os_service_entry_t*)getservbyname((name), (proto))
+#else /* if !OSAL_WRAP */
+OS_API os_service_entry_t *os_service_entry_by_name(
+	const char *name,
+	const char *proto );
+#endif /* else if !OSAL_WRAP */
+
+/**
+ * @brief Finds a service entry by port
+ *
+ * @note This is equivilent to the @p getservbyport POSIX function
+ *
+ * @note This function will open the service entry database if required
+ *
+ * @param[in]      port                service port to search for
+ * @param[in]      proto               protocol to search for (optional)
+ *
+ * @return a pointer to the service entry if found.  NULL otherwise
+ *
+ * @see os_service_entry_by_name
+ * @see os_service_entry_close
+ */
+#if !defined( __VXWORKS__ ) && !OSAL_WRAP
+#define os_service_entry_by_port(port,proto)     (os_service_entry_t*)getservbyport((port), (proto))
+#else /* if !OSAL_WRAP */
+OS_API os_service_entry_t *os_service_entry_by_port(
+	int port,
+	const char *proto );
+#endif /* else if !OSAL_WRAP */
+
+/**
+ * @brief Closes the service entry database if open
+ *
+ * @note This is equivilent to the @p endservent POSIX function
+ *
+ * @see os_service_entry_get
+ * @see os_service_entry_open
+ */
+#if !defined( __VXWORKS__ ) && !OSAL_WRAP
+#define os_service_entry_close()                 endservent()
+#else /* if !OSAL_WRAP */
+OS_API void os_service_entry_close( void );
+#endif /* else if !OSAL_WRAP */
+
+/**
+ * @brief Retrieves the next service entry from the database
+ *
+ * @note This is equivilent to the @p getservent POSIX function
+ *
+ * @return the next entry in the service database
+ *
+ * @see os_service_entry_open
+ * @see os_service_entry_close
+ */
+#if !defined( __VXWORKS__ ) && !OSAL_WRAP
+#define os_service_entry_get()                   (os_service_entry_t*)getservent()
+#else /* if !OSAL_WRAP */
+OS_API os_service_entry_t *os_service_entry_get( void );
+#endif /* else if !OSAL_WRAP */
+
+/**
+ * @brief Opens the service entry database
+ *
+ * @note This is equivilent to the @p setservent POSIX function
+ *
+ * @param[in]      stayopen            whether to keep the database open
+ *
+ * @see os_service_entry_get
+ * @see os_service_entry_close
+ */
+#if !defined( __VXWORKS__ ) && !OSAL_WRAP
+#define os_service_entry_open(stayopen)          setservent(stayopen)
+#else /* if !OSAL_WRAP */
+OS_API void os_service_entry_open(
+	int stayopen );
+#endif /* else if !OSAL_WRAP */
+
 /**
  * @brief Returns the operating system code for the last system error
  *        encountered
@@ -1174,3 +1279,4 @@ OS_API os_status_t os_thread_condition_wait(
 #endif
 
 #endif /* if OSAL_THREAD_SUPPORT */
+

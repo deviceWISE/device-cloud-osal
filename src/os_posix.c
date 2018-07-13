@@ -1305,7 +1305,6 @@ os_bool_t os_path_is_absolute( const char *path )
 	return result;
 }
 
-/* socket functions */
 int os_get_host_address(
 	const char *host,
 	const char *service,
@@ -1357,6 +1356,7 @@ int os_get_host_address(
 	return result;
 }
 
+/* socket functions */
 os_status_t os_socket_accept(
 	const os_socket_t *socket,
 	os_socket_t **out,
@@ -1870,6 +1870,41 @@ unsigned long os_strtoul(
 	return strtoul( str, endptr, 10 );
 }
 #endif /* if defined( OSAL_WRAP ) */
+
+/* service entry (servent) functions */
+#if !defined( __VXWORKS__ )
+#if defined(OSAL_WRAP) && OSAL_WRAP
+os_service_entry_t *os_service_entry_by_name(
+	const char *name,
+	const char *proto )
+{
+	return (os_service_entry_t *)getservbyname( name, proto );
+}
+
+os_service_entry_t *os_service_entry_by_port(
+	int port,
+	const char *proto )
+{
+	return (os_service_entry_t *)getservbyport( port, proto );
+}
+
+void os_service_entry_close( void )
+{
+	endservent();
+}
+
+os_service_entry_t *os_service_entry_get( void )
+{
+	return (os_service_entry_t *)getservent();
+}
+
+void os_service_entry_open(
+	int stayopen )
+{
+	setservent( stayopen );
+}
+#endif /* if defined(OSAL_WRAP) && OSAL_WRAP */
+#endif /* if !defined( __VXWORKS__ ) */
 
 #if defined(OSAL_WRAP) && OSAL_WRAP
 /* operating system specific */
