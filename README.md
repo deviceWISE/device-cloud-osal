@@ -11,6 +11,6 @@ This library is a work-in-progress, and more calls will be added as required,
 and current calls will have tests built for them to improve reliability.
 
 ## Targets
-The current targets of the library are: linux, windows 8/10, and eventually
-VxWorks and Android.
+The current targets of the library are: linux, windows 8/10, VxWorks 7 and
+Android.
 
